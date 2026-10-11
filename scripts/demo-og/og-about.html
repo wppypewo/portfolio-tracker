@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: "Plex Sans"; src: url("../../src/app/fonts/IBMPlexSans-latin.woff2") format("woff2"); font-weight: 100 700; }
+  @font-face { font-family: "Plex Mono"; src: url("../../src/app/fonts/IBMPlexMono-400-ascii.woff2") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "Plex Mono"; src: url("../../src/app/fonts/IBMPlexMono-500-ascii.woff2") format("woff2"); font-weight: 500; }
+  @font-face { font-family: "Plex Mono"; src: url("../../src/app/fonts/IBMPlexMono-600-ascii.woff2") format("woff2"); font-weight: 600; }
+  @font-face { font-family: "Noto TC"; src: url("../../src/app/fonts/NotoSansTC-big5.woff2") format("woff2"); font-weight: 100 900; }
+  :root {
+    --page: #e7eef0; --surface: #f4f8f9; --text: #101820; --muted: #46565f; --faint: #56666e;
+    --accent: #195f7a; --accent-soft: rgba(25, 95, 122, 0.1); --annot: #d14b32;
+    --border: rgba(16, 24, 32, 0.16); --line-strong: rgba(16, 24, 32, 0.32); --grid: rgba(16, 24, 32, 0.07); --grid-major: rgba(16, 24, 32, 0.13);
+    --sans: "Plex Sans", "Noto TC", sans-serif; --mono: "Plex Mono", "Noto TC", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative; background-color: var(--page); color: var(--text); font-family: var(--sans);
+    /* 製圖格線：24px 細格、120px 主格 */
+    background-image:
+      linear-gradient(var(--grid-major) 1px, transparent 1px), linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+      linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+    background-position: 0 30px, 0 0, 0 6px, 0 0;
+  }
+  .sheet { position: absolute; inset: 36px 48px; border: 1px solid var(--line-strong); background: color-mix(in srgb, var(--surface) 82%, transparent); }
+  /* 套準記號 */
+  .reg { position: absolute; width: 26px; height: 26px; }
+  .reg::before, .reg::after { content: ""; position: absolute; background: var(--text); }
+  .reg::before { left: 12px; top: 0; width: 1px; height: 26px; }
+  .reg::after { top: 12px; left: 0; height: 1px; width: 26px; }
+  .reg i { position: absolute; inset: 6px; border: 1px solid var(--text); border-radius: 50%; }
+  .r-tl { left: -13px; top: -13px; } .r-tr { right: -13px; top: -13px; } .r-bl { left: -13px; bottom: -13px; } .r-br { right: -13px; bottom: -13px; }
+
+  .brand { position: absolute; left: 44px; top: 38px; display: flex; align-items: center; gap: 14px; }
+  .brand b { font-size: 30px; font-weight: 600; letter-spacing: -0.01em; }
+  .demo { font-family: var(--mono); font-weight: 600; font-size: 15px; letter-spacing: 0.14em; padding: 3px 8px 2px; border: 1.5px dashed var(--annot); color: var(--text); }
+  .sheet-no { position: absolute; right: 44px; top: 44px; font-family: var(--sans); font-size: 16px; color: var(--faint); }
+
+  .head { position: absolute; left: 44px; top: 100px; width: 680px; }
+  .label { font-family: var(--mono); font-size: 16px; color: var(--muted); display: flex; align-items: center; gap: 10px; letter-spacing: 0.02em; }
+  .label::before { content: ""; width: 10px; height: 10px; border-left: 2px solid var(--accent); border-top: 2px solid var(--accent); }
+  h1 { margin-top: 12px; font-family: "Noto TC", sans-serif; font-weight: 700; font-size: 50px; line-height: 1.12; letter-spacing: 0.01em; }
+  .sub { margin-top: 14px; font-family: "Noto TC", sans-serif; font-size: 21px; line-height: 1.5; color: var(--muted); }
+
+  /* 指標欄：只放計算管線的名稱，不放會隨日期漂移的數字 */
+  .metrics { position: absolute; right: 44px; top: 128px; width: 300px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); }
+  .metrics div { background: var(--surface); padding: 14px 16px 12px; }
+  .metrics span { display: block; font-family: var(--mono); font-size: 13px; color: var(--faint); letter-spacing: 0.04em; }
+  .metrics strong { display: block; margin-top: 4px; font-family: "Noto TC", sans-serif; font-weight: 600; font-size: 19px; }
+
+  .chart { position: absolute; left: 0; right: 0; bottom: 0; height: 236px; border-top: 1px solid var(--border); }
+  .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .axis { position: absolute; left: 44px; right: 44px; bottom: 16px; display: flex; justify-content: space-between; font-family: var(--mono); font-size: 13px; color: var(--faint); }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <span class="reg r-tl"><i></i></span><span class="reg r-tr"><i></i></span><span class="reg r-bl"><i></i></span><span class="reg r-br"><i></i></span>
+    <div class="brand"><b>StackWorth</b></div>
+    <div class="sheet-no">圖號 SW-00</div>
+
+    <div class="head">
+      <div class="label">個人投資組合測繪</div>
+      <h1>把資產攤在製圖桌上，<br>一條一條量清楚。</h1>
+      <p class="sub">台股、美股、加密貨幣與現金，折成台幣畫在同一張圖。</p>
+    </div>
+
+    <div class="metrics">
+      <div><span>XIRR</span><strong>資金加權</strong></div>
+      <div><span>TWR</span><strong>時間加權</strong></div>
+      <div><span>MDD</span><strong>最大回撤</strong></div>
+      <div><span>SHARPE</span><strong>風險調整</strong></div>
+    </div>
+
+    <div class="chart">
+      <svg id="c" viewBox="0 0 1104 236" preserveAspectRatio="none"></svg>
+      <div class="axis"><span>-6M</span><span>-5M</span><span>-4M</span><span>-3M</span><span>-2M</span><span>-1M</span><span>今天</span></div>
+    </div>
+  </div>
+<script>
+  // 淨值序列取自 /demo 首頁趨勢圖（2026-10-06 正式 build，預設 6M 區間），只取形狀，換算到這張圖的座標
+  const d = "M52.0,222.3 L56.9,218.4 L61.9,218.6 L66.8,219.3 L71.7,222.3 L76.7,226.6 L81.6,226.1 L86.5,232.5 L91.5,224.1 L96.4,223.9 L101.3,221.4 L106.3,221.4 L111.2,231.5 L116.1,227.2 L121.1,233.8 L126.0,236.9 L130.9,239.9 L135.9,239.4 L140.8,236.8 L145.7,234.3 L150.7,228.1 L155.6,231.0 L160.5,235.8 L165.5,230.7 L170.4,228.9 L175.4,222.7 L180.3,221.1 L185.2,211.4 L190.2,195.4 L195.1,195.2 L200.0,188.9 L205.0,200.7 L209.9,204.1 L214.8,202.2 L219.8,194.4 L224.7,188.5 L229.6,192.6 L234.6,186.4 L239.5,188.0 L244.4,188.4 L249.4,185.7 L254.3,179.1 L259.2,181.6 L264.2,187.2 L269.1,186.6 L274.0,184.3 L279.0,188.8 L283.9,188.9 L288.8,190.4 L293.8,187.3 L298.7,185.1 L303.6,185.7 L308.6,180.7 L313.5,178.9 L318.4,181.3 L323.4,175.9 L328.3,188.7 L333.2,192.3 L338.2,191.8 L343.1,171.6 L348.0,166.3 L353.0,173.0 L357.9,169.4 L362.8,170.3 L367.8,161.2 L372.7,162.3 L377.6,160.8 L382.6,165.0 L387.5,158.7 L392.5,161.0 L397.4,158.3 L402.3,163.1 L407.3,166.8 L412.2,159.3 L417.1,161.3 L422.1,162.0 L427.0,158.8 L431.9,164.8 L436.9,163.0 L441.8,158.6 L446.7,157.2 L451.7,165.2 L456.6,170.1 L461.5,168.4 L466.5,168.9 L471.4,169.7 L476.3,162.4 L481.3,165.6 L486.2,161.8 L491.1,139.9 L496.1,141.8 L501.0,135.1 L505.9,126.1 L510.9,124.6 L515.8,120.6 L520.7,115.6 L525.7,120.5 L530.6,119.0 L535.5,128.4 L540.5,131.3 L545.4,126.9 L550.3,125.5 L555.3,127.3 L560.2,122.3 L565.1,120.5 L570.1,118.4 L575.0,120.3 L579.9,118.0 L584.9,113.6 L589.8,104.6 L594.7,99.5 L599.7,97.9 L604.6,102.1 L609.5,101.6 L614.5,104.7 L619.4,100.3 L624.4,111.5 L629.3,112.7 L634.2,104.6 L639.2,105.8 L644.1,86.2 L649.0,81.5 L654.0,91.9 L658.9,94.9 L663.8,94.4 L668.8,94.0 L673.7,102.1 L678.6,103.3 L683.6,108.9 L688.5,109.4 L693.4,104.1 L698.4,100.6 L703.3,92.0 L708.2,94.4 L713.2,88.8 L718.1,89.3 L723.0,96.0 L728.0,93.4 L732.9,94.7 L737.8,96.3 L742.8,83.9 L747.7,90.4 L752.6,107.6 L757.6,107.4 L762.5,114.2 L767.4,109.6 L772.4,118.3 L777.3,119.5 L782.2,115.1 L787.2,116.1 L792.1,117.9 L797.0,93.8 L802.0,92.3 L806.9,93.3 L811.8,105.1 L816.8,106.7 L821.7,104.2 L826.6,100.3 L831.6,110.6 L836.5,115.3 L841.5,116.6 L846.4,117.2 L851.3,113.1 L856.3,103.7 L861.2,94.7 L866.1,88.8 L871.1,79.9 L876.0,80.2 L880.9,86.8 L885.9,75.1 L890.8,80.9 L895.7,79.4 L900.7,67.2 L905.6,59.5 L910.5,59.3 L915.5,60.2 L920.4,77.0 L925.3,83.0 L930.3,86.5 L935.2,86.8 L940.1,91.3 L945.1,72.2 L950.0,67.6";
+  const pts = d.replace(/[ML]/g, " ").trim().split(/\s+/).map((p) => p.split(",").map(Number));
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const L = 44, R = 1104 - 44, T = 36, B = 236 - 48;
+  const map = ([x, y]) => [L + ((x - x0) / (x1 - x0)) * (R - L), T + ((y - y0) / (y1 - y0)) * (B - T)];
+  const P = pts.map(map);
+  const line = P.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const area = line + ` L${R},${B} L${L},${B} Z`;
+  const last = P[P.length - 1];
+  // 期間最高點：放一個十字測點與虛線引線，像測繪桌上的標註
+  let hi = 0; P.forEach((p, i) => { if (p[1] < P[hi][1]) hi = i; });
+  const ticks = [0, 1, 2, 3, 4, 5, 6].map((i) => L + (i * (R - L)) / 6);
+  document.getElementById("c").innerHTML = `
+    ${[T, (T + B) / 2, B].map((y) => `<line x1="${L}" x2="${R}" y1="${y}" y2="${y}" stroke="rgba(16,24,32,0.10)" stroke-width="1"/>`).join("")}
+    ${ticks.map((x) => `<line x1="${x}" x2="${x}" y1="${B}" y2="${B + 6}" stroke="rgba(16,24,32,0.4)" stroke-width="1"/>`).join("")}
+    <path d="${area}" fill="rgba(25,95,122,0.08)"/>
+    <path d="${line}" fill="none" stroke="#195f7a" stroke-width="2.25" stroke-linejoin="round"/>
+    <line x1="${last[0]}" x2="${last[0]}" y1="${T - 18}" y2="${B}" stroke="#101820" stroke-width="1"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="5" fill="#f4f8f9" stroke="#195f7a" stroke-width="2"/>
+    <g stroke="#101820" stroke-width="1">
+      <line x1="${P[hi][0] - 9}" x2="${P[hi][0] + 9}" y1="${P[hi][1]}" y2="${P[hi][1]}"/>
+      <line x1="${P[hi][0]}" x2="${P[hi][0]}" y1="${P[hi][1] - 9}" y2="${P[hi][1] + 9}"/>
+    </g>
+  `;
+</script>
+</body>
+</html>

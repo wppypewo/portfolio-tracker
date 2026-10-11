@@ -21,10 +21,31 @@ import { SurveyPlate } from "./SurveyPlate";
 
 export const dynamic = "force-dynamic";
 
+const TITLE = "StackWorth — 個人投資組合測繪";
+const DESCRIPTION =
+  "把台股、美股、加密貨幣與現金折成台幣，畫在同一張圖上。XIRR、TWR、回撤與配置都寫明算法，資料不夠時顯示「—」。";
+// 分享圖由 scripts/demo-og/render.mjs about 產生（og-about.html → public/og/about.png）。
+// 貼到 LINE／Slack 的預覽卡讀的是 og:*，不讀 <title>，所以兩組一起給。
+const OG_IMAGE = {
+  url: "/og/about.png",
+  width: 1200,
+  height: 630,
+  type: "image/png",
+  alt: "StackWorth：把資產攤在製圖桌上，一條一條量清楚。附近 6 個月淨資產走勢圖",
+};
+
 export const metadata: Metadata = {
-  title: "StackWorth — 個人投資組合測繪",
-  description:
-    "把台股、美股、加密貨幣與現金折成台幣，畫在同一張圖上。XIRR、TWR、回撤與配置都寫明算法，資料不夠時顯示「—」。",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    type: "website",
+    locale: "zh_TW",
+    siteName: "StackWorth",
+    images: [OG_IMAGE],
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [OG_IMAGE] },
 };
 
 const SOURCES = [

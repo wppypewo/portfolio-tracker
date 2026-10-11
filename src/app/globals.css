@@ -15,6 +15,12 @@
    font-mono：數字、註記、軸標與代碼，Plex Mono。
    Mono 只收 ASCII，中文一律掉到 Noto Sans TC；inline 讓 utility 直接吃
    next/font 掛在 <html> 上的變數，不在建置期展開。 */
+/* 繁中字族。@font-face 在 src/app/fonts/noto-sans-tc.css（腳本產生的切片），
+   不跟主題走，所以獨立一條，不放進下方深淺色的 token 區塊。 */
+:root {
+  --font-tc: "StackWorth TC";
+}
+
 @theme inline {
   --font-display: var(--font-sans), var(--font-tc), "Noto Sans TC", system-ui, sans-serif;
   --font-mono: var(--font-figures), var(--font-tc), ui-monospace, SFMono-Regular, monospace;
@@ -247,7 +253,11 @@ body {
    （實測 /demo/decisions：main 停在 0px、頁首佔到 59px，眉標被蓋住）。
    scroll-padding 讓捲動停在頁首下方，另留 8px 給 2px 焦點框與 2px offset。
    高度：手機兩列（品牌列與導覽列各 44px，加上下兩條邊線）共 90px，sm 起一列 --header-h 加邊線。
-   只在畫面上有 Demo 頁首時生效；已登入版 AppHeader 也是黏頂，未納入這次範圍。 */
+   已登入版 AppHeader 同樣黏頂，但各寬度都只有一列 --header-h（手機的導覽收進抽屜），
+   所以不分斷點，一律 --header-h 加邊線。 */
+html:has([data-app-header]) {
+  scroll-padding-top: calc(var(--header-h) + 1px + 8px);
+}
 html:has([data-demo-header]) {
   scroll-padding-top: calc(2.75rem * 2 + 2px + 8px);
 }
@@ -869,9 +879,13 @@ textarea:disabled {
   min-height: 0;
 }
 
+/* 起點的不透明度是 0.01 不是 0：Chrome 計算 LCP 時直接略過 opacity 為 0 的元素，
+   淡入結束後也不會補記。實測整頁 main 從 0 淡入時，Lighthouse 量到的 LCP 是頁首的
+   小字 logo（/about）或根本量不到（/login 回 NO_LCP），真正的大標題從沒被算進去。
+   0.01 肉眼看不出差別，但元素一畫出來就算數，量到的才是使用者真正等的那一刻。 */
 @keyframes page-in {
   from {
-    opacity: 0;
+    opacity: 0.01;
     transform: translateY(4px);
   }
   to {
@@ -908,6 +922,17 @@ textarea:disabled {
   background: linear-gradient(90deg, transparent 0%, var(--c-shimmer) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* 空狀態的底：與 .sk 同一組斜線，但更淡、不掃光。底色用 surface，
+   不論放在桌面上還是卡片裡都讀成「一張還沒畫的圖紙」。 */
+.empty-plot {
+  background-color: var(--c-surface);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--c-drafting-minor) 0 1px,
+    transparent 1px 9px
+  );
 }
 
 @keyframes tooltip-in {
@@ -948,12 +973,155 @@ textarea:disabled {
   background-repeat: no-repeat;
 }
 
+/* 起點 0.01 的理由同 page-in。 */
 @keyframes fade-in-only {
   from {
-    opacity: 0;
+    opacity: 0.01;
   }
   to {
     opacity: 1;
+  }
+}
+
+/* ── /about 介紹頁 ─────────────────────────────────────────────────
+   design.md 的「介紹頁例外」只在這一段生效：主圖描線、註記依序落下、
+   各圖幅捲進視野時淡入上移。仍然只動 opacity 與 transform（描線用 stroke-dashoffset，
+   是 SVG 的筆畫屬性，不觸發版面重排），reduced-motion 時全部直接到終點。 */
+/* 1024 以下主標獨佔一整列（主圖換到下方），字可以放大到 96px：
+   5 字一行，平板 820 寬約 480px，手機 390 寬約 50px／字。 */
+.about-display {
+  font-size: clamp(44px, 13vw, 96px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+@media (min-width: 64rem) {
+  .about-display {
+    font-size: clamp(56px, 5.6vw, 84px);
+  }
+}
+/* 圖幅標題。keep-all 讓中文只在標點與空白處換行（「四個數字，／各回答一個問題」），
+   不會從詞中間切開；balance 再把兩行拉得一樣長。標題都短，最窄的手機也放得下一個詞組，
+   overflow-wrap 是放不下時的保險。 */
+.about-display-sm {
+  font-size: clamp(26px, 3.2vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/* 主圖：格線 → 描線（0.25s 起 1.6s）→ 面 → 回撤註記 → 十字準星與現值。 */
+.plate-grid {
+  animation: fade-in-only 0.5s ease both;
+}
+.plate-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: plate-draw 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.25s forwards;
+}
+.plate-area {
+  animation: fade-in-only 0.6s ease 1.3s both;
+}
+.plate-mark {
+  animation: plate-mark-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) both;
+}
+/* 引線從標籤往上「拉」出來，準星線從交點往兩側展開：都是 scale，不是改寬高。 */
+.plate-leader {
+  transform-origin: top;
+  animation: plate-stretch 0.35s ease 1.9s both;
+}
+.plate-cross-v {
+  transform-origin: center;
+  animation: plate-stretch-y 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) both;
+}
+.plate-cross-h {
+  transform-origin: right;
+  animation: plate-stretch-x 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) both;
+}
+@keyframes plate-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes plate-mark-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes plate-stretch {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes plate-stretch-y {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
+@keyframes plate-stretch-x {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+/* 十字準星的標記本身有 translate 置中，不能被 plate-mark-in 的 transform 蓋掉，
+   所以帶 -translate 的標記只淡入。 */
+.plate-mark[class*="-translate-"] {
+  animation-name: fade-in-only;
+}
+
+/* 捲動進場。隱藏的前提是 RevealRoot 已掛載（html[data-reveal-ready]），
+   沒有 JS 時內容照常顯示。--rd 是同一組裡的錯開延遲。 */
+[data-reveal] {
+  transition:
+    opacity 0.55s ease var(--rd, 0ms),
+    transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rd, 0ms);
+}
+html[data-reveal-ready] [data-reveal]:not([data-inview]) {
+  opacity: 0;
+  transform: translateY(14px);
+}
+/* 地塊一塊一塊「劃」出來：從左上角長到原尺寸，順序就是 squarify 的擺放順序。 */
+.cad-parcel {
+  transform-origin: top left;
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) calc(150ms + var(--i, 0) * 90ms);
+}
+html[data-reveal-ready] [data-reveal]:not([data-inview]) .cad-parcel {
+  transform: scale(0.001);
+}
+.pipe-flow {
+  transform-origin: left;
+  transition: transform 0.45s ease var(--rd, 0ms);
+}
+html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
+  transform: translateX(-50%) scaleX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate-line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .plate-leader,
+  .plate-cross-v,
+  .plate-cross-h,
+  .plate-mark {
+    animation-name: fade-in-only;
+  }
+  html[data-reveal-ready] [data-reveal]:not([data-inview]),
+  html[data-reveal-ready] [data-reveal]:not([data-inview]) .cad-parcel,
+  html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
+    transform: none;
+  }
+  [data-reveal] {
+    transition-property: opacity;
+  }
+  .cad-parcel,
+  .pipe-flow {
+    transition: none;
   }
 }
 
@@ -1136,16 +1304,16 @@ textarea:disabled {
    class 片段比對只抓底色 utility 本身（hover: 之類的變體沒有出現在這些元素上），排除互動控制項，
    免得把按鈕整顆塗成 CanvasText。行內 style 上色的配置條抓不到，元件上另外標 .fc-ink，
    底色要 !important 才蓋得過行內 style。
-   只在 Demo 頁生效；正式頁有同樣的問題，未納入這次範圍。 */
+   原本只在 Demo 頁生效；正式頁用的是同一批元件（範圍鈕、配置條、頁首目前頁），
+   問題一樣，2026-10 起全站套用。 */
 @media (forced-colors: active) {
-  html:has([data-demo-header]) :is([aria-pressed="true"], [aria-current]:not([aria-current="false"])) {
+  :is([aria-pressed="true"], [aria-current]:not([aria-current="false"])) {
     forced-color-adjust: none;
     background-color: Highlight;
     color: HighlightText;
   }
 
-  html:has([data-demo-header])
-    :is(
+  :is(
       [class*=" bg-[var(--c-accent)]"],
       [class*=" bg-[var(--c-text)]"],
       [class*=" bg-[var(--c-line-strong)]"],
@@ -1232,8 +1400,9 @@ textarea:disabled {
      print-color-adjust：數字格的分隔線是 gap-px 透出的底色、歸因條的零軸與斜線地塊也是底色，
      Chrome 列印對話框預設不勾「背景圖形」，不加這條這些線全部消失。報告裡的底色都已換成紙白，
      多印的只有地塊的 12% 淡藍。
-     只在畫面上有 Demo 頁首時生效；正式月報 /reports/monthly 有同樣的問題，未納入這次範圍。 */
-  .report-shell:has(> [data-demo-header]) {
+     原本只在畫面上有 Demo 頁首時生效；正式月報 /reports/monthly 用同一個 .report-shell，
+     深色主題列印一樣會印出淺灰字，2026-10 起兩邊都套。 */
+  .report-shell {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     --c-page: var(--c-print-paper);
@@ -1253,7 +1422,7 @@ textarea:disabled {
 
   /* 「跳至主內容」平常靠 transform 移到畫面外，但 box-shadow 的模糊仍落在頁面上緣，
      列印時在標題右上方印出一塊灰影。 */
-  html:has([data-demo-header]) .skip-link {
+  .skip-link {
     display: none !important;
   }
 }

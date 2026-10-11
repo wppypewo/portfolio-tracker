@@ -52,17 +52,21 @@ export async function updateSession(
 
   const path = request.nextUrl.pathname;
 
-  // 未登入，且不在 /login、/auth/*（OAuth callback）、/demo（公開展示頁）
-  // 或 /methodology（公開指標說明頁，從 demo 連入）→ 導向登入頁。
+  // 未登入，且不在 /login、/auth/*（OAuth callback）、/demo（公開展示頁）、
+  // /methodology（公開指標說明頁，從 demo 連入）或 /about（公開介紹頁）→ 導向登入頁
+  // （根路徑例外，導向介紹頁）。
   if (
     !user &&
     !path.startsWith("/login") &&
     !path.startsWith("/auth") &&
     !path.startsWith("/demo") &&
-    !path.startsWith("/methodology")
+    !path.startsWith("/methodology") &&
+    !path.startsWith("/about")
   ) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    // 根路徑是第一次來的人最常打的網址：沒登入的人先看介紹頁，
+    // 介紹頁上有登入入口；其他受保護的頁面照舊直接到登入頁。
+    url.pathname = path === "/" ? "/about" : "/login";
     return NextResponse.redirect(url);
   }
 

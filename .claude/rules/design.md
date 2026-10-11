@@ -43,6 +43,18 @@ StackWorth 是工具型 UI，核心指標是資料可讀性，不是視覺衝擊
   不做游標跟隨之類的裝飾），不整包安裝
 - Lenis（平滑捲動）仍然禁止：工具型 UI 不劫持捲動
 
+## 介紹頁例外（`/about`，2026-10-11 起）
+
+公開介紹頁 `/about` 是唯一允許「展示性動作」的頁面，工具頁（含 `/demo`）照舊：
+
+- 允許：主圖描線、註記依序落下、各區塊捲進視野時淡入上移（一次，不重播）
+- 實作限 CSS keyframe／transition 加一支 IntersectionObserver（`RevealRoot`），不裝 motion／gsap
+- 仍然只動 transform、opacity（描線用 SVG 的 stroke-dashoffset）
+- 仍然尊重 `prefers-reduced-motion`：描線直接畫完，位移換成淡入
+- 仍然禁止：Lenis、捲動劫持、捲動綁定的逐格播放（scrubbing）、游標跟隨
+- 沒有 JS 時內容必須照常顯示（隱藏規則以 `html[data-reveal-ready]` 為前提）
+- 頁面上的數字一律取自 `/demo` 同一份資料與計算管線，不另寫行銷用數字
+
 ## 禁止
 
 - 禁止套 movie-app 的 cinematic 風格（整頁捲動劇場、Lenis）到這個專案

@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { deleteUser, type FormState } from "@/lib/allowlist-actions";
 import { useActionAnnounce } from "@/components/a11y/use-action-announce";
-import { Panel, Tag } from "@/components/survey";
+import { Panel, Tag, EmptyPlot } from "@/components/survey";
 
 export type UserRow = {
   id: string;
@@ -98,9 +98,7 @@ export function UsersManager({
   return (
     <Panel title="已註冊使用者" sub={<span className="tnum">共 {rows.length} 人</span>} flush>
       {rows.length === 0 ? (
-        <p className="m-5 border border-dashed border-[var(--c-border)] px-5 py-8 text-center text-[length:var(--fs-sm)] text-[var(--c-muted)]">
-          還沒有人註冊。
-        </p>
+        <EmptyPlot className="m-5">還沒有人註冊。</EmptyPlot>
       ) : (
         <ul>
           {rows.map((r) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Panel, SurveyLabel, Tag } from "@/components/survey";
+import { Panel, SurveyLabel, Tag, EmptyPlot } from "@/components/survey";
 import { ASSET_CLASS_LABEL } from "@/lib/dashboard-data";
 import { fmtFull } from "@/lib/format";
 import { planRebalance } from "@/lib/rebalance";
@@ -29,10 +29,10 @@ export function RebalanceTab({ data }: { data: RebalanceData }) {
 
   if (plan.rows.length === 0) {
     return (
-      <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface)] px-6 py-12 text-center text-[length:var(--fs-sm)] text-[var(--c-muted)]">
+      <EmptyPlot>
         {plan.notes[0] ??
           "還沒有可估值的持倉，先到帳戶頁建立帳戶後再回來看再平衡建議。"}
-      </div>
+      </EmptyPlot>
     );
   }
 

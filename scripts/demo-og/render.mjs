@@ -1,7 +1,7 @@
-// 產生公開 Demo 的分享圖 public/og/demo.png（1200×630），五個 Demo 頁共用，由 src/lib/demo-metadata.ts 指定。
-// 用本機 Chrome 無頭模式把 og.html 截圖：字體直接讀 src/app/fonts/ 的 woff2，
-// 中文不必另外內嵌進 next/og。不在建置流程內，改了 og.html 才需要手動重跑：
-//   node scripts/demo-og/render.mjs
+// 產生分享圖（1200×630）。用本機 Chrome 無頭模式把 HTML 截圖：字體直接讀 src/app/fonts/ 的 woff2，
+// 中文不必另外內嵌進 next/og。不在建置流程內，改了 HTML 才需要手動重跑：
+//   node scripts/demo-og/render.mjs          → og.html       → public/og/demo.png（Demo 五頁共用，見 src/lib/demo-metadata.ts）
+//   node scripts/demo-og/render.mjs about    → og-about.html → public/og/about.png（介紹頁 /about）
 // 曲線是 2026-10-06 從 /demo 趨勢圖（預設 6M）取下的形狀，寫死在 og.html，
 // Demo 序列依日期滾動，所以這張圖只示意走勢，不對應任何一天的數字。
 import { spawn } from "node:child_process";
@@ -11,7 +11,9 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const out = resolve(here, "../../public/og/demo.png");
+const name = process.argv[2] ?? "demo";
+const source = name === "demo" ? "og.html" : `og-${name}.html`;
+const out = resolve(here, `../../public/og/${name}.png`);
 const chromePath = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const port = 9800 + Math.floor(Math.random() * 100);
 const profile = mkdtempSync(join(tmpdir(), "demo-og-"));
@@ -51,7 +53,7 @@ try {
     });
 
   await send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 630, deviceScaleFactor: 1, mobile: false });
-  await send("Page.navigate", { url: pathToFileURL(join(here, "og.html")).href });
+  await send("Page.navigate", { url: pathToFileURL(join(here, source)).href });
   await sleep(1500);
   // 字體沒載到就停下，免得悄悄用系統字體產出一張不一樣的圖
   const failed = (

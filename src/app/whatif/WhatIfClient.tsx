@@ -3,7 +3,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { project, crossMonth, type ProjPoint } from "@/lib/whatif-project";
 import { fmtFull as fmtTwd, fmtCompact } from "@/lib/format";
-import { Stat, StatStrip, SurveyLabel, Tag } from "@/components/survey";
+import { Stat, StatStrip, SurveyLabel, Tag, EmptyPlot } from "@/components/survey";
 import { ScenarioTab, type ScenarioData } from "./ScenarioTab";
 import { RebalanceTab } from "./RebalanceTab";
 
@@ -766,9 +766,7 @@ export function WhatIfClient({
         ) : counterfactual ? (
           <CounterfactualTab cf={counterfactual} />
         ) : (
-          <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface)] px-6 py-12 text-center text-[length:var(--fs-sm)] text-[var(--c-muted)]">
-            還沒有任何投入紀錄，先到帳戶頁建立帳戶並加碼後再回來看回測對照。
-          </div>
+          <EmptyPlot>還沒有任何投入紀錄，先到帳戶頁建立帳戶並加碼後再回來看回測對照。</EmptyPlot>
         )}
       </div>
     </div>

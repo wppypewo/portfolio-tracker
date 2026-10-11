@@ -9,7 +9,7 @@ import {
 } from "./actions";
 import { executePlan } from "./recurring-execution-action";
 import { useActionAnnounce } from "@/components/a11y/use-action-announce";
-import { SurveyLabel, Tag } from "@/components/survey";
+import { SurveyLabel, Tag, EmptyPlot } from "@/components/survey";
 import { DEFAULT_DCA_TIER_CONFIG } from "@/lib/dca-tiers";
 import type { DcaTierStatus } from "@/lib/dca-tier-status";
 
@@ -633,9 +633,7 @@ export function RecurringPlanList({
 }) {
   if (plans.length === 0) {
     return (
-      <p className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface)] px-4 py-6 text-center text-[length:var(--fs-sm)] text-[var(--c-muted)]">
-        尚無定期定額計劃。展開下方表單建立第一個。
-      </p>
+      <EmptyPlot compact>尚無定期定額計劃。展開下方表單建立第一個。</EmptyPlot>
     );
   }
 

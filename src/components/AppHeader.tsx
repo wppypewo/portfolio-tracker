@@ -54,7 +54,7 @@ export function AppHeader({
 
   return (
     // 實心桌面色，不半透明、不模糊：導覽列是壓在圖面上方的標題欄，不是毛玻璃。
-    <header className="sticky top-0 z-40 border-b border-[var(--c-line-strong)] bg-[var(--c-page)]">
+    <header data-app-header className="sticky top-0 z-40 border-b border-[var(--c-line-strong)] bg-[var(--c-page)]">
       <div className="mx-auto flex h-[var(--header-h)] max-w-[1200px] items-center gap-4 px-4 sm:px-6 lg:px-7">
         <Link
           href="/"

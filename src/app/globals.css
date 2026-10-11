@@ -247,7 +247,11 @@ body {
    （實測 /demo/decisions：main 停在 0px、頁首佔到 59px，眉標被蓋住）。
    scroll-padding 讓捲動停在頁首下方，另留 8px 給 2px 焦點框與 2px offset。
    高度：手機兩列（品牌列與導覽列各 44px，加上下兩條邊線）共 90px，sm 起一列 --header-h 加邊線。
-   只在畫面上有 Demo 頁首時生效；已登入版 AppHeader 也是黏頂，未納入這次範圍。 */
+   已登入版 AppHeader 同樣黏頂，但各寬度都只有一列 --header-h（手機的導覽收進抽屜），
+   所以不分斷點，一律 --header-h 加邊線。 */
+html:has([data-app-header]) {
+  scroll-padding-top: calc(var(--header-h) + 1px + 8px);
+}
 html:has([data-demo-header]) {
   scroll-padding-top: calc(2.75rem * 2 + 2px + 8px);
 }
@@ -1136,16 +1140,16 @@ textarea:disabled {
    class 片段比對只抓底色 utility 本身（hover: 之類的變體沒有出現在這些元素上），排除互動控制項，
    免得把按鈕整顆塗成 CanvasText。行內 style 上色的配置條抓不到，元件上另外標 .fc-ink，
    底色要 !important 才蓋得過行內 style。
-   只在 Demo 頁生效；正式頁有同樣的問題，未納入這次範圍。 */
+   原本只在 Demo 頁生效；正式頁用的是同一批元件（範圍鈕、配置條、頁首目前頁），
+   問題一樣，2026-10 起全站套用。 */
 @media (forced-colors: active) {
-  html:has([data-demo-header]) :is([aria-pressed="true"], [aria-current]:not([aria-current="false"])) {
+  :is([aria-pressed="true"], [aria-current]:not([aria-current="false"])) {
     forced-color-adjust: none;
     background-color: Highlight;
     color: HighlightText;
   }
 
-  html:has([data-demo-header])
-    :is(
+  :is(
       [class*=" bg-[var(--c-accent)]"],
       [class*=" bg-[var(--c-text)]"],
       [class*=" bg-[var(--c-line-strong)]"],
@@ -1232,8 +1236,9 @@ textarea:disabled {
      print-color-adjust：數字格的分隔線是 gap-px 透出的底色、歸因條的零軸與斜線地塊也是底色，
      Chrome 列印對話框預設不勾「背景圖形」，不加這條這些線全部消失。報告裡的底色都已換成紙白，
      多印的只有地塊的 12% 淡藍。
-     只在畫面上有 Demo 頁首時生效；正式月報 /reports/monthly 有同樣的問題，未納入這次範圍。 */
-  .report-shell:has(> [data-demo-header]) {
+     原本只在畫面上有 Demo 頁首時生效；正式月報 /reports/monthly 用同一個 .report-shell，
+     深色主題列印一樣會印出淺灰字，2026-10 起兩邊都套。 */
+  .report-shell {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     --c-page: var(--c-print-paper);
@@ -1253,7 +1258,7 @@ textarea:disabled {
 
   /* 「跳至主內容」平常靠 transform 移到畫面外，但 box-shadow 的模糊仍落在頁面上緣，
      列印時在標題右上方印出一塊灰影。 */
-  html:has([data-demo-header]) .skip-link {
+  .skip-link {
     display: none !important;
   }
 }

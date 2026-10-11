@@ -50,6 +50,7 @@ src/
 │   ├── history/                 ← 歷史重播 + 報酬歸因
 │   ├── reports/monthly/         ← 月報 + 列印輸出
 │   ├── whatif/                  ← What-if + 投資組合壓力測試
+│   ├── about/                   ← 公開介紹頁（未登入可看；動畫例外見 .claude/rules/design.md）
 │   ├── admin/allowlist/         ← Admin 使用者管理
 │   ├── auth/{callback,mfa,reset-password,signout}/
 │   ├── api/cron/refresh/        ← Vercel cron 入口
@@ -61,6 +62,8 @@ src/
 │   └── globals.css              ← CSS 變數系統
 ├── components/
 │   ├── AppHeader.tsx            ← 導覽 + 鈴鐺（unreadCount prop）
+│   ├── SiteFooter.tsx           ← 全站頁尾（標題欄），掛在 root layout
+│   ├── survey.tsx               ← PageHead、Panel、Stat、EmptyPlot 等測繪桌共用元件
 │   ├── DemoV1Header.tsx         ← 公開 /demo 專屬導覽（總覽/日誌/歷史/壓力/月報）
 │   ├── PortfolioCharts.tsx      ← 帳戶詳情頁用 Recharts 版（AllocationPie, NetWorthLine）
 │   ├── NetWorthPanel.tsx        ← 範圍切換（1M/3M/6M/1Y/ALL）+ NetWorthLine

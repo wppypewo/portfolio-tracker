@@ -176,7 +176,8 @@ npm run dev   # Mac 也可用工作區根的 start-dev-portfolio.command（不�
 - **視覺語言是「測繪桌 Survey Table」**（2026-09-26 起翻新，2026-09-27 併入 main，`2222999`）：
   冷紙底、製圖格線、圓角 0、髮絲線、Plex Mono 等寬數字。跌色（磚紅）與朱砂註記
   刻意分成兩個色，朱砂只用在帶文字與虛線引線的「注意」註記。細節見 `.claude/rules/design.md`
-- **字體自架**：三支字體改 `next/font/local`，檔案 commit 在 `src/app/fonts/`，
+- **字體自架**：拉丁兩支走 `next/font/local`，繁中走腳本產生的 `@font-face` 切片（見本條末段），
+  檔案 commit 在 `src/app/fonts/`，
   由 `scripts/build-fonts.py` 產生（需要 Python + fonttools，**不在建置流程內**，
   Vercel 不需要 Python）。動機是 `next/font/google` 建置時抓 Noto Sans TC 會失敗。
   注意 `next/font/google` 本來就已經自架了，執行期不連 Google，所以這次換的是
@@ -196,6 +197,21 @@ npm run dev   # Mac 也可用工作區根的 start-dev-portfolio.command（不�
   6 個上游 Noto Sans TC 本來就沒有，維持掉到系統字體，與改動前一致）。
   改動 UI 文案後跑 `python scripts/build-fonts.py --audit` 檢查有沒有掉字。
   subset 保留全部 layout features，`tnum` / `lnum` 在，金額欄位對齊不受影響。
+  **2026-10-11 起繁中改成切片載入**（使用者核准）：上面「一包 1,683 KB」讓 Lighthouse
+  行動版 LCP 落在 11 秒多、效能分數 56。`next/font/local` 宣告不了 unicode-range，
+  所以繁中不走 next/font，改由 `scripts/build-fonts.py` 從 `NotoSansTC-big5.woff2`
+  切出 `NotoSansTC-ui.woff2`（原始碼字串裡出現的 804 字，去掉註解與測試檔，228 KB）
+  與 `NotoSansTC-f00…f10.woff2`（其餘字照 Google Fonts 的常用度分組，每片約 450 字、
+  76–189 KB），並產生 `src/app/fonts/noto-sans-tc.css`（`layout.tsx` 引入，
+  字族名 `StackWorth TC`，`--font-tc` 定義在 `globals.css`）。
+  實測 production build：`/about`、`/demo`、`/login`、`/demo/report` 都只下載 UI 片，
+  字體合計 1,761 KB → 306 KB；Lighthouse 行動版 `/about` 效能 56 → 72–80、
+  LCP 11.4 → 4.2 秒，`/demo` 56 → 77–78。代價：`noto-sans-tc.css` 列出全部字的
+  unicode-range，41 KB（gzip 15.7 KB），是會擋渲染的 CSS；使用者自己輸入的字
+  （帳戶名、備註）若不在 UI 片，會多下載對應的常用度切片。
+  改了 UI 文案後跑 `python scripts/build-fonts.py --tc-slices` 重切（不需要重新下載上游）；
+  沒重切也不會掉字，只是新字落在常用度切片、多一個請求。
+  `NotoSansTC-big5.woff2` 不再被網頁引用，留著當切片來源與分享圖（`scripts/demo-og/`）用的整包字。
 - **CSV 匯入採「重放狀態」而非「重跑計算」**：匯入的每一列直接照抄檔案裡的
   `Qty after` / `Unit price` / `FX` / `Cashflow` / `Realized PnL` / `Fee`，
   帳戶終態取每個帳戶**時間上**最後一列（匯出檔是由新到舊排序，務必先排序）。

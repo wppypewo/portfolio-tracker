@@ -15,6 +15,12 @@
    font-mono：數字、註記、軸標與代碼，Plex Mono。
    Mono 只收 ASCII，中文一律掉到 Noto Sans TC；inline 讓 utility 直接吃
    next/font 掛在 <html> 上的變數，不在建置期展開。 */
+/* 繁中字族。@font-face 在 src/app/fonts/noto-sans-tc.css（腳本產生的切片），
+   不跟主題走，所以獨立一條，不放進下方深淺色的 token 區塊。 */
+:root {
+  --font-tc: "StackWorth TC";
+}
+
 @theme inline {
   --font-display: var(--font-sans), var(--font-tc), "Noto Sans TC", system-ui, sans-serif;
   --font-mono: var(--font-figures), var(--font-tc), ui-monospace, SFMono-Regular, monospace;

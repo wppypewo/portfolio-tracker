@@ -9,17 +9,28 @@ Vercel 建置不需要 Python，也不需要對外抓字體。
 
     python3 -m venv .venv-fonts
     .venv-fonts/bin/pip install fonttools brotli
-    .venv-fonts/bin/python scripts/build-fonts.py
+    .venv-fonts/bin/python scripts/build-fonts.py               # 全部重產
+    .venv-fonts/bin/python scripts/build-fonts.py --tc-slices   # 只重切繁中（改了 UI 文案時）
 
 為什麼自架：next/font/google 本身已經會在建置時把字體抓下來自架，
 執行期不連 Google。問題出在「建置時」——抓 Noto Sans TC 失敗過好幾次，
 建置就跟著掛。改成本地檔案後這個外部相依整個消失。
 
-代價：next/font/local 沒辦法逐檔宣告 unicode-range，所以 Google 那套
-105 個切片的機制沒了，改成一包 Big5 常用字。取捨的實測數字見 AGENTS.md。
+繁中字體的載入方式（2026-10-11 起）：next/font/local 沒辦法逐檔宣告
+unicode-range，所以繁中不走 next/font，改由這支腳本切片並產生
+src/app/fonts/noto-sans-tc.css（手寫 @font-face + unicode-range）：
+
+- NotoSansTC-ui.woff2：原始碼字串裡實際出現的字（去掉註解與測試檔），幾乎每頁只需要這一片
+- NotoSansTC-fNN.woff2：其餘 Big5 常用字，照 Google Fonts 的切片順序（越前面越常用）
+  每約 450 字併成一片，只有畫面上出現那幾個字時瀏覽器才會下載
+
+NotoSansTC-big5.woff2 仍然產生：它是切片的來源，也是分享圖（scripts/demo-og/）用的整包字。
+改了 UI 文案之後跑 `--tc-slices` 重切即可（不需要重新下載上游字體）。
+新字沒進 UI 片也不會變豆腐，只是多下載一片。取捨的實測數字見 AGENTS.md。
 """
 
 import pathlib
+import re
 import sys
 import urllib.request
 
@@ -66,6 +77,18 @@ LATIN = (
 # 少了這些，箭頭、勾勾、展開三角形會變成豆腐。
 # 由 scripts/build-fonts.py 的 --audit 模式掃出來，改動 UI 文案後值得重掃一次。
 EXTRA = "₿↔↻≈≤≥⊘⌕▸✓✦⤓⬆閾饋～￥"
+
+# 繁中切片。Google Fonts 的 css2 API 把 Noto Sans TC 切成一百多片，
+# 編號越大越常用（「的」「是」在最後一片）。只拿它的分組當「常用度」的依據，
+# 檔案仍然從我們自己的 Big5 子集切出來。不帶現代瀏覽器的 User-Agent 時
+# Google 會回單一整包、沒有 unicode-range，所以要帶。
+GOOGLE_TC_CSS = "https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900"
+GOOGLE_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+)
+TC_FAMILY = "StackWorth TC"
+TC_SLICE_TARGET = 450
 
 
 def big5_block(lo: int, hi: int) -> set[str]:
@@ -141,9 +164,110 @@ def audit() -> None:
     print("  EXTRA 涵蓋完整")
 
 
+def google_tc_groups() -> list[set[int]]:
+    """Google 的繁中切片，由最常用排到最少用。"""
+    CACHE.mkdir(exist_ok=True)
+    dest = CACHE / "notosanstc-google.css"
+    if not dest.exists():
+        print("  下載 Google Fonts 切片定義")
+        req = urllib.request.Request(GOOGLE_TC_CSS, headers={"User-Agent": GOOGLE_UA})
+        with urllib.request.urlopen(req) as r:
+            dest.write_bytes(r.read())
+    css = dest.read_text(encoding="utf-8")
+    groups = []
+    for idx, ranges in re.findall(r"\.(\d+)\.woff2\).*?unicode-range: ([^;]+);", css, re.S):
+        cps: set[int] = set()
+        for part in ranges.split(","):
+            a, _, b = part.strip()[2:].partition("-")
+            cps.update(range(int(a, 16), int(b or a, 16) + 1))
+        groups.append((int(idx), cps))
+    if len(groups) < 50:
+        sys.exit("Google 回的不是切片版 CSS（切片數太少），檢查 User-Agent")
+    return [cps for _, cps in sorted(groups, reverse=True)]
+
+
+def ui_codepoints(available: set[int]) -> set[int]:
+    """原始碼裡會被畫出來的字：去掉區塊註解與行註解，跳過測試檔。
+
+    行註解的規則避開「://」，網址字串後半段才不會被當成註解吃掉。
+    掃得不完美也沒關係：漏掉的字仍在某個常用度切片裡，只是多一個請求。"""
+    found: set[int] = set()
+    for pat in ("*.ts", "*.tsx", "*.css"):
+        for p in (ROOT / "src").rglob(pat):
+            if ".test." in p.name:
+                continue
+            text = p.read_text(encoding="utf-8", errors="ignore")
+            text = re.sub(r"/\*[\s\S]*?\*/", "", text)
+            text = re.sub(r"(?<![:\"'])//[^\n]*", "", text)
+            found |= {ord(c) for c in text if ord(c) > 0x7F and ord(c) in available}
+    return found
+
+
+def to_unicode_range(cps: set[int]) -> str:
+    out, ordered = [], sorted(cps)
+    start = prev = ordered[0]
+    for cp in ordered[1:] + [None]:
+        if cp is not None and cp == prev + 1:
+            prev = cp
+            continue
+        out.append(f"U+{start:X}" if start == prev else f"U+{start:X}-{prev:X}")
+        if cp is not None:
+            start = prev = cp
+    return ",".join(out)
+
+
+def build_tc_slices() -> None:
+    """從 NotoSansTC-big5.woff2 切出 UI 片與常用度切片，並寫出 noto-sans-tc.css。"""
+    full = OUT / "NotoSansTC-big5.woff2"
+    available = set(TTFont(full).getBestCmap().keys())
+    for old in OUT.glob("NotoSansTC-[uf]*.woff2"):
+        old.unlink()
+
+    ui = ui_codepoints(available)
+    rest = available - ui
+    slices = [("ui", ui)]
+    chunk: set[int] = set()
+    for group in google_tc_groups():
+        chunk |= group & rest
+        rest -= group
+        if len(chunk) >= TC_SLICE_TARGET:
+            slices.append((f"f{len(slices) - 1:02d}", chunk))
+            chunk = set()
+    # Google 沒列到的少數 Big5 符號併進最後一片
+    chunk |= rest
+    if chunk:
+        slices.append((f"f{len(slices) - 1:02d}", chunk))
+
+    faces = []
+    for name, cps in slices:
+        out = OUT / f"NotoSansTC-{name}.woff2"
+        run(full, out, unicodes=to_unicode_range(cps))
+        faces.append(
+            "@font-face {\n"
+            f'  font-family: "{TC_FAMILY}";\n'
+            "  font-style: normal;\n"
+            "  font-weight: 100 900;\n"
+            "  font-display: swap;\n"
+            f'  src: url("./{out.name}") format("woff2");\n'
+            f"  unicode-range: {to_unicode_range(cps)};\n"
+            "}\n"
+        )
+    header = (
+        "/* 由 scripts/build-fonts.py 產生，勿手改。\n"
+        "   繁中字體切片：第一片是 UI 文案用到的字，其餘照常用度排序。\n"
+        "   瀏覽器只下載畫面上實際出現的字所在的那幾片。 */\n"
+    )
+    (OUT / "noto-sans-tc.css").write_text(header + "\n".join(faces), encoding="utf-8")
+    print(f"  noto-sans-tc.css: {len(faces)} 片")
+
+
 def main() -> None:
     if "--audit" in sys.argv:
         audit()
+        return
+    if "--tc-slices" in sys.argv:
+        print("重切繁中字體（沿用現有的 NotoSansTC-big5.woff2）")
+        build_tc_slices()
         return
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -168,6 +292,9 @@ def main() -> None:
     print("繁中字體（Big5 符號區 + 常用字 + UI 額外符號）")
     chars = big5_block(0xA1, 0xA3) | big5_block(0xA4, 0xC6) | set(EXTRA)
     run(srcs["NotoSansTC[wght].ttf"], OUT / "NotoSansTC-big5.woff2", text="".join(sorted(chars)))
+
+    print("繁中切片（UI 片 + 常用度切片）與 noto-sans-tc.css")
+    build_tc_slices()
 
     print("\n完成。字體檔要 commit 進 repo。")
 

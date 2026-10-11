@@ -6,6 +6,13 @@ import { LiveAnnouncer } from "@/components/a11y/LiveAnnouncer";
 import { SiteFooter } from "@/components/SiteFooter";
 import localFont from "next/font/local";
 import "./globals.css";
+/* 繁中不走 next/font：next/font/local 沒辦法逐檔宣告 unicode-range，只能整包載入
+   （1.68 MB，Lighthouse 行動版 LCP 11 秒多，幾乎全是在等它）。
+   2026-10-11 起改由 scripts/build-fonts.py 切片，@font-face 寫在 fonts/noto-sans-tc.css：
+   UI 文案用到的 804 字一片（約 228 KB），其餘照常用度切成 11 片，畫面上出現才下載。
+   字族名在 globals.css 的 --font-tc。不 preload，理由跟改動前一樣：
+   display:swap 會先用系統中文字體把字顯示出來，preload 只會跟關鍵 JS 搶頻寬。 */
+import "./fonts/noto-sans-tc.css";
 
 /* 字體自架。檔案由 scripts/build-fonts.py 產生並 commit 進 repo，
    建置流程不需要 Python，也不對外抓字體——建置期抓 Noto Sans TC 失敗
@@ -40,20 +47,6 @@ const fontFigures = localFont({
   display: "swap",
   adjustFontFallback: false,
   fallback: ["ui-monospace", "SFMono-Regular", "monospace"],
-});
-
-/* preload 關掉：這個檔 1.68 MB，preload 會讓它跟關鍵 JS 搶頻寬，
-   而 display:swap 本來就會先用系統中文字體把字顯示出來。
-   adjustFontFallback 也關掉：那個選項只會拿 Arial / Times 的度量去校正，
-   對中文字沒有意義，硬套反而會讓 fallback 期間的字級不對。 */
-const fontTc = localFont({
-  src: "./fonts/NotoSansTC-big5.woff2",
-  variable: "--font-tc",
-  weight: "100 900",
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  fallback: ["system-ui", "sans-serif"],
 });
 
 export const viewport: Viewport = {
@@ -109,7 +102,7 @@ export default async function RootLayout({
     <html
       lang="zh-Hant"
       suppressHydrationWarning
-      className={`${fontSans.variable} ${fontFigures.variable} ${fontTc.variable} h-full antialiased`}
+      className={`${fontSans.variable} ${fontFigures.variable} h-full antialiased`}
     >
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeInit }} />

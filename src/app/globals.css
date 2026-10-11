@@ -976,8 +976,10 @@ textarea:disabled {
    design.md 的「介紹頁例外」只在這一段生效：主圖描線、註記依序落下、
    各圖幅捲進視野時淡入上移。仍然只動 opacity 與 transform（描線用 stroke-dashoffset，
    是 SVG 的筆畫屬性，不觸發版面重排），reduced-motion 時全部直接到終點。 */
+/* 1024 以下主標獨佔一整列（主圖換到下方），字可以放大到 96px：
+   5 字一行，平板 820 寬約 480px，手機 390 寬約 50px／字。 */
 .about-display {
-  font-size: clamp(44px, 15vw, 64px);
+  font-size: clamp(44px, 13vw, 96px);
   line-height: 1.04;
   letter-spacing: -0.03em;
 }

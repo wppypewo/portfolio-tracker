@@ -972,6 +972,142 @@ textarea:disabled {
   }
 }
 
+/* ── /about 介紹頁 ─────────────────────────────────────────────────
+   design.md 的「介紹頁例外」只在這一段生效：主圖描線、註記依序落下、
+   各圖幅捲進視野時淡入上移。仍然只動 opacity 與 transform（描線用 stroke-dashoffset，
+   是 SVG 的筆畫屬性，不觸發版面重排），reduced-motion 時全部直接到終點。 */
+.about-display {
+  font-size: clamp(44px, 15vw, 64px);
+  line-height: 1.04;
+  letter-spacing: -0.03em;
+}
+@media (min-width: 64rem) {
+  .about-display {
+    font-size: clamp(56px, 5.6vw, 84px);
+  }
+}
+/* text-wrap: balance 讓中文標題不在最後一行只剩一兩個字。 */
+.about-display-sm {
+  font-size: clamp(26px, 3.2vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+/* 主圖：格線 → 描線（0.25s 起 1.6s）→ 面 → 回撤註記 → 十字準星與現值。 */
+.plate-grid {
+  animation: fade-in-only 0.5s ease both;
+}
+.plate-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: plate-draw 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.25s forwards;
+}
+.plate-area {
+  animation: fade-in-only 0.6s ease 1.3s both;
+}
+.plate-mark {
+  animation: plate-mark-in 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) both;
+}
+/* 引線從標籤往上「拉」出來，準星線從交點往兩側展開：都是 scale，不是改寬高。 */
+.plate-leader {
+  transform-origin: top;
+  animation: plate-stretch 0.35s ease 1.9s both;
+}
+.plate-cross-v {
+  transform-origin: center;
+  animation: plate-stretch-y 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) both;
+}
+.plate-cross-h {
+  transform-origin: right;
+  animation: plate-stretch-x 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0s) both;
+}
+@keyframes plate-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes plate-mark-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes plate-stretch {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes plate-stretch-y {
+  from {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+}
+@keyframes plate-stretch-x {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+/* 十字準星的標記本身有 translate 置中，不能被 plate-mark-in 的 transform 蓋掉，
+   所以帶 -translate 的標記只淡入。 */
+.plate-mark[class*="-translate-"] {
+  animation-name: fade-in-only;
+}
+
+/* 捲動進場。隱藏的前提是 RevealRoot 已掛載（html[data-reveal-ready]），
+   沒有 JS 時內容照常顯示。--rd 是同一組裡的錯開延遲。 */
+[data-reveal] {
+  transition:
+    opacity 0.55s ease var(--rd, 0ms),
+    transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) var(--rd, 0ms);
+}
+html[data-reveal-ready] [data-reveal]:not([data-inview]) {
+  opacity: 0;
+  transform: translateY(14px);
+}
+/* 地塊一塊一塊「劃」出來：從左上角長到原尺寸，順序就是 squarify 的擺放順序。 */
+.cad-parcel {
+  transform-origin: top left;
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) calc(150ms + var(--i, 0) * 90ms);
+}
+html[data-reveal-ready] [data-reveal]:not([data-inview]) .cad-parcel {
+  transform: scale(0.001);
+}
+.pipe-flow {
+  transform-origin: left;
+  transition: transform 0.45s ease var(--rd, 0ms);
+}
+html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
+  transform: translateX(-50%) scaleX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate-line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .plate-leader,
+  .plate-cross-v,
+  .plate-cross-h,
+  .plate-mark {
+    animation-name: fade-in-only;
+  }
+  html[data-reveal-ready] [data-reveal]:not([data-inview]),
+  html[data-reveal-ready] [data-reveal]:not([data-inview]) .cad-parcel,
+  html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
+    transform: none;
+  }
+  [data-reveal] {
+    transition-property: opacity;
+  }
+  .cad-parcel,
+  .pipe-flow {
+    transition: none;
+  }
+}
+
 /* ── 表單欄位 ─────────────────────────────────────────────────────────
    S3 之前每個表單各寫一串 input class（47 處），多數帶
    outline-none + focus:shadow-[0_0_0_3px_…] 的光暈：outline-none 把全站焦點規則的

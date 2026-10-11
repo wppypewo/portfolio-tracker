@@ -289,12 +289,15 @@ export default function AboutPage() {
                 key={row.term}
                 data-reveal
                 style={{ "--rd": `${i * 50}ms` } as React.CSSProperties}
-                className="grid gap-x-8 gap-y-2 border-b border-[var(--c-border)] py-5 md:grid-cols-[3rem_minmax(0,14rem)_minmax(0,10rem)_minmax(0,1fr)] md:items-baseline"
+                className="grid gap-x-8 gap-y-2 border-b border-[var(--c-border)] py-5 md:grid-cols-[minmax(0,17rem)_minmax(0,10rem)_minmax(0,1fr)] md:items-baseline"
               >
-                <span className="font-mono text-[length:var(--fs-micro)] text-[var(--c-faint)]">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <dt className="font-semibold">{row.term}</dt>
+                {/* 序號放在 dt 裡：dl 底下的 div 只能直接包 dt／dd。 */}
+                <dt className="flex items-baseline font-semibold">
+                  <span className="w-12 shrink-0 font-mono text-[length:var(--fs-micro)] font-normal text-[var(--c-faint)]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {row.term}
+                </dt>
                 <dd className="text-[length:var(--fs-sm)]" aria-hidden="true">
                   {row.mark}
                 </dd>

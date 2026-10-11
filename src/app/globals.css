@@ -986,11 +986,15 @@ textarea:disabled {
     font-size: clamp(56px, 5.6vw, 84px);
   }
 }
-/* text-wrap: balance 讓中文標題不在最後一行只剩一兩個字。 */
+/* 圖幅標題。keep-all 讓中文只在標點與空白處換行（「四個數字，／各回答一個問題」），
+   不會從詞中間切開；balance 再把兩行拉得一樣長。標題都短，最窄的手機也放得下一個詞組，
+   overflow-wrap 是放不下時的保險。 */
 .about-display-sm {
   font-size: clamp(26px, 3.2vw, 40px);
   line-height: 1.15;
   letter-spacing: -0.02em;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
   text-wrap: balance;
 }
 

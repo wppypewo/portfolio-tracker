@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Panel } from "@/components/survey";
+import { Panel, EmptyPlot } from "@/components/survey";
 import { ImportCsv } from "./ImportCsv";
 
 export type ActRow = {
@@ -368,23 +368,27 @@ export function ActivityClient({
 
       {/* 時間軸帳本 */}
       {groups.length === 0 ? (
-        <div className="mt-8 border border-dashed border-[var(--c-line-strong)] px-4 py-10 text-center text-[length:var(--fs-sm)] text-[var(--c-muted)]">
+        <EmptyPlot
+          className="mt-8"
+          action={
+            rows.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActive(new Set());
+                  setQ("");
+                }}
+                className="btn btn-outline btn-sm"
+              >
+                清除篩選
+              </button>
+            )
+          }
+        >
           {rows.length === 0
             ? "還沒有任何變動。建立帳戶或執行操作後，這裡會出現記錄。"
             : "沒有符合條件的紀錄。"}
-          {rows.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setActive(new Set());
-                setQ("");
-              }}
-              className="tap-row ml-2 text-[var(--c-accent)] underline"
-            >
-              清除篩選
-            </button>
-          )}
-        </div>
+        </EmptyPlot>
       ) : (
         <div className="mt-7 flex flex-col gap-8 min-[920px]:grid min-[920px]:grid-cols-[1fr_236px] min-[920px]:items-start min-[920px]:gap-10">
           <div className="min-w-0">

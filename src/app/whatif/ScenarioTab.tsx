@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { PICK_OFF, PICK_ON, TONE_TEXT, sign, toneCls } from "@/components/dashboard/shared";
-import { Panel, Stat, StatStrip, SurveyLabel } from "@/components/survey";
+import { Panel, Stat, StatStrip, SurveyLabel, EmptyPlot } from "@/components/survey";
 import { ASSET_CLASS_LABEL, MARKET_LABEL } from "@/lib/dashboard-data";
 import { fmtFull, fmtNum } from "@/lib/format";
 import {
@@ -113,9 +113,7 @@ export function ScenarioTab({
 
   if (data.holdings.length === 0) {
     return (
-      <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface)] px-6 py-12 text-center text-[length:var(--fs-sm)] text-[var(--c-muted)]">
-        目前沒有使用中的持倉可供壓力測試。
-      </div>
+      <EmptyPlot>目前沒有使用中的持倉可供壓力測試。</EmptyPlot>
     );
   }
 

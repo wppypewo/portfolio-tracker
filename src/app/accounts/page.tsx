@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/AppHeader";
 import { getUnreadCount } from "@/lib/notifications";
-import { PageHead, SurveyLabel } from "@/components/survey";
+import { PageHead, SurveyLabel, EmptyPlot } from "@/components/survey";
 import {
   ASSET_CLASS_LABEL,
   MARKET_LABEL,
@@ -65,16 +65,18 @@ export default async function AccountsPage() {
         />
 
         {rows.length === 0 ? (
-          <section className="mt-6 border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface)] px-6 py-12 text-center">
-            <p className="text-[length:var(--fs-md)]">還沒有任何帳戶。</p>
-            <p className="mt-1 text-[length:var(--fs-sm)] text-[var(--c-muted)]">
-              先建立第一個資產帳戶，總覽的淨值、趨勢與配置就會開始累積。
-            </p>
-            {/* 頁首已經有主按鈕，這裡用外框按鈕，避免同頁兩顆主按鈕 */}
-            <Link href="/accounts/new" className="btn btn-outline mt-5">
-              建立第一個帳戶
-            </Link>
-          </section>
+          <EmptyPlot
+            className="mt-6"
+            title="還沒有任何帳戶"
+            action={
+              /* 頁首已經有主按鈕，這裡用外框按鈕，避免同頁兩顆主按鈕 */
+              <Link href="/accounts/new" className="btn btn-outline">
+                建立第一個帳戶
+              </Link>
+            }
+          >
+            先建立第一個資產帳戶，總覽的淨值、趨勢與配置就會開始累積。
+          </EmptyPlot>
         ) : (
           <>
             <AccountList rows={active} total={activeTotal} className="mt-6" />

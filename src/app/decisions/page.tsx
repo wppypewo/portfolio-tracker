@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
-import { PageHead, Stat, StatStrip, Tag } from "@/components/survey";
+import { PageHead, Stat, StatStrip, Tag, EmptyPlot } from "@/components/survey";
 import { todayTaipei } from "@/lib/dates";
 import { getUnreadCount } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
@@ -91,12 +91,9 @@ export default async function DecisionsPage() {
         </StatStrip>
 
         {decisions.length === 0 ? (
-          <section className="mt-5 border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface)] px-6 py-12 text-center">
-            <p className="text-[length:var(--fs-md)]">還沒有決策紀錄。</p>
-            <p className="mt-1 text-[length:var(--fs-sm)] text-[var(--c-muted)]">
-              可從這裡建立，或從活動紀錄連結一筆交易後再填寫。
-            </p>
-          </section>
+          <EmptyPlot className="mt-5" title="還沒有決策紀錄">
+            可從這裡建立，或從活動紀錄連結一筆交易後再填寫。
+          </EmptyPlot>
         ) : (
           <section className="mt-5 border border-[var(--c-border)] bg-[var(--c-surface)]">
             {decisions.map((decision, index) => {

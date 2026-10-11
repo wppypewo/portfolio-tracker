@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/AppHeader";
-import { PageHead, Tag, type TagTone } from "@/components/survey";
+import { PageHead, Tag, type TagTone, EmptyPlot } from "@/components/survey";
 import { getUnreadCount } from "@/lib/notifications";
 import {
   MarkAllNotificationsReadButton,
@@ -90,8 +90,8 @@ export default async function NotificationsPage() {
         />
 
         {rows.length === 0 ? (
-          <p className="mt-6 border border-dashed border-[var(--c-border)] px-5 py-8 text-[length:var(--fs-sm)] text-[var(--c-muted)]">
-            還沒有任何通知。先到{" "}
+          <EmptyPlot className="mt-6" title="還沒有任何通知">
+            先到{" "}
             <Link
               href="/alerts"
               className="text-[var(--c-accent)] underline underline-offset-4"
@@ -99,7 +99,7 @@ export default async function NotificationsPage() {
               提醒
             </Link>
             {" "}建立規則，每日抓價後觸發就會出現在這裡。
-          </p>
+          </EmptyPlot>
         ) : (
           <ul className="mt-6 border border-[var(--c-border)] bg-[var(--c-surface)]">
             {rows.map((r) => (

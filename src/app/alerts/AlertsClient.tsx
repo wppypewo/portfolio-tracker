@@ -8,7 +8,7 @@ import {
   type FormState,
 } from "@/lib/alert-actions";
 import { useActionAnnounce } from "@/components/a11y/use-action-announce";
-import { Panel, Tag } from "@/components/survey";
+import { Panel, Tag, EmptyPlot } from "@/components/survey";
 
 export type AlertAccount = {
   id: string;
@@ -588,9 +588,9 @@ export function AlertsClient({
       <section>
         <ListHead on label="啟用中" count={active.length} />
         {active.length === 0 ? (
-          <p className="mt-3 border border-dashed border-[var(--c-border)] px-5 py-5 text-[length:var(--fs-sm)] text-[var(--c-muted)]">
+          <EmptyPlot compact className="mt-3">
             目前沒有啟用中的提醒。上方選一種類型、填門檻就能建立。
-          </p>
+          </EmptyPlot>
         ) : (
           <div className="mt-3 border border-[var(--c-border)] bg-[var(--c-surface)]">
             {active.map((a) => (

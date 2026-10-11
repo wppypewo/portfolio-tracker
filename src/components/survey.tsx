@@ -192,3 +192,43 @@ export function Panel({
    那支是 client 元件，server 頁面不能呼叫，所以月報與歷史回放的地塊條從這裡取。 */
 export const PARCEL_HATCH =
   "repeating-linear-gradient(135deg, color-mix(in srgb, var(--c-accent) 55%, transparent) 0 1px, transparent 1px 6px), color-mix(in srgb, var(--c-accent) 12%, transparent)";
+
+/* 空狀態：一塊「還沒測量的圖幅」。虛線外框 + 淡斜線底，跟載入骨架 .sk 同一個語彙
+   （斜線＝這塊還沒有資料），差在骨架會掃光、空狀態是靜的。
+   原本全站 10 處各寫一份：外框有 border 與 line-strong 兩種、內距從 py-5 到 py-12、
+   有的置中有的靠左、有的有底色有的透出格線，同一件事長成四個樣子。
+   compact 給清單裡的空列（提醒、定期定額）：靠左、內距小，不搶上方表單。
+   title 選填：只有一句話時直接放 children。 */
+export function EmptyPlot({
+  title,
+  children,
+  action,
+  compact = false,
+  className = "",
+}: {
+  title?: React.ReactNode;
+  children?: React.ReactNode;
+  action?: React.ReactNode;
+  compact?: boolean;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`empty-plot border border-dashed border-[var(--c-line-strong)] ${
+        compact ? "px-4 py-4" : "px-6 py-11 text-center"
+      } ${className}`}
+    >
+      {title && <p className="text-[length:var(--fs-md)] font-medium text-[var(--c-text)]">{title}</p>}
+      {children && (
+        <div
+          className={`text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)] ${
+            title ? "mt-1" : ""
+          } ${compact ? "" : "mx-auto max-w-[46ch]"}`}
+        >
+          {children}
+        </div>
+      )}
+      {action && <div className={compact ? "mt-3" : "mt-5"}>{action}</div>}
+    </div>
+  );
+}

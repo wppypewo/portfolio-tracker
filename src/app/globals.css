@@ -914,6 +914,17 @@ textarea:disabled {
   animation: shimmer 1.4s ease-in-out infinite;
 }
 
+/* 空狀態的底：與 .sk 同一組斜線，但更淡、不掃光。底色用 surface，
+   不論放在桌面上還是卡片裡都讀成「一張還沒畫的圖紙」。 */
+.empty-plot {
+  background-color: var(--c-surface);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--c-drafting-minor) 0 1px,
+    transparent 1px 9px
+  );
+}
+
 @keyframes tooltip-in {
   from {
     opacity: 0;

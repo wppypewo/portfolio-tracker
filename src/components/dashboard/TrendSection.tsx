@@ -89,9 +89,35 @@ export function TrendSection({
           </p>
         </div>
 
+        {/* 控制項集中在圖表右上：區間（量哪一段）與模式（量什麼）都是讀這張圖的前提，
+            原本區間列放在圖下方左側、模式在右上，同一張圖的兩組控制分在對角，
+            視線要繞一圈。手機上這組會換到標題下方，仍在圖之前。 */}
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {/* 區間列是一條分段控制，讀起來像尺上的刻度格。
+              外層負責水平捲動，內層 inline-flex 才不會被撐滿而把框拉長。 */}
+          <div className="hide-scrollbar max-w-full overflow-x-auto">
+            <div role="group" aria-label="區間" className="inline-flex divide-x divide-[var(--c-border)] border border-[var(--c-line-strong)]">
+              {RANGES.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  aria-pressed={range === item.key}
+                  onClick={() => setRange(item.key)}
+                  /* 區間鈕是主圖表上最常按的控制項：觸控固定 44×44，
+                     滑鼠（pointer: fine）收到 36px，跟旁邊的模式鈕同高，兩組並排才對得齊。 */
+                  className={`tnum min-h-11 min-w-11 shrink-0 px-2.5 text-[length:var(--fs-micro)] pointer-fine:min-h-9 pointer-fine:min-w-10 ${
+                    range === item.key ? PICK_ON : PICK_OFF
+                  }`}
+                >
+                  {item.key}
+                </button>
+              ))}
+            </div>
+          </div>
+
         {hasPerf && (
           /* 分段控制：一條髮絲線框住，段與段之間是分隔線，不再是「底座裡放藥丸」。 */
-          <div className="inline-flex self-start divide-x divide-[var(--c-border)] border border-[var(--c-line-strong)]">
+          <div role="group" aria-label="圖表模式" className="inline-flex self-start divide-x divide-[var(--c-border)] border border-[var(--c-line-strong)]">
             {(["value", "bench"] as const).map((item) => (
               <button
                 key={item}
@@ -107,6 +133,7 @@ export function TrendSection({
             ))}
           </div>
         )}
+        </div>
       </div>
 
       {mode === "value" ? (
@@ -136,31 +163,9 @@ export function TrendSection({
         </p>
       )}
 
-      <div className="mt-2 border-t border-[var(--c-border)] px-4 py-3 sm:px-6">
-        {/* 區間列同樣是一條分段控制，讀起來像尺上的刻度格。
-            外層負責水平捲動，內層 inline-flex 才不會被撐滿而把框拉長。 */}
-        <div className="hide-scrollbar overflow-x-auto">
-          <div className="inline-flex divide-x divide-[var(--c-border)] border border-[var(--c-line-strong)]">
-            {RANGES.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                aria-pressed={range === item.key}
-                onClick={() => setRange(item.key)}
-                /* 區間鈕是主圖表上最常按的控制項，固定拉到 44×44；模式與圖例
-                   則由 .tap-row 在粗指標裝置補到 44px，不擠壓滑鼠版密集版面。 */
-                className={`tnum min-h-11 min-w-11 shrink-0 px-2.5 text-[length:var(--fs-micro)] ${
-                  range === item.key ? PICK_ON : PICK_OFF
-                }`}
-              >
-                {item.key}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {mode === "bench" && (
-          <div className="hide-scrollbar mt-3 flex gap-1.5 overflow-x-auto pb-1">
+      {mode === "bench" ? (
+        <div className="mt-2 border-t border-[var(--c-border)] px-4 py-3 sm:px-6">
+          <div className="hide-scrollbar flex gap-1.5 overflow-x-auto pb-1">
             <LegendButton
               on={active.portfolio}
               color="var(--c-accent)"
@@ -188,8 +193,10 @@ export function TrendSection({
               />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="h-3" aria-hidden="true" />
+      )}
     </section>
   );
 }

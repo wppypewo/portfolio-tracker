@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useAnnounceValue } from "@/components/a11y/use-action-announce";
 import { createClient } from "@/lib/supabase/client";
@@ -216,6 +217,19 @@ export default function LoginPage() {
           )}
         </div>
       </AuthCard>
+      {/* 未登入的訪客原本只看得到這張表單，示範與介紹頁都公開但沒有入口。
+          放在卡片外：它們不是登入流程的一步，是給還沒決定的人看的。 */}
+      <p className="mt-4 flex w-full max-w-[400px] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-1 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
+        <span>還沒決定要不要用？</span>
+        <span className="flex gap-4">
+          <Link href="/demo" className={linkCls}>
+            看示範（免登入）
+          </Link>
+          <Link href="/about" className={linkCls}>
+            認識 StackWorth
+          </Link>
+        </span>
+      </p>
     </main>
   );
 }

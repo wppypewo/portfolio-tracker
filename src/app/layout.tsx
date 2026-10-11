@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { NONCE_HEADER } from "@/lib/csp";
 import { SwRegister } from "@/components/SwRegister";
 import { LiveAnnouncer } from "@/components/a11y/LiveAnnouncer";
+import { SiteFooter } from "@/components/SiteFooter";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -126,6 +127,7 @@ export default async function RootLayout({
             無障礙樹裡，所以掛在這裡而不是跟訊息一起條件渲染。 */}
         <LiveAnnouncer />
         {children}
+        <SiteFooter />
       </body>
     </html>
   );

@@ -879,9 +879,13 @@ textarea:disabled {
   min-height: 0;
 }
 
+/* 起點的不透明度是 0.01 不是 0：Chrome 計算 LCP 時直接略過 opacity 為 0 的元素，
+   淡入結束後也不會補記。實測整頁 main 從 0 淡入時，Lighthouse 量到的 LCP 是頁首的
+   小字 logo（/about）或根本量不到（/login 回 NO_LCP），真正的大標題從沒被算進去。
+   0.01 肉眼看不出差別，但元素一畫出來就算數，量到的才是使用者真正等的那一刻。 */
 @keyframes page-in {
   from {
-    opacity: 0;
+    opacity: 0.01;
     transform: translateY(4px);
   }
   to {
@@ -969,9 +973,10 @@ textarea:disabled {
   background-repeat: no-repeat;
 }
 
+/* 起點 0.01 的理由同 page-in。 */
 @keyframes fade-in-only {
   from {
-    opacity: 0;
+    opacity: 0.01;
   }
   to {
     opacity: 1;

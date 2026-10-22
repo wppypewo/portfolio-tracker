@@ -70,12 +70,17 @@
 
 ### Fixed
 - **定期定額跨月提前手動執行後卡住、逾期補執行跳期**（2026-10-23，分支
-  `fix/recurring-cross-month-next-run`，尚未合併）。下一期原本從「執行日的下個月」推算：
+  `fix/recurring-cross-month-next-run`，#38 已合併）。下一期原本從「執行日的下個月」推算：
   10/20 手動執行 11/5 那期時，下一期算出來還是 11/5，之後每次執行都撞到已執行的同一期，
   計劃永久停住；10/28 那期拖到 11/2 才執行時，下一期跳到 12/28，少扣 11/28。改成
   「晚於本期預定日與實際執行日兩者的第一個扣款日」，準時執行的結果不變。延誤超過一期
   仍不補齊中間的期數。**需要跑 `supabase/migrations/20261023120000_recurring_next_run_from_schedule.sql`**，
   程式不用改；已經卡住的計劃要另外修，SQL 見 `supabase/README.md`。
+- **補記交易的時間晚 8 小時，晚上補記的落到隔天**（2026-10-23，分支 `fix/datetime-local-taipei`）。
+  加碼、賣出、配息／利息表單的 datetime-local 值不帶時區，server action 直接 `new Date()`，
+  在 UTC 的 Vercel 主機上被當成 UTC：台北 10/22 21:30 補記的，存成台北 10/23 05:30，
+  快照日期也跟著錯。改用 `src/lib/dates.ts` 的 `parseTaipeiDateTime`，不帶時區的值一律當台北時間。
+  已經存進資料庫的舊紀錄不會自動更正。
 
 ## [1.2.0] - 2026-08-18
 

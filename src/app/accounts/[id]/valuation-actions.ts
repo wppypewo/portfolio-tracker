@@ -2,7 +2,7 @@
 
 import { getQuote } from "@/lib/prices/router";
 import { applyAccountMutation } from "@/lib/account-mutation";
-import { todayTaipei } from "@/lib/dates";
+import { parseTaipeiDateTime, todayTaipei } from "@/lib/dates";
 import type { Market } from "@/lib/prices/types";
 import { applyContribution } from "@/lib/contributions";
 import { AddByAmountSchema } from "@/lib/schemas/action/add-by-amount";
@@ -271,7 +271,9 @@ export async function addByAmount(
     occurredAt: occurredAtInput,
     note,
   } = parsed.data;
-  const occurredAt = occurredAtInput ? new Date(occurredAtInput) : new Date();
+  const occurredAt = occurredAtInput
+    ? parseTaipeiDateTime(occurredAtInput)
+    : new Date();
   const { supabase, user, account, error } = await loadAccount(accountId);
   if (error || !account || !user) return { error: error ?? "錯誤" };
 

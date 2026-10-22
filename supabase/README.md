@@ -22,8 +22,43 @@
 | 15 | `migrations/20260930120000_adjust_cost_type.sql` | `txn_type` enum 加 `adjust_cost`（校正成本）。不改任何函式。**要在程式部署前跑：** 沒跑的話「校正成本」表單會收到 `invalid input value for enum txn_type`，整筆 rollback、帳戶不會被改到 | ✅ |
 | 16 | `migrations/20260930180000_recurring_tier_config.sql` | `recurring_plans.tier_config`（jsonb，可為空）：定期定額的級距加減碼設定。不改任何函式與 RLS。**要在程式部署前跑：** 沒跑的話帳戶頁的定期定額區塊會顯示「讀不到定期定額計畫」；cron 查到期計劃時也帶這一欄（級距自動套用之後），沒跑的話查詢失敗、log 印 `queryFailed=true`，當天所有計劃都不執行 | ✅ |
 | 17 | `migrations/20260930200000_recurring_cron_tier_amount.sql` | `execute_recurring_plan_mutation`：cron 可以對有 `tier_config` 的計劃帶本期金額（級距加減碼自動套用），流水備註寫「定期定額(cron·級距，基準 N)」；固定金額計劃與手續費覆寫照舊拒絕。簽名不變。**要在第 16 支之後跑。** 與程式部署的先後都不會弄壞資料：程式先上的話，級距計劃該期被舊函式拒絕、隔天重試 | ✅ |
+| 18 | `migrations/20261023120000_recurring_next_run_from_schedule.sql` | `execute_recurring_plan_mutation` 的下一期改成「晚於本期預定日與實際執行日兩者的第一個扣款日」。**修 bug：** 舊版從執行月推算，跨月提前手動執行下個月那期時 `next_run_date` 不會前進，之後每次執行都撞到同一期、計劃永久卡住；逾期到下個月才補執行時則會跳過一期。簽名不變，與程式部署的先後無關。**要在第 17 支之後跑。** 已經卡住的計劃要另外修，見下方「修復已卡住的定期定額計劃」 | ✅ |
 
-既有 StackWorth 部署若已完成 1–16，只執行第 17 個 versioned migration。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
+既有 StackWorth 部署若已完成 1–17，只執行第 18 個 versioned migration。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
+
+## 修復已卡住的定期定額計劃
+
+第 18 支 migration 只修之後的推算，不改既有資料。跑第 18 支之前若有計劃在跨月提前手動執行後卡住（`next_run_date` 那一期已經有執行紀錄），先用下面的查詢找出來：
+
+```sql
+-- 找出 next_run_date 那一期已經執行過的計劃
+select p.id, p.account_id, p.day_of_month, p.next_run_date
+from public.recurring_plans p
+where exists (
+  select 1 from public.recurring_plan_runs r
+  where r.plan_id = p.id and r.scheduled_date = p.next_run_date
+);
+```
+
+確認清單無誤後，把這些計劃推到下一個扣款日（晚於目前 `next_run_date` 的第一個 `day_of_month`）：
+
+```sql
+update public.recurring_plans p
+set next_run_date = (
+      make_date(extract(year from p.next_run_date)::int,
+                extract(month from p.next_run_date)::int,
+                p.day_of_month)
+      + case when p.day_of_month <= extract(day from p.next_run_date)::int
+             then interval '1 month' else interval '0' end
+    )::date,
+    updated_at = now()
+where exists (
+  select 1 from public.recurring_plan_runs r
+  where r.plan_id = p.id and r.scheduled_date = p.next_run_date
+);
+```
+
+推完後若新的 `next_run_date` 已經過了，cron 隔天會照常執行那一期；只補一期，不會把中間錯過的月份全部補齊。
 
 ## 注意事項
 

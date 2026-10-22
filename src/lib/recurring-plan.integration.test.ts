@@ -25,6 +25,7 @@ describe.skipIf(!url)("execute_recurring_plan_mutation (integration)", () => {
       "supabase/migrations/20260810230000_transaction_fee.sql",
       "supabase/migrations/20260930180000_recurring_tier_config.sql",
       "supabase/migrations/20260930200000_recurring_cron_tier_amount.sql",
+      "supabase/migrations/20261023120000_recurring_next_run_from_schedule.sql",
     ]);
     // 第二條連線在 schema 重建之後才接：它只用來驗併發，沒必要讓它經歷
     // 一次 drop schema，也省得去想連線層的快取。
@@ -64,6 +65,7 @@ describe.skipIf(!url)("execute_recurring_plan_mutation (integration)", () => {
     source = "cron",
     amountOverride: number | null = null,
     feeOverride: number | null = null,
+    executedAt = EXECUTED_AT,
   ) =>
     client.query(
       `select * from execute_recurring_plan_mutation(
@@ -72,10 +74,10 @@ describe.skipIf(!url)("execute_recurring_plan_mutation (integration)", () => {
       [
         planId,
         expectedRunDate,
-        EXECUTED_AT,
+        executedAt,
         50,
         2,
-        EXECUTED_AT,
+        executedAt,
         source,
         amountOverride,
         feeOverride,
@@ -191,7 +193,7 @@ describe.skipIf(!url)("execute_recurring_plan_mutation (integration)", () => {
     `);
   });
 
-  it("cron 不可提前執行，manual 可立即執行並從執行月推進", async () => {
+  it("cron 不可提前執行，manual 可提前執行並推到預定日之後的扣款日", async () => {
     await db.query(
       "update recurring_plans set next_run_date = '2026-07-20' where id = $1",
       [PLAN_ID],
@@ -207,6 +209,81 @@ describe.skipIf(!url)("execute_recurring_plan_mutation (integration)", () => {
     ).rows[0];
     expect(manual.executed).toBe(true);
     expect(toDate(manual.next_run_date)).toBe("2026-08-05");
+  });
+
+  // 執行時間都取台北上午 10 點（UTC 02:00），函式以台北日期判斷執行日。
+  it("跨月提前手動執行下個月那期，計劃往後推一期而不是卡在同一期", async () => {
+    const julyCron = (
+      await execute(db, PLAN_ID, "2026-07-05", "cron", null, null, "2026-07-05T02:00:00.000Z")
+    ).rows[0];
+    expect(julyCron.executed).toBe(true);
+    expect(toDate(julyCron.next_run_date)).toBe("2026-08-05");
+
+    // 7/20 先手動執行 8/5 那期：舊版從執行月推算會得到 8/5，計劃永遠停在已執行的這一期。
+    const earlyManual = (
+      await execute(db, PLAN_ID, "2026-08-05", "manual", null, null, "2026-07-20T02:00:00.000Z")
+    ).rows[0];
+    expect(earlyManual.executed).toBe(true);
+    expect(toDate(earlyManual.next_run_date)).toBe("2026-09-05");
+
+    // 同一期重送只回傳未執行，不會重複扣款。
+    const retry = (
+      await execute(db, PLAN_ID, "2026-08-05", "manual", null, null, "2026-07-20T02:05:00.000Z")
+    ).rows[0];
+    expect(retry.executed).toBe(false);
+    expect(toDate(retry.next_run_date)).toBe("2026-09-05");
+
+    const septemberCron = (
+      await execute(db, PLAN_ID, "2026-09-05", "cron", null, null, "2026-09-05T02:00:00.000Z")
+    ).rows[0];
+    expect(septemberCron.executed).toBe(true);
+    expect(toDate(septemberCron.next_run_date)).toBe("2026-10-05");
+
+    const runs = (
+      await db.query(
+        "select scheduled_date, executed_date, source from recurring_plan_runs order by scheduled_date",
+      )
+    ).rows;
+    expect(runs.map((run) => toDate(run.scheduled_date))).toEqual([
+      "2026-07-05",
+      "2026-08-05",
+      "2026-09-05",
+    ]);
+    expect(toDate(runs[1].executed_date)).toBe("2026-07-20");
+    expect(runs[1].source).toBe("manual");
+    expect(await count(db, "transactions")).toBe(3);
+    expect(Number((await accountRow(db)).quantity)).toBeCloseTo(16, 8);
+  });
+
+  it("逾期到下個月才補執行，只要還沒過下一個扣款日就不跳期", async () => {
+    await db.query(
+      "update recurring_plans set day_of_month = 28, next_run_date = '2026-07-28' where id = $1",
+      [PLAN_ID],
+    );
+
+    // 7/28 那期 8/2 才執行：舊版從執行月加一個月會得到 9/28，跳過 8/28。
+    const overdue = (
+      await execute(db, PLAN_ID, "2026-07-28", "cron", null, null, "2026-08-02T02:00:00.000Z")
+    ).rows[0];
+    expect(overdue.executed).toBe(true);
+    expect(toDate(overdue.next_run_date)).toBe("2026-08-28");
+
+    const august = (
+      await execute(db, PLAN_ID, "2026-08-28", "cron", null, null, "2026-08-28T02:00:00.000Z")
+    ).rows[0];
+    expect(august.executed).toBe(true);
+    expect(toDate(august.next_run_date)).toBe("2026-09-28");
+    expect(await count(db, "recurring_plan_runs")).toBe(2);
+  });
+
+  it("延誤超過一期時不補齊中間錯過的期數，從執行日之後的扣款日繼續", async () => {
+    // 7/5 那期拖到 8/20 才執行：8/5 已經過了，這一期只扣一次，下一期是 9/5。
+    const late = (
+      await execute(db, PLAN_ID, "2026-07-05", "cron", null, null, "2026-08-20T02:00:00.000Z")
+    ).rows[0];
+    expect(late.executed).toBe(true);
+    expect(toDate(late.next_run_date)).toBe("2026-09-05");
+    expect(await count(db, "recurring_plan_runs")).toBe(1);
   });
 
   it("manual 覆寫金額只影響本期，計劃預設金額不變", async () => {

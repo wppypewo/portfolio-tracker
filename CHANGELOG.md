@@ -36,6 +36,12 @@
   **需要先跑 `supabase/migrations/20260930120000_adjust_cost_type.sql`**，再部署程式。
 
 ### Security
+- **伺服器端錯誤送 Sentry 前遮掉憑證**（2026-10-23，分支 `fix/sentry-scrub-secrets`）。
+  `@sentry/nextjs` 10.x 的 `onRequestError` 會把 request headers 與 cookie 原樣放進 event，
+  `sendDefaultPii` 關著也一樣，cron 的 `Authorization: Bearer <CRON_SECRET>` 和 Supabase
+  auth cookie 都會送出。`src/lib/sentry-scrub.ts` 掛在 nodejs／edge 的 `beforeSend`，
+  名稱含 auth、cookie、token、secret、key 等片段的 header 一律換成 `[Filtered]`，
+  cookie 只留名稱。瀏覽器端不受影響（讀不到 httpOnly cookie，SDK 也不送 Authorization）。
 - **CSP 由 `src/proxy.ts` 每 request 產生 nonce**，政策集中在 `src/lib/csp.ts`。
   目前是 `Content-Security-Policy-Report-Only`，開關是 `CSP_ENFORCE`。
   公開頁（`/demo`、`/demo/whatif`、`/demo/report`、`/demo/history`、`/login`）

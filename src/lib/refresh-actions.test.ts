@@ -70,6 +70,21 @@ describe("refreshMyPrices", () => {
     expect(refreshAccountPrices).not.toHaveBeenCalled();
   });
 
+  it("台股：last_priced_at 是資料日期，但 updated_at 在 10 分鐘內就要冷卻", async () => {
+    selectResult.mockResolvedValue({
+      data: [{ last_priced_at: iso(14 * 60 * MIN), updated_at: iso(3 * MIN) }],
+      error: null,
+    });
+    const r = await refreshMyPrices();
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error).toBe("冷卻中");
+      expect(r.waitSec).toBeGreaterThan(6 * 60 - 10);
+      expect(r.waitSec).toBeLessThanOrEqual(7 * 60);
+    }
+    expect(refreshAccountPrices).not.toHaveBeenCalled();
+  });
+
   it("冷卻已過：執行刷新並回統計", async () => {
     selectResult.mockResolvedValue({
       data: [{ last_priced_at: iso(11 * MIN) }],

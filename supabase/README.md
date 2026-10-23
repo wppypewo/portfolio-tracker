@@ -26,8 +26,9 @@
 | 19 | `migrations/20261023180000_reversal_sell_quantity_guard.sql` | `reverse_transaction_mutation`：撤銷賣出前先比對帳戶持有數量與賣出列的 `quantity_after`，對不上就拒絕。**修 bug：** 賣出後補記較早日期的交易，賣出仍是「最新一筆」，舊版會用已改動的帳戶狀態反解出錯的賣出股數。簽名不變，與程式部署的先後無關 | ✅ |
 | 20 | `migrations/20261023200000_recurring_snapshot_cost.sql` | `execute_recurring_plan_mutation` 寫當天快照時一併寫入成本、已實現損益與帳戶狀態，當天已有快照時也更新這些欄位。**修 bug：** cron 先刷價寫好當天快照，扣款後只更新股數與市值，成本停在扣款前，/history 那天的未實現損益多出一期扣款金額。簽名不變，與程式部署的先後無關。**要在第 18 支之後跑**（以第 18 支為底），與第 19 支（PR #41）沒有先後關係。已寫錯的歷史快照不會自動修正 | ✅ |
 | 21 | `migrations/20261023210000_account_mutation_stale_guard.sql` | `apply_account_mutation` 改成 `select ... for update` 鎖住帳戶，並接受 `p_account_patch.expected_updated_at`：帶了而且和目前的 `accounts.updated_at` 不同就拒絕整筆寫入。**修 bug：** 賣出、加碼、增減股數、校正成本、配息、改餘額都是交易外讀取後整筆覆寫，會吞掉同時發生的 cron 定期定額或另一個分頁的異動。簽名不變，與程式部署的先後都不會弄壞資料（舊函式忽略這個鍵；舊程式不帶這個鍵）。與第 19、20 支沒有先後關係 | ✅ |
+| 22 | `migrations/20261023220000_mfa_aal2_rls.sql` | 新增 `public.mfa_satisfied()`，並替 12 張有 RLS 的表各加一條 restrictive policy `mfa_required`：已綁 MFA（有 verified factor）的使用者，JWT 必須是 `aal2` 才讀寫得到。**修安全漏洞：** 原本 MFA 只在 proxy 擋頁面，密碼登入後拿到的 aal1 JWT 可以直接打 PostgREST 讀寫全部資料。不改任何函式與欄位，與程式部署的先後無關；12 張表少一張就整支報錯、什麼都不建 | ✅ |
 
-既有 StackWorth 部署若已完成 1–17，依序執行第 18–21 個 versioned migration（第 19、20、21 個之間沒有先後關係）。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
+既有 StackWorth 部署若已完成 1–17，依序執行第 18–22 個 versioned migration（第 19–22 個之間沒有先後關係）。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
 
 ## 修復已卡住的定期定額計劃
 
@@ -74,6 +75,7 @@ where exists (
 - 所有 RLS policy 都綁 `auth.uid()`，使用者只能存取自己的資料；service-role key（給 cron 用）會繞過 RLS。
 - v1 migration 會為 `account_status_history`、`investment_decisions`、`decision_reviews` 建立逐操作 RLS policy，並限制函式執行權限。決策情境快照由 trigger 阻止後續改寫。
 - `save_decision_review` 與更新後的 `apply_account_mutation` 使用 `security invoker`；呼叫者仍受 RLS 限制。
+- 第 22 支之後，已綁 MFA 的使用者在 aal1 時所有表都讀不到、寫不進，security invoker 的 RPC 會回「不存在或無權限」。沒綁 MFA、或只有未完成設定的 unverified factor 的使用者不受影響；service-role 照樣繞過。之後新增有 RLS 的表，要在同一支 migration 裡替它加同樣的 `mfa_required`，`src/lib/mfa-rls.integration.test.ts` 會比對 public 底下所有開了 RLS 的表。
 - migration 不是可逆資料刪除腳本。若要回退，先備份並另寫經審核的 forward migration，不要直接刪除新表。
 
 ## 使用者管理

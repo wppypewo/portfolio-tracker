@@ -130,23 +130,78 @@ export function parseAmount(raw: string): number {
   return Number(cleaned);
 }
 
-// 接受多種日期寫法：ISO 2025-05-01、2025/5/1、5/1/2025、2025.5.1
+// 接受多種日期寫法：ISO 2025-05-01、2025/5/1、5/1/2025、2025.5.1，可帶時間（空白或 T 分隔）。
+//
+// 結果不能依主機時區而定：舊版直接 new Date()，「2025-05-01 20:00」在 Vercel（UTC）會被當成
+// 20:00Z = 台北隔天 04:00，「2025/5/1」在 UTC 與台北主機上也會差 8 小時。規則改成：
+//   - 帶時區（Z 或 ±HH:mm，例如本站匯出檔的 created_at）：照原樣。
+//   - 有時間、沒時區：視為台北時間。
+//   - 只有日期：存成 UTC 00:00（= 台北當天 08:00）。這是舊版在 Vercel 上的結果，
+//     重複匯入同一份檔案時，去重鍵（精確到毫秒）才對得上已經匯入過的列。
+const YMD_DATE =
+  /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?)?\s*(Z|[+-]\d{2}:?\d{2})?$/i;
+const MDY_DATE = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/;
+const TAIPEI_OFFSET_MIN = 8 * 60;
+
+function buildDate(
+  y: number,
+  mo: number,
+  d: number,
+  time: { h: number; mi: number; sec: number; ms: number } | null,
+  tz: string | undefined,
+): Date | null {
+  // Date.UTC 會把 2/30 進位成 3/2，先確認日期真的存在
+  const day = new Date(Date.UTC(y, mo - 1, d));
+  if (
+    day.getUTCFullYear() !== y ||
+    day.getUTCMonth() !== mo - 1 ||
+    day.getUTCDate() !== d
+  ) {
+    return null;
+  }
+  const t = time ?? { h: 0, mi: 0, sec: 0, ms: 0 };
+  if (t.h > 23 || t.mi > 59 || t.sec > 59) return null;
+
+  let offsetMin = 0;
+  if (tz && tz.toUpperCase() !== "Z") {
+    const m = tz.match(/^([+-])(\d{2}):?(\d{2})$/)!;
+    offsetMin = (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3]));
+  } else if (!tz && time) {
+    offsetMin = TAIPEI_OFFSET_MIN;
+  }
+  const utcMs = Date.UTC(y, mo - 1, d, t.h, t.mi, t.sec, t.ms);
+  return new Date(utcMs - offsetMin * 60_000);
+}
+
 export function parseFlexibleDate(raw: string): Date | null {
   const s = raw.trim();
   if (!s) return null;
-  const d1 = new Date(s);
-  if (!Number.isNaN(d1.getTime())) return d1;
-  const norm = s.replace(/[./]/g, "-");
-  const d2 = new Date(norm);
-  if (!Number.isNaN(d2.getTime())) return d2;
-  const m = norm.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-  if (m) {
-    const d3 = new Date(
-      `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`,
-    );
-    if (!Number.isNaN(d3.getTime())) return d3;
+
+  const ymd = s.match(YMD_DATE);
+  if (ymd) {
+    const [, y, mo, d, h, mi, sec, frac, tz] = ymd;
+    const time =
+      h === undefined
+        ? null
+        : {
+            h: Number(h),
+            mi: Number(mi),
+            sec: Number(sec ?? 0),
+            ms: Number((frac ?? "").slice(0, 3).padEnd(3, "0")),
+          };
+    // 有時區卻沒時間（例如「2025-05-01Z」）不是合法寫法
+    if (tz && !time) return null;
+    return buildDate(Number(y), Number(mo), Number(d), time, tz);
   }
-  return null;
+
+  const mdy = s.match(MDY_DATE);
+  if (mdy) {
+    return buildDate(Number(mdy[3]), Number(mdy[1]), Number(mdy[2]), null, undefined);
+  }
+
+  // 其他寫法（例如「May 1, 2025」）交給 Date 解析；沒帶時區時仍依主機時區，結果僅供參考
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 /** 每個欄位在表頭中的位置，找不到為 -1。 */

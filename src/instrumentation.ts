@@ -1,6 +1,7 @@
 // Next 16 register hook：server / edge runtime 啟動時跑一次。
 // 沒設 SENTRY_DSN 就不 init，避免無 DSN 警告。
 import * as Sentry from "@sentry/nextjs";
+import { scrubSentryEvent } from "@/lib/sentry-scrub";
 
 export async function register() {
   if (!process.env.SENTRY_DSN) return;
@@ -11,6 +12,9 @@ export async function register() {
       tracesSampleRate: 0.1,
       // 開發環境不送 event 出去
       enabled: process.env.NODE_ENV === "production",
+      // 遮掉 Authorization、cookie 等憑證，原因見 sentry-scrub.ts
+      beforeSend: scrubSentryEvent,
+      beforeSendTransaction: scrubSentryEvent,
     });
   }
 
@@ -19,6 +23,8 @@ export async function register() {
       dsn: process.env.SENTRY_DSN,
       tracesSampleRate: 0.1,
       enabled: process.env.NODE_ENV === "production",
+      beforeSend: scrubSentryEvent,
+      beforeSendTransaction: scrubSentryEvent,
     });
   }
 }

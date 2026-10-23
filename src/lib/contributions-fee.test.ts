@@ -106,6 +106,29 @@ describe("applyContribution 手續費（費用內含）", () => {
     expect(args.p_transaction.note).not.toContain("含手續費");
   });
 
+  it("帳戶帶 updated_at 時一併送出 expected_updated_at，讓 RPC 擋掉讀取後的併發寫入", async () => {
+    const { client, rpc } = clientWithRpc();
+    const updatedAt = "2026-07-10T01:00:00.123456+00:00";
+
+    await applyContribution({
+      supabase: client,
+      userId: "user-1",
+      account: { ...ACCOUNT, updated_at: updatedAt },
+      twd: 50_000,
+      feeTwd: null,
+      priceOverride: null,
+      fxOverride: null,
+      occurredAt: OCCURRED_AT,
+      noteSuffix: null,
+    });
+
+    const args = mutationArgs(rpc) as unknown as {
+      p_account_patch: Record<string, unknown>;
+    };
+    // 原字串照送，微秒不能被 Date 截掉，否則永遠比對不上
+    expect(args.p_account_patch.expected_updated_at).toBe(updatedAt);
+  });
+
   it("手續費吃掉整筆金額時拒絕，不寫任何東西", async () => {
     const { client, rpc } = clientWithRpc();
 

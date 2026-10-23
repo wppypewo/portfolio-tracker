@@ -26,6 +26,7 @@ describe.skipIf(!url)("execute_recurring_plan_mutation (integration)", () => {
       "supabase/migrations/20260930180000_recurring_tier_config.sql",
       "supabase/migrations/20260930200000_recurring_cron_tier_amount.sql",
       "supabase/migrations/20261023120000_recurring_next_run_from_schedule.sql",
+      "supabase/migrations/20261023200000_recurring_snapshot_cost.sql",
     ]);
     // 第二條連線在 schema 重建之後才接：它只用來驗併發，沒必要讓它經歷
     // 一次 drop schema，也省得去想連線層的快取。
@@ -118,6 +119,29 @@ describe.skipIf(!url)("execute_recurring_plan_mutation (integration)", () => {
     ).rows[0];
     expect(toDate(plan.last_run_date)).toBe("2026-07-10");
     expect(toDate(plan.next_run_date)).toBe("2026-08-05");
+  });
+
+  it("當天已有刷價寫的快照時，扣款後快照的成本也跟著更新", async () => {
+    // 模擬 cron 先刷價：快照不帶成本欄位，由 trigger 補成扣款前的 1000 / 500。
+    await db.query(
+      `insert into account_snapshots (
+        user_id, account_id, snapshot_date, quantity, unit_price, fx_rate, value_base
+      ) values ($1, $2, '2026-07-10', 10, 50, 2, 1000)`,
+      [USER_ID, ACCOUNT_ID],
+    );
+    const before = (await db.query("select * from account_snapshots")).rows[0];
+    expect(Number(before.cost_basis_twd)).toBe(1000);
+
+    expect((await execute(db)).rows[0].executed).toBe(true);
+
+    const rows = (await db.query("select * from account_snapshots")).rows;
+    expect(rows).toHaveLength(1);
+    expect(Number(rows[0].quantity)).toBeCloseTo(12, 8);
+    expect(Number(rows[0].value_base)).toBe(1200);
+    expect(Number(rows[0].cost_basis_twd)).toBe(1200);
+    expect(Number(rows[0].cost_basis_native)).toBe(600);
+    expect(Number(rows[0].realized_pnl_twd)).toBe(0);
+    expect(rows[0].account_status).toBe("active");
   });
 
   it("相同 scheduled date 重試只執行一次", async () => {

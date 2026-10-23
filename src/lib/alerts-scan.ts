@@ -79,7 +79,7 @@ export async function scanAlerts(supabase: SupabaseClient) {
         )
         .in("id", [...accountIds])
     : { data: [] };
-  const accountsMap = new Map<string, AccountSlim>();
+  const accountsMap = new Map<string, AccountSlim & { user_id: string }>();
   for (const a of (accountsRaw ?? []) as (AccountSlim & {
     user_id: string;
   })[]) {
@@ -132,6 +132,12 @@ export async function scanAlerts(supabase: SupabaseClient) {
         if (!alert.account_id) continue;
         const acc = accountsMap.get(alert.account_id);
         if (!acc) continue;
+        // cron 用 service role 繞過 RLS，alerts.account_id 又只有 FK 沒有擁有者檢查：
+        // 指向別人帳戶的警示會把對方的帳戶名稱與現價寫進自己的通知。
+        if (acc.user_id !== alert.user_id) {
+          errors.push(`alert ${alert.id}: 帳戶擁有者不符，略過`);
+          continue;
+        }
         if (acc.price_market === "manual") continue;
         const price = Number(acc.last_unit_price ?? 0);
         if (!Number.isFinite(price) || price <= 0) continue;
@@ -147,7 +153,7 @@ export async function scanAlerts(supabase: SupabaseClient) {
         }
 
         if (didTrigger) {
-          await supabase
+          const { error: insertError } = await supabase
             .from("notifications")
             .insert({
               user_id: alert.user_id,
@@ -156,6 +162,13 @@ export async function scanAlerts(supabase: SupabaseClient) {
               title,
               body,
             });
+          // 通知沒寫進去就先別停用：停用後使用者永遠收不到這次觸發。
+          if (insertError) {
+            errors.push(
+              `alert ${alert.id}: 寫入通知失敗 code=${insertError.code ?? "unknown"}`,
+            );
+            continue;
+          }
           // 價格警示觸發後關閉，避免天天重發
           await supabase
             .from("alerts")
@@ -194,13 +207,21 @@ export async function scanAlerts(supabase: SupabaseClient) {
         if (breaches.length > 0) {
           title = `配置偏離 > ${alert.threshold}%`;
           body = breaches.join("\n");
-          await supabase.from("notifications").insert({
-            user_id: alert.user_id,
-            alert_id: alert.id,
-            type: alert.type,
-            title,
-            body,
-          });
+          const { error: insertError } = await supabase
+            .from("notifications")
+            .insert({
+              user_id: alert.user_id,
+              alert_id: alert.id,
+              type: alert.type,
+              title,
+              body,
+            });
+          if (insertError) {
+            errors.push(
+              `alert ${alert.id}: 寫入通知失敗 code=${insertError.code ?? "unknown"}`,
+            );
+            continue;
+          }
           await supabase
             .from("alerts")
             .update({ last_triggered_at: nowIso })

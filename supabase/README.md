@@ -24,8 +24,9 @@
 | 17 | `migrations/20260930200000_recurring_cron_tier_amount.sql` | `execute_recurring_plan_mutation`：cron 可以對有 `tier_config` 的計劃帶本期金額（級距加減碼自動套用），流水備註寫「定期定額(cron·級距，基準 N)」；固定金額計劃與手續費覆寫照舊拒絕。簽名不變。**要在第 16 支之後跑。** 與程式部署的先後都不會弄壞資料：程式先上的話，級距計劃該期被舊函式拒絕、隔天重試 | ✅ |
 | 18 | `migrations/20261023120000_recurring_next_run_from_schedule.sql` | `execute_recurring_plan_mutation` 的下一期改成「晚於本期預定日與實際執行日兩者的第一個扣款日」。**修 bug：** 舊版從執行月推算，跨月提前手動執行下個月那期時 `next_run_date` 不會前進，之後每次執行都撞到同一期、計劃永久卡住；逾期到下個月才補執行時則會跳過一期。簽名不變，與程式部署的先後無關。**要在第 17 支之後跑。** 已經卡住的計劃要另外修，見下方「修復已卡住的定期定額計劃」 | ✅ |
 | 19 | `migrations/20261023180000_reversal_sell_quantity_guard.sql` | `reverse_transaction_mutation`：撤銷賣出前先比對帳戶持有數量與賣出列的 `quantity_after`，對不上就拒絕。**修 bug：** 賣出後補記較早日期的交易，賣出仍是「最新一筆」，舊版會用已改動的帳戶狀態反解出錯的賣出股數。簽名不變，與程式部署的先後無關 | ✅ |
+| 20 | `migrations/20261023200000_recurring_snapshot_cost.sql` | `execute_recurring_plan_mutation` 寫當天快照時一併寫入成本、已實現損益與帳戶狀態，當天已有快照時也更新這些欄位。**修 bug：** cron 先刷價寫好當天快照，扣款後只更新股數與市值，成本停在扣款前，/history 那天的未實現損益多出一期扣款金額。簽名不變，與程式部署的先後無關。**要在第 18 支之後跑**（以第 18 支為底），與第 19 支（PR #41）沒有先後關係。已寫錯的歷史快照不會自動修正 | ✅ |
 
-既有 StackWorth 部署若已完成 1–17，依序執行第 18、19 個 versioned migration。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
+既有 StackWorth 部署若已完成 1–17，依序執行第 18、19、20 個 versioned migration（第 19、20 個之間沒有先後關係）。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
 
 ## 修復已卡住的定期定額計劃
 

@@ -22,6 +22,7 @@ describe.skipIf(!url)("reverse_transaction_mutation (integration)", () => {
       "supabase/migrations/20260810230000_transaction_fee.sql",
       "supabase/migrations/20260810234500_transaction_reversal.sql",
       "supabase/migrations/20260818130000_reversal_negative_fee.sql",
+      "supabase/migrations/20261023180000_reversal_sell_quantity_guard.sql",
     ]);
   });
 
@@ -158,6 +159,38 @@ describe.skipIf(!url)("reverse_transaction_mutation (integration)", () => {
     expect(Number(account.cost_basis_twd)).toBe(1000);
     expect(Number(account.cost_basis_native)).toBe(500);
     expect(Number(account.realized_pnl_twd)).toBe(0);
+  });
+
+  it("undo 賣出：賣出後補記較早日期的加碼，數量對不上就擋下", async () => {
+    // 今天賣 4 股：剩 6 股、成本 600。
+    const sold = await insertTxn({
+      type: "sell",
+      quantity_after: 6,
+      cashflow_twd: 500,
+      realized_pnl: 100,
+      created_at: "2026-07-10T02:00:00.000Z",
+    });
+    // 之後補記上週加碼 4 股、成本 800：created_at 比賣出早，賣出仍是最新一筆。
+    await insertTxn({
+      quantity_after: 10,
+      cashflow_twd: -800,
+      unit_price: 100,
+      created_at: "2026-07-03T02:00:00.000Z",
+    });
+    await db.query(
+      "update accounts set quantity = 10, cost_basis_twd = 1400, cost_basis_native = 700, realized_pnl_twd = 100 where id = $1",
+      [ACCOUNT_ID],
+    );
+
+    // 修正前會反解成 10 × 400 / 1400 = 2.857 股，帳戶變 12.857 股。
+    await expect(reverse(sold, "undo")).rejects.toThrow(/改動過持有數量/);
+    const account = await accountRow();
+    expect(Number(account.quantity)).toBe(10);
+    expect(Number(account.cost_basis_twd)).toBe(1400);
+    expect(
+      (await db.query("select * from transactions where id = $1", [sold]))
+        .rowCount,
+    ).toBe(1);
   });
 
   it("undo 修改餘額：退回前一筆餘額", async () => {

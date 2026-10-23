@@ -16,6 +16,12 @@ export type AccountPatch = {
   last_fx_rate?: number;
   last_priced_at?: string;
   manual_value_base?: number;
+  /**
+   * 呼叫端讀到的 accounts.updated_at。帶了就由 RPC 在鎖住帳戶後比對，
+   * 不同代表讀取後有別的寫入，整筆拒絕。只用來比對，不寫入。
+   * 從讀到的值算出新絕對值（股數、成本、已實現損益、餘額）的寫入都要帶。
+   */
+  expected_updated_at?: string;
 };
 
 export type MutationTransaction = {

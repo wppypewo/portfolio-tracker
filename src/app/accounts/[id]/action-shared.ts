@@ -16,6 +16,7 @@ export type AccountForAction = {
   cost_basis_twd: number;
   cost_basis_native: number;
   realized_pnl_twd: number;
+  updated_at: string;
 };
 
 export async function loadAccount(accountId: string) {
@@ -30,7 +31,7 @@ export async function loadAccount(accountId: string) {
   const { data, error } = await supabase
     .from("accounts")
     .select(
-      "id,user_id,price_market,symbol,quantity,native_currency,last_unit_price,last_fx_rate,manual_value_base,cost_basis_twd,cost_basis_native,realized_pnl_twd",
+      "id,user_id,price_market,symbol,quantity,native_currency,last_unit_price,last_fx_rate,manual_value_base,cost_basis_twd,cost_basis_native,realized_pnl_twd,updated_at",
     )
     .eq("id", accountId)
     .single();

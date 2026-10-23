@@ -27,6 +27,7 @@ describe.skipIf(!url)("apply_account_mutation (integration)", () => {
       "supabase/rpc-mutations.sql",
       "supabase/migrations/20260718032234_stackworth_v1.sql",
       "supabase/migrations/20260810230000_transaction_fee.sql",
+      "supabase/migrations/20261023210000_account_mutation_stale_guard.sql",
     ]);
   });
 
@@ -278,6 +279,37 @@ describe.skipIf(!url)("apply_account_mutation (integration)", () => {
     const snap = (await db.query("select * from account_snapshots")).rows[0];
     expect(Number(snap.cost_basis_twd)).toBe(88000);
     expect(Number(snap.cost_basis_native)).toBe(2750);
+  });
+
+  it("expected_updated_at 相符：照常寫入", async () => {
+    const { updated_at } = (
+      await db.query("select updated_at::text from accounts where id = $1", [ACC])
+    ).rows[0];
+    await call({ quantity: 4, expected_updated_at: updated_at }, null, []);
+    const acc = (await db.query("select quantity from accounts where id = $1", [ACC])).rows[0];
+    expect(Number(acc.quantity)).toBe(4);
+  });
+
+  it("expected_updated_at 不符（讀取後有別的寫入）：raise，帳戶、流水、快照都不動", async () => {
+    const { updated_at } = (
+      await db.query("select updated_at::text from accounts where id = $1", [ACC])
+    ).rows[0];
+    // 模擬 cron 定期定額在 server action 讀取之後先寫入：10 → 20 股
+    await call({ quantity: 20 }, null, []);
+
+    // server action 用先前讀到的 10 股算出賣 6 股後剩 4 股
+    await expect(
+      call(
+        { quantity: 4, expected_updated_at: updated_at },
+        { type: "sell", quantity_after: 4, cashflow_twd: 3000 },
+        [{ snapshot_date: "2026-07-05", quantity: 4, unit_price: 500, fx_rate: 32, value_base: 64000 }],
+      ),
+    ).rejects.toThrow(/帳戶剛被其他操作更新/);
+
+    const acc = (await db.query("select quantity from accounts where id = $1", [ACC])).rows[0];
+    expect(Number(acc.quantity)).toBe(20);
+    expect((await db.query("select count(*)::int as n from transactions")).rows[0].n).toBe(0);
+    expect((await db.query("select count(*)::int as n from account_snapshots")).rows[0].n).toBe(0);
   });
 
   it("不存在的帳戶：raise，不寫任何東西", async () => {

@@ -23,8 +23,9 @@
 | 16 | `migrations/20260930180000_recurring_tier_config.sql` | `recurring_plans.tier_config`（jsonb，可為空）：定期定額的級距加減碼設定。不改任何函式與 RLS。**要在程式部署前跑：** 沒跑的話帳戶頁的定期定額區塊會顯示「讀不到定期定額計畫」；cron 查到期計劃時也帶這一欄（級距自動套用之後），沒跑的話查詢失敗、log 印 `queryFailed=true`，當天所有計劃都不執行 | ✅ |
 | 17 | `migrations/20260930200000_recurring_cron_tier_amount.sql` | `execute_recurring_plan_mutation`：cron 可以對有 `tier_config` 的計劃帶本期金額（級距加減碼自動套用），流水備註寫「定期定額(cron·級距，基準 N)」；固定金額計劃與手續費覆寫照舊拒絕。簽名不變。**要在第 16 支之後跑。** 與程式部署的先後都不會弄壞資料：程式先上的話，級距計劃該期被舊函式拒絕、隔天重試 | ✅ |
 | 18 | `migrations/20261023120000_recurring_next_run_from_schedule.sql` | `execute_recurring_plan_mutation` 的下一期改成「晚於本期預定日與實際執行日兩者的第一個扣款日」。**修 bug：** 舊版從執行月推算，跨月提前手動執行下個月那期時 `next_run_date` 不會前進，之後每次執行都撞到同一期、計劃永久卡住；逾期到下個月才補執行時則會跳過一期。簽名不變，與程式部署的先後無關。**要在第 17 支之後跑。** 已經卡住的計劃要另外修，見下方「修復已卡住的定期定額計劃」 | ✅ |
+| 21 | `migrations/20261023210000_account_mutation_stale_guard.sql` | `apply_account_mutation` 改成 `select ... for update` 鎖住帳戶，並接受 `p_account_patch.expected_updated_at`：帶了而且和目前的 `accounts.updated_at` 不同就拒絕整筆寫入。**修 bug：** 賣出、加碼、增減股數、校正成本、配息、改餘額都是交易外讀取後整筆覆寫，會吞掉同時發生的 cron 定期定額或另一個分頁的異動。簽名不變，與程式部署的先後都不會弄壞資料（舊函式忽略這個鍵；舊程式不帶這個鍵）。與第 19、20 支沒有先後關係 | ✅ |
 
-既有 StackWorth 部署若已完成 1–17，只執行第 18 個 versioned migration。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
+既有 StackWorth 部署若已完成 1–17，執行第 18 與第 21 個 versioned migration（第 19、20 個分別見 PR #41 與 PR #45）。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
 
 ## 修復已卡住的定期定額計劃
 

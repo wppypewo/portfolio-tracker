@@ -25,9 +25,32 @@ stable
 as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;
+-- 與 supabase/auth migration 20220531120530 的定義相同
+create or replace function auth.jwt() returns jsonb
+language sql
+stable
+as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim', true), ''),
+    nullif(current_setting('request.jwt.claims', true), '')
+  )::jsonb
+$$;
+
+-- MFA factor：只放 mfa_satisfied() 用到的欄位（supabase/auth migration 20221003041349）。
+-- 刻意不 grant 給 authenticated，讓測試能抓到函式少了 security definer。
+do $$ begin
+  create type auth.factor_status as enum ('unverified', 'verified');
+exception when duplicate_object then null;
+end $$;
+create table if not exists auth.mfa_factors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  status auth.factor_status not null
+);
 
 grant usage on schema public, auth to authenticated;
 grant execute on function auth.uid() to authenticated;
+grant execute on function auth.jwt() to authenticated;
 
 drop table if exists recurring_plan_runs cascade;
 drop table if exists recurring_plans cascade;

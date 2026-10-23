@@ -36,6 +36,12 @@
   **需要先跑 `supabase/migrations/20260930120000_adjust_cost_type.sql`**，再部署程式。
 
 ### Security
+- **伺服器端錯誤送 Sentry 前遮掉憑證**（2026-10-23，分支 `fix/sentry-scrub-secrets`）。
+  `@sentry/nextjs` 10.x 的 `onRequestError` 會把 request headers 與 cookie 原樣放進 event，
+  `sendDefaultPii` 關著也一樣，cron 的 `Authorization: Bearer <CRON_SECRET>` 和 Supabase
+  auth cookie 都會送出。`src/lib/sentry-scrub.ts` 掛在 nodejs／edge 的 `beforeSend`，
+  名稱含 auth、cookie、token、secret、key 等片段的 header 一律換成 `[Filtered]`，
+  cookie 只留名稱。瀏覽器端不受影響（讀不到 httpOnly cookie，SDK 也不送 Authorization）。
 - **已綁 MFA 的帳號，資料庫層沒有要求第二道驗證**（2026-10-23，分支 `fix/mfa-aal2-rls`）。
   MFA 原本只在 `src/lib/supabase/proxy.ts` 擋頁面：已綁 TOTP 的使用者用密碼登入後拿到 aal1 的 JWT，
   頁面會被導去 `/auth/mfa`，但這顆 JWT 直接打 `/rest/v1/accounts` 或 `/rest/v1/rpc/...` 一樣讀寫得到，

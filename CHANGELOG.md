@@ -36,6 +36,18 @@
   **需要先跑 `supabase/migrations/20260930120000_adjust_cost_type.sql`**，再部署程式。
 
 ### Security
+- **價格警示可以讀到別人帳戶的名稱與現價**（2026-10-23，分支 `fix/alerts-scan-ownership`，
+  尚未合併）。`alerts` 的 RLS 只檢查 `user_id`，`account_id` 只有 FK，建立警示時填入別人帳戶的
+  UUID 會成功；cron 用 service role 掃描時也沒比對擁有者，觸發後把對方的帳戶名稱與現價寫進
+  自己的通知。改成建立時用使用者自己的 client 確認帳戶查得到，掃描時帳戶擁有者不符就略過並記錯誤。
+  前提是知道對方帳戶的 UUID，UUID 不會出現在任何公開頁面。
+- CSV 公式注入防護補上開頭是 `\r` 的儲存格。
+- **伺服器端錯誤送 Sentry 前遮掉憑證**（2026-10-23，分支 `fix/sentry-scrub-secrets`）。
+  `@sentry/nextjs` 10.x 的 `onRequestError` 會把 request headers 與 cookie 原樣放進 event，
+  `sendDefaultPii` 關著也一樣，cron 的 `Authorization: Bearer <CRON_SECRET>` 和 Supabase
+  auth cookie 都會送出。`src/lib/sentry-scrub.ts` 掛在 nodejs／edge 的 `beforeSend`，
+  名稱含 auth、cookie、token、secret、key 等片段的 header 一律換成 `[Filtered]`，
+  cookie 只留名稱。瀏覽器端不受影響（讀不到 httpOnly cookie，SDK 也不送 Authorization）。
 - **已綁 MFA 的帳號，資料庫層沒有要求第二道驗證**（2026-10-23，分支 `fix/mfa-aal2-rls`）。
   MFA 原本只在 `src/lib/supabase/proxy.ts` 擋頁面：已綁 TOTP 的使用者用密碼登入後拿到 aal1 的 JWT，
   頁面會被導去 `/auth/mfa`，但這顆 JWT 直接打 `/rest/v1/accounts` 或 `/rest/v1/rpc/...` 一樣讀寫得到，
@@ -79,6 +91,13 @@
   `last_priced_at`，台股報價寫的是 FinMind 資料日期的 00:00，不是抓取時間，所以 10 分鐘冷卻永遠
   判定已過，可以連按到全站共用的 FinMind 每日額度用完，當天 cron 也跟著失敗。改成取
   `last_priced_at` 與 `updated_at` 的較晚者。副作用：剛交易或調整過的帳戶也會進 10 分鐘冷卻。
+- **稅務 CSV 的日期欄用 UTC**（2026-10-23，分支 `fix/tax-csv-taipei-date`，尚未合併）。
+  年度範圍以台北時間切，日期欄卻直接截 UTC 字串：台北 1/1 05:00 的配息出現在今年的報表，
+  日期卻印成去年 12/31。改成台北日期；未帶 `year` 時的預設年份也改用台北時間
+  （原本 Vercel 上元旦 00:00–08:00 匯出會拿到前一年）。
+- **警示通知寫入失敗時，價格警示仍被停用**（2026-10-23，分支 `fix/alerts-scan-ownership`）。
+  `notifications` 的 insert 沒有檢查回傳的 error，失敗後照樣把警示設成 inactive，這次觸發就永遠
+  收不到。改成寫入失敗時不停用、不更新 `last_triggered_at`，錯誤碼進 cron 回報，隔天重試。
 - **賣出、加碼等操作會蓋掉同時發生的異動**（2026-10-23，分支 `fix/account-mutation-stale-guard`）。
   這些 server action 在交易外讀出帳戶、在 JS 算好新的股數與成本再整筆覆寫。例：帳戶 100 股，cron 定期定額
   加到 110 股的同時使用者賣出 60 股，寫回的是 40 股，少了 10 股，定期定額的流水卻還在。現在寫入時帶上讀到的
@@ -90,12 +109,17 @@
   /history 那天的未實現損益多算 200。改成寫入與衝突更新都帶成本、已實現損益與帳戶狀態。
   **需要跑 `supabase/migrations/20261023200000_recurring_snapshot_cost.sql`**；已寫錯的歷史快照不會自動修正。
 - **定期定額跨月提前手動執行後卡住、逾期補執行跳期**（2026-10-23，分支
-  `fix/recurring-cross-month-next-run`，尚未合併）。下一期原本從「執行日的下個月」推算：
+  `fix/recurring-cross-month-next-run`，#38 已合併）。下一期原本從「執行日的下個月」推算：
   10/20 手動執行 11/5 那期時，下一期算出來還是 11/5，之後每次執行都撞到已執行的同一期，
   計劃永久停住；10/28 那期拖到 11/2 才執行時，下一期跳到 12/28，少扣 11/28。改成
   「晚於本期預定日與實際執行日兩者的第一個扣款日」，準時執行的結果不變。延誤超過一期
   仍不補齊中間的期數。**需要跑 `supabase/migrations/20261023120000_recurring_next_run_from_schedule.sql`**，
   程式不用改；已經卡住的計劃要另外修，SQL 見 `supabase/README.md`。
+- **補記交易的時間晚 8 小時，晚上補記的落到隔天**（2026-10-23，分支 `fix/datetime-local-taipei`）。
+  加碼、賣出、配息／利息表單的 datetime-local 值不帶時區，server action 直接 `new Date()`，
+  在 UTC 的 Vercel 主機上被當成 UTC：台北 10/22 21:30 補記的，存成台北 10/23 05:30，
+  快照日期也跟著錯。改用 `src/lib/dates.ts` 的 `parseTaipeiDateTime`，不帶時區的值一律當台北時間。
+  已經存進資料庫的舊紀錄不會自動更正。
 - **補記較早日期的交易後，撤銷賣出會還原錯的股數**（2026-10-23，分支
   `fix/reversal-sell-quantity`，尚未合併）。撤銷賣出用「帳戶當前數量 × 被賣部位成本 ÷
   帳戶當前成本」反解賣出股數，前提是帳戶仍停在賣出後的狀態；但「最新一筆」依發生時間

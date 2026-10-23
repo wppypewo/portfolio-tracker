@@ -5,7 +5,7 @@ import {
   applyAccountMutation,
   type MutationSnapshot,
 } from "@/lib/account-mutation";
-import { todayTaipei } from "@/lib/dates";
+import { parseTaipeiDateTime, todayTaipei } from "@/lib/dates";
 import type { Market } from "@/lib/prices/types";
 import { SellQuantitySchema } from "@/lib/schemas/action/sell-quantity";
 import { RecordIncomeSchema } from "@/lib/schemas/action/record-income";
@@ -44,7 +44,9 @@ export async function sellQuantity(
     occurredAt: occurredAtInput,
     note,
   } = parsed.data;
-  const occurredAt = occurredAtInput ? new Date(occurredAtInput) : new Date();
+  const occurredAt = occurredAtInput
+    ? parseTaipeiDateTime(occurredAtInput)
+    : new Date();
   const { supabase, user, account, error } = await loadAccount(accountId);
   if (error || !account || !user) return { error: error ?? "錯誤" };
   if (account.price_market === "manual" || !account.symbol) {
@@ -171,7 +173,9 @@ async function recordIncome(
     occurredAt: occurredAtInput,
     note,
   } = parsed.data;
-  const occurredAt = occurredAtInput ? new Date(occurredAtInput) : new Date();
+  const occurredAt = occurredAtInput
+    ? parseTaipeiDateTime(occurredAtInput)
+    : new Date();
   const { supabase, user, account, error } = await loadAccount(accountId);
   if (error || !account || !user) return { error: error ?? "錯誤" };
 

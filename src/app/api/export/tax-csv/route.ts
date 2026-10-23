@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { escapeCsvCell } from "@/lib/csv";
+import { todayTaipei } from "@/lib/dates";
 import { fetchAllPages } from "@/lib/supabase/paginate";
 
 /**
@@ -64,7 +65,7 @@ export async function GET(request: Request) {
   const yearParam = url.searchParams.get("year");
   const year = yearParam
     ? Number(yearParam)
-    : new Date().getFullYear();
+    : Number(todayTaipei().slice(0, 4));
   // 必須是整數：Number.isFinite 會放行 "2025.5"，組出 `2025.5-01-01` 這種
   // 無效時間戳丟給 Postgres，換來一個 500 和一則外洩的資料庫錯誤訊息。
   if (!Number.isInteger(year) || year < 2000 || year > 2100) {
@@ -131,7 +132,11 @@ export async function GET(request: Request) {
   const lines: string[] = [header];
   for (const r of rows) {
     const acc = r.accounts;
-    const date = r.created_at.slice(0, 10);
+    // 查詢範圍以台北時間切年度，日期欄也要用台北日期，否則元旦清晨的紀錄
+    // 會被印成前一年的 12/31，卻出現在今年的報表裡。
+    const date = new Date(r.created_at).toLocaleDateString("en-CA", {
+      timeZone: "Asia/Taipei",
+    });
     // dividend / interest 的 unit_price / fx_rate 是 null（由 importTransactionsCsv 寫入），輸出為空字串
     lines.push(
       [

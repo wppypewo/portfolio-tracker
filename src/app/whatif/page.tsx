@@ -70,7 +70,10 @@ export default async function WhatIfPage() {
     cashflow_twd: number;
   }[])
     .map((r) => ({
-      date: r.created_at.slice(0, 10),
+      // created_at 由 PostgREST 以 UTC 輸出，直接截字串會把台北清晨 8 點前的現金流算到前一天
+      date: new Date(r.created_at).toLocaleDateString("en-CA", {
+        timeZone: "Asia/Taipei",
+      }),
       amount: Number(r.cashflow_twd),
     }))
     .filter((c) => Number.isFinite(c.amount) && c.amount !== 0);

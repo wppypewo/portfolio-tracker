@@ -122,6 +122,39 @@ describe("parseFlexibleDate", () => {
     expect(parseFlexibleDate("not a date")).toBeNull();
     expect(parseFlexibleDate("")).toBeNull();
   });
+
+  it("有時間、沒時區：視為台北時間，不受主機時區影響", () => {
+    expect(parseFlexibleDate("2025-05-01 20:00")!.toISOString()).toBe(
+      "2025-05-01T12:00:00.000Z",
+    );
+    expect(parseFlexibleDate("2025/5/1T08:30:15")!.toISOString()).toBe(
+      "2025-05-01T00:30:15.000Z",
+    );
+  });
+
+  it("帶時區：照原樣（本站匯出檔的 created_at）", () => {
+    expect(parseFlexibleDate("2026-03-01T02:00:00+00:00")!.toISOString()).toBe(
+      "2026-03-01T02:00:00.000Z",
+    );
+    expect(parseFlexibleDate("2026-03-01T02:00:00.123456Z")!.toISOString()).toBe(
+      "2026-03-01T02:00:00.123Z",
+    );
+    expect(parseFlexibleDate("2026-03-01 10:00+08:00")!.toISOString()).toBe(
+      "2026-03-01T02:00:00.000Z",
+    );
+  });
+
+  it("只有日期：各種寫法都落在 UTC 00:00，與舊版在 Vercel 上的結果相同", () => {
+    for (const s of ["2025-05-01", "2025/5/1", "2025.5.1", "5/1/2025"]) {
+      expect(parseFlexibleDate(s)!.toISOString()).toBe("2025-05-01T00:00:00.000Z");
+    }
+  });
+
+  it("不存在的日期或時間回 null", () => {
+    expect(parseFlexibleDate("2025-02-30")).toBeNull();
+    expect(parseFlexibleDate("2/30/2025")).toBeNull();
+    expect(parseFlexibleDate("2025-05-01 24:00")).toBeNull();
+  });
 });
 
 describe("mapHeader", () => {

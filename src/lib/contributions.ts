@@ -18,6 +18,8 @@ export type ContributionAccount = {
   last_fx_rate: number;
   cost_basis_twd: number;
   cost_basis_native: number;
+  /** 有帶就做樂觀鎖比對，見 AccountPatch.expected_updated_at */
+  updated_at?: string;
 };
 
 export type ContributionResult =
@@ -110,6 +112,7 @@ export async function applyContribution(args: {
       last_priced_at: quote.asOf,
       cost_basis_twd: newCost,
       cost_basis_native: newCostNative,
+      expected_updated_at: account.updated_at,
     },
     transaction: {
       type: "adjust_quantity",

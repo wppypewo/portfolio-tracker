@@ -42,6 +42,12 @@
   自己的通知。改成建立時用使用者自己的 client 確認帳戶查得到，掃描時帳戶擁有者不符就略過並記錯誤。
   前提是知道對方帳戶的 UUID，UUID 不會出現在任何公開頁面。
 - CSV 公式注入防護補上開頭是 `\r` 的儲存格。
+- **伺服器端錯誤送 Sentry 前遮掉憑證**（2026-10-23，分支 `fix/sentry-scrub-secrets`）。
+  `@sentry/nextjs` 10.x 的 `onRequestError` 會把 request headers 與 cookie 原樣放進 event，
+  `sendDefaultPii` 關著也一樣，cron 的 `Authorization: Bearer <CRON_SECRET>` 和 Supabase
+  auth cookie 都會送出。`src/lib/sentry-scrub.ts` 掛在 nodejs／edge 的 `beforeSend`，
+  名稱含 auth、cookie、token、secret、key 等片段的 header 一律換成 `[Filtered]`，
+  cookie 只留名稱。瀏覽器端不受影響（讀不到 httpOnly cookie，SDK 也不送 Authorization）。
 - **已綁 MFA 的帳號，資料庫層沒有要求第二道驗證**（2026-10-23，分支 `fix/mfa-aal2-rls`）。
   MFA 原本只在 `src/lib/supabase/proxy.ts` 擋頁面：已綁 TOTP 的使用者用密碼登入後拿到 aal1 的 JWT，
   頁面會被導去 `/auth/mfa`，但這顆 JWT 直接打 `/rest/v1/accounts` 或 `/rest/v1/rpc/...` 一樣讀寫得到，
@@ -95,12 +101,17 @@
   /history 那天的未實現損益多算 200。改成寫入與衝突更新都帶成本、已實現損益與帳戶狀態。
   **需要跑 `supabase/migrations/20261023200000_recurring_snapshot_cost.sql`**；已寫錯的歷史快照不會自動修正。
 - **定期定額跨月提前手動執行後卡住、逾期補執行跳期**（2026-10-23，分支
-  `fix/recurring-cross-month-next-run`，尚未合併）。下一期原本從「執行日的下個月」推算：
+  `fix/recurring-cross-month-next-run`，#38 已合併）。下一期原本從「執行日的下個月」推算：
   10/20 手動執行 11/5 那期時，下一期算出來還是 11/5，之後每次執行都撞到已執行的同一期，
   計劃永久停住；10/28 那期拖到 11/2 才執行時，下一期跳到 12/28，少扣 11/28。改成
   「晚於本期預定日與實際執行日兩者的第一個扣款日」，準時執行的結果不變。延誤超過一期
   仍不補齊中間的期數。**需要跑 `supabase/migrations/20261023120000_recurring_next_run_from_schedule.sql`**，
   程式不用改；已經卡住的計劃要另外修，SQL 見 `supabase/README.md`。
+- **補記交易的時間晚 8 小時，晚上補記的落到隔天**（2026-10-23，分支 `fix/datetime-local-taipei`）。
+  加碼、賣出、配息／利息表單的 datetime-local 值不帶時區，server action 直接 `new Date()`，
+  在 UTC 的 Vercel 主機上被當成 UTC：台北 10/22 21:30 補記的，存成台北 10/23 05:30，
+  快照日期也跟著錯。改用 `src/lib/dates.ts` 的 `parseTaipeiDateTime`，不帶時區的值一律當台北時間。
+  已經存進資料庫的舊紀錄不會自動更正。
 - **補記較早日期的交易後，撤銷賣出會還原錯的股數**（2026-10-23，分支
   `fix/reversal-sell-quantity`，尚未合併）。撤銷賣出用「帳戶當前數量 × 被賣部位成本 ÷
   帳戶當前成本」反解賣出股數，前提是帳戶仍停在賣出後的狀態；但「最新一筆」依發生時間

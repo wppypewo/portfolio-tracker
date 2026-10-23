@@ -36,6 +36,12 @@
   **需要先跑 `supabase/migrations/20260930120000_adjust_cost_type.sql`**，再部署程式。
 
 ### Security
+- **價格警示可以讀到別人帳戶的名稱與現價**（2026-10-23，分支 `fix/alerts-scan-ownership`，
+  尚未合併）。`alerts` 的 RLS 只檢查 `user_id`，`account_id` 只有 FK，建立警示時填入別人帳戶的
+  UUID 會成功；cron 用 service role 掃描時也沒比對擁有者，觸發後把對方的帳戶名稱與現價寫進
+  自己的通知。改成建立時用使用者自己的 client 確認帳戶查得到，掃描時帳戶擁有者不符就略過並記錯誤。
+  前提是知道對方帳戶的 UUID，UUID 不會出現在任何公開頁面。
+- CSV 公式注入防護補上開頭是 `\r` 的儲存格。
 - **CSP 由 `src/proxy.ts` 每 request 產生 nonce**，政策集中在 `src/lib/csp.ts`。
   目前是 `Content-Security-Policy-Report-Only`，開關是 `CSP_ENFORCE`。
   公開頁（`/demo`、`/demo/whatif`、`/demo/report`、`/demo/history`、`/login`）
@@ -69,6 +75,9 @@
   代價是 Sentry 非同步載入，瀏覽器剛啟動那一瞬間的錯誤可能來不及捕捉。
 
 ### Fixed
+- **警示通知寫入失敗時，價格警示仍被停用**（2026-10-23，分支 `fix/alerts-scan-ownership`）。
+  `notifications` 的 insert 沒有檢查回傳的 error，失敗後照樣把警示設成 inactive，這次觸發就永遠
+  收不到。改成寫入失敗時不停用、不更新 `last_triggered_at`，錯誤碼進 cron 回報，隔天重試。
 - **定期定額跨月提前手動執行後卡住、逾期補執行跳期**（2026-10-23，分支
   `fix/recurring-cross-month-next-run`，尚未合併）。下一期原本從「執行日的下個月」推算：
   10/20 手動執行 11/5 那期時，下一期算出來還是 11/5，之後每次執行都撞到已執行的同一期，

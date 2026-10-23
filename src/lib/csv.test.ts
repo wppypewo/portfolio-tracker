@@ -9,6 +9,11 @@ describe("escapeCsvCell", () => {
     },
   );
 
+  it("neutralizes formulas behind a leading carriage return", () => {
+    // 含 \r 所以還會被引號包住；重點是 ' 在最前面。
+    expect(escapeCsvCell("\r=1+1")).toBe(`"'\r=1+1"`);
+  });
+
   it("quotes commas, line breaks, and quotes", () => {
     expect(escapeCsvCell('A, "B"\nC')).toBe('"A, ""B""\nC"');
   });

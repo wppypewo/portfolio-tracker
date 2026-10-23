@@ -29,7 +29,8 @@ export function escapeCsvCell(value: string | null | undefined): string {
   if (value === null || value === undefined) return "";
 
   let cell = String(value);
-  if (/^[=+\-@\t]/.test(cell)) cell = `'${cell}`;
+  // \r 開頭與 \t 同理：試算表會吃掉前導空白字元，接著的 = 仍被當成公式。
+  if (/^[=+\-@\t\r]/.test(cell)) cell = `'${cell}`;
 
   if (/[",\n\r]/.test(cell)) {
     return `"${cell.replace(/"/g, '""')}"`;

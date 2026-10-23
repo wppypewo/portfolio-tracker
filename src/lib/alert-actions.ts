@@ -30,6 +30,17 @@ export async function createAlert(
 
   const { type, threshold, accountId, note } = result.data;
 
+  // alerts 的 RLS 只檢查 user_id，account_id 的 FK 不受 RLS 限制，
+  // 所以要自己確認帳戶屬於登入者。這裡用的是使用者的 client，查得到才是自己的。
+  if (type !== "allocation_drift" && accountId) {
+    const { data: owned } = await supabase
+      .from("accounts")
+      .select("id")
+      .eq("id", accountId)
+      .maybeSingle();
+    if (!owned) return { error: "找不到這個帳戶" };
+  }
+
   const { error } = await supabase.from("alerts").insert({
     user_id: user.id,
     type,

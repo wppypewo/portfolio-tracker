@@ -36,6 +36,12 @@
   **需要先跑 `supabase/migrations/20260930120000_adjust_cost_type.sql`**，再部署程式。
 
 ### Security
+- **已綁 MFA 的帳號，資料庫層沒有要求第二道驗證**（2026-10-23，分支 `fix/mfa-aal2-rls`）。
+  MFA 原本只在 `src/lib/supabase/proxy.ts` 擋頁面：已綁 TOTP 的使用者用密碼登入後拿到 aal1 的 JWT，
+  頁面會被導去 `/auth/mfa`，但這顆 JWT 直接打 `/rest/v1/accounts` 或 `/rest/v1/rpc/...` 一樣讀寫得到，
+  因為 RLS 只比對 `auth.uid()`。密碼外洩時，第二道驗證只擋得住走網頁的人。現在 12 張有 RLS 的表各加一條
+  restrictive policy，已綁 MFA 就必須是 aal2；沒綁 MFA 的使用者行為不變。
+  **需要跑 `supabase/migrations/20261023220000_mfa_aal2_rls.sql`**，與部署先後無關。
 - **CSP 由 `src/proxy.ts` 每 request 產生 nonce**，政策集中在 `src/lib/csp.ts`。
   目前是 `Content-Security-Policy-Report-Only`，開關是 `CSP_ENFORCE`。
   公開頁（`/demo`、`/demo/whatif`、`/demo/report`、`/demo/history`、`/login`）

@@ -23,8 +23,9 @@
 | 16 | `migrations/20260930180000_recurring_tier_config.sql` | `recurring_plans.tier_config`（jsonb，可為空）：定期定額的級距加減碼設定。不改任何函式與 RLS。**要在程式部署前跑：** 沒跑的話帳戶頁的定期定額區塊會顯示「讀不到定期定額計畫」；cron 查到期計劃時也帶這一欄（級距自動套用之後），沒跑的話查詢失敗、log 印 `queryFailed=true`，當天所有計劃都不執行 | ✅ |
 | 17 | `migrations/20260930200000_recurring_cron_tier_amount.sql` | `execute_recurring_plan_mutation`：cron 可以對有 `tier_config` 的計劃帶本期金額（級距加減碼自動套用），流水備註寫「定期定額(cron·級距，基準 N)」；固定金額計劃與手續費覆寫照舊拒絕。簽名不變。**要在第 16 支之後跑。** 與程式部署的先後都不會弄壞資料：程式先上的話，級距計劃該期被舊函式拒絕、隔天重試 | ✅ |
 | 18 | `migrations/20261023120000_recurring_next_run_from_schedule.sql` | `execute_recurring_plan_mutation` 的下一期改成「晚於本期預定日與實際執行日兩者的第一個扣款日」。**修 bug：** 舊版從執行月推算，跨月提前手動執行下個月那期時 `next_run_date` 不會前進，之後每次執行都撞到同一期、計劃永久卡住；逾期到下個月才補執行時則會跳過一期。簽名不變，與程式部署的先後無關。**要在第 17 支之後跑。** 已經卡住的計劃要另外修，見下方「修復已卡住的定期定額計劃」 | ✅ |
+| 22 | `migrations/20261023220000_mfa_aal2_rls.sql` | 新增 `public.mfa_satisfied()`，並替 12 張有 RLS 的表各加一條 restrictive policy `mfa_required`：已綁 MFA（有 verified factor）的使用者，JWT 必須是 `aal2` 才讀寫得到。**修安全漏洞：** 原本 MFA 只在 proxy 擋頁面，密碼登入後拿到的 aal1 JWT 可以直接打 PostgREST 讀寫全部資料。不改任何函式與欄位，與程式部署的先後無關；12 張表少一張就整支報錯、什麼都不建 | ✅ |
 
-既有 StackWorth 部署若已完成 1–17，只執行第 18 個 versioned migration。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
+既有 StackWorth 部署若已完成 1–17，執行第 18 與第 22 個 versioned migration（第 19、20、21 個分別見 PR #41、#45、#47）。先在測試或預覽資料庫驗證，再套用正式環境；本 repository 不會自動修改 production schema。
 
 ## 修復已卡住的定期定額計劃
 
@@ -71,6 +72,7 @@ where exists (
 - 所有 RLS policy 都綁 `auth.uid()`，使用者只能存取自己的資料；service-role key（給 cron 用）會繞過 RLS。
 - v1 migration 會為 `account_status_history`、`investment_decisions`、`decision_reviews` 建立逐操作 RLS policy，並限制函式執行權限。決策情境快照由 trigger 阻止後續改寫。
 - `save_decision_review` 與更新後的 `apply_account_mutation` 使用 `security invoker`；呼叫者仍受 RLS 限制。
+- 第 22 支之後，已綁 MFA 的使用者在 aal1 時所有表都讀不到、寫不進，security invoker 的 RPC 會回「不存在或無權限」。沒綁 MFA、或只有未完成設定的 unverified factor 的使用者不受影響；service-role 照樣繞過。之後新增有 RLS 的表，要在同一支 migration 裡替它加同樣的 `mfa_required`，`src/lib/mfa-rls.integration.test.ts` 會比對 public 底下所有開了 RLS 的表。
 - migration 不是可逆資料刪除腳本。若要回退，先備份並另寫經審核的 forward migration，不要直接刪除新表。
 
 ## 使用者管理

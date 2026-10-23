@@ -132,6 +132,7 @@ export async function sellQuantity(
       last_unit_price: quote.unitPrice,
       last_fx_rate: quote.fxToBase,
       last_priced_at: quote.asOf,
+      expected_updated_at: account.updated_at,
     },
     transaction: {
       type: "sell",
@@ -192,7 +193,10 @@ async function recordIncome(
 
   const { error: mutationError } = await applyAccountMutation(supabase, {
     accountId,
-    patch: { realized_pnl_twd: newRealizedTotal },
+    patch: {
+      realized_pnl_twd: newRealizedTotal,
+      expected_updated_at: account.updated_at,
+    },
     transaction: {
       type,
       quantity_after: Number(account.quantity),

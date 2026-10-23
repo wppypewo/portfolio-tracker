@@ -130,6 +130,7 @@ export async function adjustQuantity(
       last_priced_at: quote.asOf,
       cost_basis_twd: newCostTwd,
       cost_basis_native: newCostNative,
+      expected_updated_at: account.updated_at,
     },
     transaction: {
       type: "adjust_quantity",
@@ -207,6 +208,7 @@ export async function adjustCostBasis(
     patch: {
       cost_basis_twd: resolved.costTwd,
       cost_basis_native: resolved.costNative,
+      expected_updated_at: account.updated_at,
     },
     transaction: {
       type: "adjust_cost",
@@ -320,6 +322,7 @@ export async function adjustBalance(
       manual_value_base: newBalance,
       cost_basis_twd: newBalance,
       cost_basis_native: newBalance,
+      expected_updated_at: account.updated_at,
     },
     transaction: {
       type: "adjust_balance",

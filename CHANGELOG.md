@@ -36,6 +36,12 @@
   **需要先跑 `supabase/migrations/20260930120000_adjust_cost_type.sql`**，再部署程式。
 
 ### Security
+- **已綁 MFA 的帳號，資料庫層沒有要求第二道驗證**（2026-10-23，分支 `fix/mfa-aal2-rls`）。
+  MFA 原本只在 `src/lib/supabase/proxy.ts` 擋頁面：已綁 TOTP 的使用者用密碼登入後拿到 aal1 的 JWT，
+  頁面會被導去 `/auth/mfa`，但這顆 JWT 直接打 `/rest/v1/accounts` 或 `/rest/v1/rpc/...` 一樣讀寫得到，
+  因為 RLS 只比對 `auth.uid()`。密碼外洩時，第二道驗證只擋得住走網頁的人。現在 12 張有 RLS 的表各加一條
+  restrictive policy，已綁 MFA 就必須是 aal2；沒綁 MFA 的使用者行為不變。
+  **需要跑 `supabase/migrations/20261023220000_mfa_aal2_rls.sql`**，與部署先後無關。
 - **CSP 由 `src/proxy.ts` 每 request 產生 nonce**，政策集中在 `src/lib/csp.ts`。
   目前是 `Content-Security-Policy-Report-Only`，開關是 `CSP_ENFORCE`。
   公開頁（`/demo`、`/demo/whatif`、`/demo/report`、`/demo/history`、`/login`）
@@ -69,6 +75,16 @@
   代價是 Sentry 非同步載入，瀏覽器剛啟動那一瞬間的錯誤可能來不及捕捉。
 
 ### Fixed
+- **賣出、加碼等操作會蓋掉同時發生的異動**（2026-10-23，分支 `fix/account-mutation-stale-guard`）。
+  這些 server action 在交易外讀出帳戶、在 JS 算好新的股數與成本再整筆覆寫。例：帳戶 100 股，cron 定期定額
+  加到 110 股的同時使用者賣出 60 股，寫回的是 40 股，少了 10 股，定期定額的流水卻還在。現在寫入時帶上讀到的
+  `updated_at`，RPC 鎖住帳戶後比對，不同就拒絕並請使用者重新整理。手動與 cron 刷價不受影響。
+  **需要跑 `supabase/migrations/20261023210000_account_mutation_stale_guard.sql`**，與部署先後無關。
+- **定期定額扣款日的快照成本停在扣款前**（2026-10-23，分支 `fix/cron-snapshot-cost`）。cron 先刷價、
+  用扣款前的成本寫好當天快照，接著定期定額 RPC 的 `on conflict` 只更新股數、價格與市值；快照 trigger
+  只補 null 欄位，所以成本不會修正。例：10 股成本 1,000，扣款 200 買 2 股後，當天快照是 12 股、成本 1,000，
+  /history 那天的未實現損益多算 200。改成寫入與衝突更新都帶成本、已實現損益與帳戶狀態。
+  **需要跑 `supabase/migrations/20261023200000_recurring_snapshot_cost.sql`**；已寫錯的歷史快照不會自動修正。
 - **定期定額跨月提前手動執行後卡住、逾期補執行跳期**（2026-10-23，分支
   `fix/recurring-cross-month-next-run`，#38 已合併）。下一期原本從「執行日的下個月」推算：
   10/20 手動執行 11/5 那期時，下一期算出來還是 11/5，之後每次執行都撞到已執行的同一期，
@@ -81,6 +97,14 @@
   在 UTC 的 Vercel 主機上被當成 UTC：台北 10/22 21:30 補記的，存成台北 10/23 05:30，
   快照日期也跟著錯。改用 `src/lib/dates.ts` 的 `parseTaipeiDateTime`，不帶時區的值一律當台北時間。
   已經存進資料庫的舊紀錄不會自動更正。
+- **補記較早日期的交易後，撤銷賣出會還原錯的股數**（2026-10-23，分支
+  `fix/reversal-sell-quantity`，尚未合併）。撤銷賣出用「帳戶當前數量 × 被賣部位成本 ÷
+  帳戶當前成本」反解賣出股數，前提是帳戶仍停在賣出後的狀態；但「最新一筆」依發生時間
+  排序，賣出後補記一筆更早日期的加碼，賣出仍算最新一筆。例：10 股成本 1000，賣 4 股後
+  補記上週加碼 4 股（成本 800），撤銷時算成 2.857 股，帳戶變 12.857 股而不是 14 股，
+  沒有任何錯誤訊息。改成帳戶數量與賣出列記下的 `quantity_after` 不同就拒絕撤銷。
+  補記的交易剛好讓數量回到原值時仍抓不到，要等賣出列另存成本才能補。
+  **需要跑 `supabase/migrations/20261023180000_reversal_sell_quantity_guard.sql`**，程式不用改。
 
 ## [1.2.0] - 2026-08-18
 

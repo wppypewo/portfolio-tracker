@@ -1,10 +1,23 @@
 # StackWorth
 
+[![CI](https://github.com/zhuang060329-bit/portfolio-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/zhuang060329-bit/portfolio-tracker/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.3.0-informational.svg)](CHANGELOG.md)
+
+English | [繁體中文](README.zh-TW.md)
+
 A personal portfolio tracker for a long-term investor holding US ETFs, Taiwan stocks, crypto, and manual assets across multiple accounts — everything in one TWD-denominated dashboard.
 
 **Live app:** https://portfolio-tracker-two-rho.vercel.app · **Public demo (no login):** https://portfolio-tracker-two-rho.vercel.app/demo · **Full reference:** [docs/REFERENCE.md](docs/REFERENCE.md)
 
-Personal finance tool. Not investment advice, not affiliated with any institution, not a commercial product.
+Personal finance tool. Not investment advice, not affiliated with any institution, not a commercial product. The interface is in Traditional Chinese.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/overview-dark.png">
+  <img alt="StackWorth demo dashboard: net worth, cost basis, unrealized and realized P&amp;L, XIRR, holdings ledger and allocation map" src="docs/screenshots/overview-light.png">
+</picture>
+
+<sub>Public demo, generated data. Light and dark themes follow your GitHub setting.</sub>
 
 ---
 
@@ -39,7 +52,7 @@ Holding assets across markets and currencies means brokerage apps only ever show
 
 **Historical pages never borrow today's quote.** Replay uses the latest snapshot available on or before the selected date, labels carried-forward values with their source date, and exposes missing data. The attribution equation keeps a visible scale-relative residual instead of hiding an incomplete split.
 
-## v1.0 workflows
+## Workflows
 
 - **Decision journal:** create a pre-trade or post-trade record at `/decisions`, optionally link it to an activity transaction, preserve the original context, schedule a review, and record outcome and process separately.
 - **Historical replay and attribution:** choose an as-of date at `/history` to inspect holdings, archived boundaries, price dates, allocation, currency exposure, and a reconciling change breakdown.
@@ -57,9 +70,15 @@ Holding assets across markets and currencies means brokerage apps only ever show
 
 https://portfolio-tracker-two-rho.vercel.app/demo — no account needed.
 
-Generated data: an 18-month DCA history with a seeded pseudo-random walk, a planted correction regime, one realized loss, dividends and interest. Deterministic per day, so reviewers see the same numbers on revisit. The production dashboard holds personal financial data, so screenshots are intentionally not committed; the demo exists so the product can still be reviewed end to end.
+Generated data: an 18-month DCA history with a seeded pseudo-random walk, a planted correction regime, one realized loss, dividends and interest. Deterministic per day, so reviewers see the same numbers on revisit. The production dashboard holds personal financial data, so every screenshot in this repository comes from the demo.
 
-The v1.0 sample flows are `/demo/decisions`, `/demo/history`, `/demo/whatif`, and `/demo/report`. They use deterministic fixtures only and never query an authenticated user's portfolio.
+| Historical replay and attribution | Stress test and anti-FOMO check |
+|---|---|
+| ![Historical replay: opening and closing net worth with a reconciling breakdown into contributions, price effect, FX effect, income and withdrawals](docs/screenshots/history.png) | ![Stress test: price and FX shock rules applied to the demo portfolio, with the stressed value and a pre-purchase check](docs/screenshots/stress-test.png) |
+
+<img alt="Demo dashboard on a phone" src="docs/screenshots/mobile.png" width="260">
+
+The demo flows are `/demo/decisions`, `/demo/history`, `/demo/whatif`, and `/demo/report`. They use deterministic fixtures only and never query an authenticated user's portfolio.
 
 Amount masking remains available in the authenticated app. Printed monthly reports state whether amounts were visible when the report was generated; check that state before saving a PDF on a shared device.
 
@@ -69,7 +88,7 @@ Amount masking remains available in the authenticated app. Printed monthly repor
 git clone https://github.com/zhuang060329-bit/portfolio-tracker
 cd portfolio-tracker
 npm install
-cp .env.local.example .env.local   # fill in — see docs/REFERENCE.md for the variable table
+cp .env.local.example .env.local   # fill in; see docs/REFERENCE.md for the variable table
 npm run dev
 ```
 
@@ -77,9 +96,16 @@ Gates: `npm run lint` / `npm run typecheck` / `npm run test:unit` / `TEST_DATABA
 
 ## Status and next steps
 
-Running in production (Vercel + Supabase, single user). CI runs lint / typecheck / unit tests / Postgres integration / build on every push to main. Version 1.0 adds the decision journal, historical replay and attribution, deterministic stress tests, the buy-before-check flow, and printable monthly reports. Existing deployments must apply `supabase/migrations/20260718032234_stackworth_v1.sql` before enabling these authenticated routes.
+Running in production (Vercel + Supabase, single user). CI runs lint / typecheck / unit tests / Postgres integration / build on every push to main. The current release is **v1.3.0** (2026-10-25): tiered DCA amounts, cost-basis correction, the public `/about` page, MFA enforced at the database layer, and a set of Asia/Taipei date fixes. Each release lists the SQL migrations it needs; the full order is in [supabase/README.md](supabase/README.md).
 
-Known v1.0 limits: replay and reports use bounded snapshot queries and surface truncation or missing prices; review performance depends on stored daily snapshots; browser printing is the PDF path; authenticated create/review flows require a configured Supabase project. See [docs/REFERENCE.md](docs/REFERENCE.md) and [CHANGELOG.md](CHANGELOG.md).
+Known limits: replay and reports use bounded snapshot queries and surface truncation or missing prices; review performance depends on stored daily snapshots; browser printing is the PDF path; authenticated create/review flows require a configured Supabase project. See [docs/REFERENCE.md](docs/REFERENCE.md) and [CHANGELOG.md](CHANGELOG.md).
+
+## Further reading
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): module boundaries and write paths
+- [docs/ADR-001-stackworth-v1-data-semantics.md](docs/ADR-001-stackworth-v1-data-semantics.md): data semantics for v1
+- [docs/DESIGN_NOTES.md](docs/DESIGN_NOTES.md): design decisions and trade-offs, with measured numbers (Traditional Chinese)
+- [SECURITY.md](SECURITY.md): how to report a vulnerability
 
 ## Author
 

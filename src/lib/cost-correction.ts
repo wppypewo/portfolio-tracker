@@ -6,7 +6,7 @@
  * （app/accounts/new/actions.ts），既有部位搬進來之後成本與券商對不上。
  *
  * 校正只動 cost_basis_twd / cost_basis_native，股數、報價、已實現損益都不動，
- * 流水的 cashflow_twd 記 0。代價寫在 AGENTS.md 第七節：
+ * 流水的 cashflow_twd 記 0。代價寫在 docs/DESIGN_NOTES.md「設計決策」：
  * 未實現損益改從實際買進成本算起，XIRR / TWR 仍從建帳戶當天的市值算起。
  */
 

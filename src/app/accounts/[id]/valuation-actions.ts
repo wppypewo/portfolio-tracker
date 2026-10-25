@@ -160,7 +160,7 @@ export async function adjustQuantity(
  *
  * 刻意不抓報價：這個操作跟市價無關，流水與當日快照沿用帳戶上次的報價，
  * 不花 API 每日預算，報價 API 掛掉時也照樣能校正。
- * 現金流記 0，所以 XIRR / TWR / Sharpe 不受影響（取捨見 AGENTS.md 第七節）。
+ * 現金流記 0，所以 XIRR / TWR / Sharpe 不受影響（取捨見 docs/DESIGN_NOTES.md「設計決策」）。
  */
 export async function adjustCostBasis(
   _previous: FormState,

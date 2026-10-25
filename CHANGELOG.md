@@ -6,17 +6,15 @@
 
 ## [Unreleased]
 
-> 以下改動已完成並通過四道關卡，2026-09-03 分成 6 個 commit
-> （`7f5a323`、`3eca6e8`、`a6c86c9`、`7889d53`、`bc40425`、`6c2260b`），
-> 已由 `optimize/2026-09-03` 快轉合併進 `main` 並推送。尚未發版號。
+## [1.3.0] - 2026-10-25
 
 ### Added
 - **公開介紹頁 `/about`**（2026-10-11，分支 `claude/focused-shannon-v4f1p4`）。未登入可看，
   登入頁與全站頁尾都有入口。主圖是示範資料的淨值線，描線後依序標出回撤期間與今日現值；
   其下是四個指標、地籍式配置圖、資料來源與排程、判讀圖例、安全說明。數字全取自 `/demo`
-  同一份資料與計算管線。動畫只在這頁，規則見 `.claude/rules/design.md`「介紹頁例外」。
+  同一份資料與計算管線。動畫只在這頁，規則見 `docs/DESIGN_NOTES.md`「介紹頁例外」。
 - **全站頁尾**（2026-10-11）：工程圖標題欄樣式，列版次、報價來源、判讀慣例、基準幣別，列印時隱藏。
-- **定期定額級距加減碼**（2026-09-30，分支 `feat/dca-tiers`，尚未合併，只支援台股）。
+- **定期定額級距加減碼**（2026-09-30，分支 `feat/dca-tiers`，只支援台股）。
   建立定期定額計劃時可選「依級距加減碼」，參數預設與 TradingView 指標
   「DCA 七級距加減碼 v2 (含息序列)」相同（200 日均線；回撤 10 / 20 / 30 / 45% 對應
   1.25 / 1.5 / 1.75 / 2 倍；高於均線 10 / 20% 對應 0.9 / 0.8 倍）。計劃列顯示前高回撤、
@@ -27,7 +25,7 @@
   **需要先跑 `supabase/migrations/20260930180000_recurring_tier_config.sql`**，再部署程式；
   cron 套用級距另需 `supabase/migrations/20260930200000_recurring_cron_tier_amount.sql`
   （沒跑的話級距計劃的自動執行會被拒絕、隔天重試，不會買錯金額）。
-- **校正成本**（2026-09-30，分支 `feat/adjust-cost`，尚未合併）。帳戶頁「增減股數」下方
+- **校正成本**（2026-09-30，分支 `feat/adjust-cost`）。帳戶頁「增減股數」下方
   多一個表單，把成本基礎直接改成券商帳上的總成本，股數、報價、已實現損益都不動。
   新建帳戶時成本等於建立當下的市值，既有部位搬進來之後與券商對不上，這是補正的手段。
   新交易型別 `adjust_cost`，流水現金流記 0：XIRR / TWR 不變，未實現損益改從校正後的
@@ -36,8 +34,7 @@
   **需要先跑 `supabase/migrations/20260930120000_adjust_cost_type.sql`**，再部署程式。
 
 ### Security
-- **價格警示可以讀到別人帳戶的名稱與現價**（2026-10-23，分支 `fix/alerts-scan-ownership`，
-  尚未合併）。`alerts` 的 RLS 只檢查 `user_id`，`account_id` 只有 FK，建立警示時填入別人帳戶的
+- **價格警示可以讀到別人帳戶的名稱與現價**（2026-10-23，分支 `fix/alerts-scan-ownership`）。`alerts` 的 RLS 只檢查 `user_id`，`account_id` 只有 FK，建立警示時填入別人帳戶的
   UUID 會成功；cron 用 service role 掃描時也沒比對擁有者，觸發後把對方的帳戶名稱與現價寫進
   自己的通知。改成建立時用使用者自己的 client 確認帳戶查得到，掃描時帳戶擁有者不符就略過並記錯誤。
   前提是知道對方帳戶的 UUID，UUID 不會出現在任何公開頁面。
@@ -69,7 +66,7 @@
 
 ### Changed
 - **繁中字體改成切片載入**（2026-10-11）：每頁 1,683 KB → 228 KB（UI 用字一片，其餘 11 片按需下載）。
-  Lighthouse 行動版 `/about` 效能 56 → 72–80、LCP 11.4 → 4.2 秒。做法與代價見 AGENTS.md 字體一節。
+  Lighthouse 行動版 `/about` 效能 56 → 72–80、LCP 11.4 → 4.2 秒。做法與代價見 `docs/DESIGN_NOTES.md` 字體一條。
 - 未登入的訪客打開根網址改導向 `/about`（原本導向 `/login`），其他受保護頁面照舊導向登入頁。
 - 公開頁（about／login／methodology／auth）載入時不再先閃出已登入首頁的骨架；關掉 JS 也看得到內容。
 - 首頁淨資產趨勢（2026-10-11）：區間切換（1M…ALL）從圖下方左側移到右上，與淨值／大盤對照並排。
@@ -96,7 +93,7 @@
   `last_priced_at`，台股報價寫的是 FinMind 資料日期的 00:00，不是抓取時間，所以 10 分鐘冷卻永遠
   判定已過，可以連按到全站共用的 FinMind 每日額度用完，當天 cron 也跟著失敗。改成取
   `last_priced_at` 與 `updated_at` 的較晚者。副作用：剛交易或調整過的帳戶也會進 10 分鐘冷卻。
-- **稅務 CSV 的日期欄用 UTC**（2026-10-23，分支 `fix/tax-csv-taipei-date`，尚未合併）。
+- **稅務 CSV 的日期欄用 UTC**（2026-10-23，分支 `fix/tax-csv-taipei-date`）。
   年度範圍以台北時間切，日期欄卻直接截 UTC 字串：台北 1/1 05:00 的配息出現在今年的報表，
   日期卻印成去年 12/31。改成台北日期；未帶 `year` 時的預設年份也改用台北時間
   （原本 Vercel 上元旦 00:00–08:00 匯出會拿到前一年）。
@@ -126,7 +123,7 @@
   快照日期也跟著錯。改用 `src/lib/dates.ts` 的 `parseTaipeiDateTime`，不帶時區的值一律當台北時間。
   已經存進資料庫的舊紀錄不會自動更正。
 - **補記較早日期的交易後，撤銷賣出會還原錯的股數**（2026-10-23，分支
-  `fix/reversal-sell-quantity`，尚未合併）。撤銷賣出用「帳戶當前數量 × 被賣部位成本 ÷
+  `fix/reversal-sell-quantity`）。撤銷賣出用「帳戶當前數量 × 被賣部位成本 ÷
   帳戶當前成本」反解賣出股數，前提是帳戶仍停在賣出後的狀態；但「最新一筆」依發生時間
   排序，賣出後補記一筆更早日期的加碼，賣出仍算最新一筆。例：10 股成本 1000，賣 4 股後
   補記上週加碼 4 股（成本 800），撤銷時算成 2.857 股，帳戶變 12.857 股而不是 14 股，
@@ -314,7 +311,8 @@
 ### Migration
 - 需先套用 `supabase/migrations/20260718032234_stackworth_v1.sql` 才能使用新的需登入頁面（決策日誌、歷史重播、月報）。請先在測試資料庫執行；本版本沒有直接修改 production。
 
-[Unreleased]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/zhuang060329-bit/portfolio-tracker/releases/tag/v1.0.0

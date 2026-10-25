@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* Tailwind v4 預設把整個專案目錄（.gitignore 以外）都當候選來源掃描，.md 也算。
-   DESIGN_DECISIONS.md 記的正好是「哪些寫法會壞」，裡面兩個反例字串
+   當時的 DESIGN_DECISIONS.md 記的正好是「哪些寫法會壞」，裡面兩個反例字串
    text-[var(--fs-*)] 與 text-[length:var(...)] 於是被當成真的 utility 生出來，
    產出 color: var(--fs-*) 這種不合法的 CSS——dev server 每一頁都 500
    （next build 不會擋，所以這個壞法只在本機開發時看得到）。

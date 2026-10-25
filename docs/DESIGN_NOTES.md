@@ -1,169 +1,10 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# 設計筆記
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+StackWorth 的設計決策、取捨與視覺規則。原本分散在給 AI 代理人的交接檔裡，2026-10-25 整理到這裡。
+架構概要見 [ARCHITECTURE.md](ARCHITECTURE.md)，資料語意見 [ADR-001](ADR-001-stackworth-v1-data-semantics.md)，
+環境變數與部署見 [REFERENCE.md](REFERENCE.md)。
 
----
-
-# StackWorth 專案交接文件
-
-這是個人投資組合追蹤工具，已上線運作中。本檔給任何接手的 AI 代理人（Claude Code / Codex CLI / Cursor / Windsurf / Aider 等）看，提供完整脈絡。
-
-## 一、專案基本資料
-
-- **路徑（Windows）**：`D:\ClaudeCode\projects\portfolio-tracker`
-- **GitHub**：`github.com/zhuang060329-bit/portfolio-tracker`（public）
-- **部署**：`https://portfolio-tracker-two-rho.vercel.app`
-- **當前狀態**：上線運作中，目前版本 **v1.2.0**（2026-08-18）。v1.0 原始碼有 32 個 app page/API 入口，測試數量以 `npm run test:unit` 與 `npm run test:integration` 實際輸出為準。各版本變更見 `CHANGELOG.md`
-- **完整背景文件**：`docs/StackWorth-專案紀實.pdf`（15 頁，繁中）
-
-## 二、技術棧
-
-| 層 | 選擇 |
-|---|---|
-| 前端框架 | Next.js 16.3.4（Turbopack；Proxy 取代 Middleware；async cookies、async params） |
-| React | 19（useActionState、useSyncExternalStore、Suspense for useSearchParams） |
-| 樣式 | Tailwind v4，`@custom-variant dark` 對應 `[data-theme="dark"]` |
-| 圖表 | Recharts；首頁儀表板為手刻 SVG |
-| 動畫 | CSS keyframes 為主；`motion`、`gsap` 只用在隔離的 client 葉節點（規則見 `.claude/rules/design.md`） |
-| 後端 | Supabase（Auth + Postgres + RLS + service-role for cron） |
-| 認證 | Email/密碼 + Google OAuth + MFA TOTP（AAL2 強制） |
-| 部署 | Vercel Hobby + GitHub auto-deploy |
-| 排程 | Vercel Cron 每日 06:00 UTC（= 台北 14:00） |
-| 報價 | Twelve Data（美股 + USD/TWD）、FinMind（台股 + 0050 + 歷史匯率）、CoinGecko（加密） |
-| 測試 | Vitest（測試數量以 `npm run test` 實際輸出為準） |
-| 監控 | Sentry SDK（DSN 未設則 no-op；**動態 import**，見第七節） |
-
-## 三、目錄重點
-
-```
-src/
-├── app/
-│   ├── page.tsx                 ← 首頁（hero + 圖表 + 指標 + holdings）
-│   ├── accounts/[id]/           ← 帳戶詳情 + actions（addByAmount, sellQuantity, ...）
-│   ├── accounts/new/{stock,crypto,manual}/  ← 新增帳戶（client components）
-│   ├── activity/                ← 變動紀錄列表 + CSV 匯入
-│   ├── alerts/                  ← 警示 CRUD
-│   ├── notifications/           ← 通知中心
-│   ├── decisions/               ← 決策日誌 + 檢討
-│   ├── history/                 ← 歷史重播 + 報酬歸因
-│   ├── reports/monthly/         ← 月報 + 列印輸出
-│   ├── whatif/                  ← What-if + 投資組合壓力測試
-│   ├── about/                   ← 公開介紹頁（未登入可看；動畫例外見 .claude/rules/design.md）
-│   ├── admin/allowlist/         ← Admin 使用者管理
-│   ├── auth/{callback,mfa,reset-password,signout}/
-│   ├── api/cron/refresh/        ← Vercel cron 入口
-│   ├── api/export/csv/          ← 全部交易 CSV
-│   ├── api/export/tax-csv/      ← 年度稅務報表
-│   ├── login/, settings/
-│   ├── fonts/                   ← 自架字體 woff2（由 scripts/build-fonts.py 產生）
-│   ├── layout.tsx, loading.tsx, error.tsx, not-found.tsx
-│   └── globals.css              ← CSS 變數系統
-├── components/
-│   ├── AppHeader.tsx            ← 導覽 + 鈴鐺（unreadCount prop）
-│   ├── SiteFooter.tsx           ← 全站頁尾（標題欄），掛在 root layout
-│   ├── survey.tsx               ← PageHead、Panel、Stat、EmptyPlot 等測繪桌共用元件
-│   ├── DemoV1Header.tsx         ← 公開 /demo 專屬導覽（總覽/日誌/歷史/壓力/月報）
-│   ├── PortfolioCharts.tsx      ← 帳戶詳情頁用 Recharts 版（AllocationPie, NetWorthLine）
-│   ├── NetWorthPanel.tsx        ← 範圍切換（1M/3M/6M/1Y/ALL）+ NetWorthLine
-│   ├── QuickAddFab.tsx          ← 首頁右下浮動 + 快速記帳
-│   ├── PrivacyToggle.tsx / ThemeToggle.tsx  ← useSyncExternalStore 實作
-│   └── dashboard/              ← 首頁儀表板（手刻 SVG 圖表）
-│       ├── DashboardClient.tsx, Hero.tsx, Holdings.tsx, MetricsCard.tsx
-│       ├── TrendSection.tsx, AllocationCard.tsx, DashboardCharts.tsx
-│       ├── chart-data.ts, shared.tsx, types.ts, useCountUp.ts
-├── lib/
-│   ├── prices/                  ← {twelvedata,finmind,coingecko,fx,router,types,http}.ts
-│   ├── xirr.ts, metrics.ts      ← 報酬指標（含測試）
-│   ├── whatif.ts                ← Buy-and-hold 模擬（含測試）
-│   ├── csv.ts                   ← EXPORT_CSV_HEADER（匯出匯入共用）、escapeCsvCell
-│   ├── csv-import-helpers.ts    ← 欄位嗅探、型別別名、列別判定（含測試）
-│   ├── csv-import-plan.ts       ← CSV 解析 + 匯入規劃（純函式，含往返測試）
-│   ├── alerts-scan.ts           ← cron 內呼叫的警示掃描
-│   ├── alert-actions.ts, allowlist-actions.ts, profile-actions.ts
-│   ├── contributions.ts         ← applyContribution 共用 helper
-│   ├── cost-correction.ts       ← 校正成本的換算與備註（純函式，含測試）
-│   ├── dca-tiers.ts             ← 定期定額級距加減碼的判定與金額（純函式，含測試）
-│   ├── total-return-series.ts   ← 由股價、除權息、分割重建含息序列（純函式，含測試）
-│   ├── dca-tier-status.ts       ← 帳戶頁計劃列要顯示的級距狀態（純函式，含測試）
-│   ├── recurring-tier-amount.ts ← cron 執行級距計劃時要帶的本期金額（含測試）
-│   ├── notifications.ts         ← getUnreadCount
-│   ├── admin.ts                 ← isAdmin(email)
-│   ├── dates.ts                 ← todayTaipei()
-│   └── supabase/{server,client,service,proxy}.ts
-└── proxy.ts                     ← 根 proxy 入口（matcher 排除 static / cron）
-
-supabase/                        ← SQL 檔（執行順序見 supabase/README.md）
-├── schema.sql, recurring-plans.sql, cost-basis.sql,
-├── realized-pnl-cashflow.sql, batch2-schema.sql,
-├── open-signup.sql, alerts.sql
-
-scripts/
-└── build-fonts.py               ← 產生 src/app/fonts/（不在建置流程內，見第七節）
-
-docs/
-├── StackWorth-專案紀實.pdf      ← 完整背景（小白版）
-└── build_pdf.py                 ← 生成腳本（reportlab + 微軟正黑體）
-
-vercel.json                      ← Cron 設定 0 6 * * *
-vitest.config.ts                 ← 測試設定（數量以 npm run test 為準）
-```
-
-## 四、環境變數
-
-在 Vercel 已設、本機在 `.env.local`：
-
-| 變數 | 用途 |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 專案 URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public publishable key |
-| `SUPABASE_SECRET_KEY` | cron / admin 用，繞過 RLS（即 service-role 金鑰） |
-| `TWELVE_DATA_API_KEY` | 美股報價 + USD/TWD |
-| `FINMIND_TOKEN` | 台股 + 歷史匯率 |
-| `CRON_SECRET` | Bearer token 驗證 cron 路由 |
-| `ADMIN_EMAILS` | 逗號分隔 admin email（未設則無 admin） |
-| `SENTRY_DSN`（選用） | 設了才會回報 |
-| `API_BUDGET_TWELVEDATA`（選用） | 美股／匯率每日呼叫上限，未設為 500 |
-| `API_BUDGET_FINMIND`（選用） | 台股／匯率每日呼叫上限，未設為 500 |
-| `API_BUDGET_COINGECKO`（選用） | 加密每日呼叫上限，未設為 500 |
-
-> 三個 `API_BUDGET_*` 的預設值 500 是保守的自訂預算，**不是**各家 API 公布的額度。
-> 請依你實際的方案自行設定。填 0 代表完全停用該來源；填錯（負數、小數、非數字）
-> 會退回預設值而不是關掉守門。
-
-## 五、開發 / 驗證指令
-
-```bash
-cd portfolio-tracker
-
-# 型別
-npx tsc --noEmit
-
-# Lint
-npx eslint src
-
-# 單元測試
-npm run test:unit
-
-# Postgres 整合測試（需要獨立測試資料庫）
-TEST_DATABASE_URL=postgresql://... npm run test:integration
-
-# 完整 build（自動跑 tsc）
-NEXT_TELEMETRY_DISABLED=1 npx next build
-
-# 本機開發
-npm run dev   # Mac 也可用工作區根的 start-dev-portfolio.command（不在本 repo 內）
-```
-
-## 六、上線流程
-
-1. 改 code → 跑 lint、typecheck、單元測試、Postgres 整合測試、production build
-2. `git commit` → push 功能分支 → 建立 PR
-3. Vercel 自動部署（GitHub webhook）
-4. 若 schema 變更：先在測試環境驗證 versioned migration，再由使用者核准正式環境套用
-
-## 七、重要設計決策
+## 設計決策
 
 - **顏色慣例**：賺綠虧紅（西方慣例，非台股紅漲綠跌）— 因為 UI 對國際使用者開放
 - **XIRR**：資料 < 30 天不顯示（避免短期波動年化後失真，例 5 天虧 10% 算成 -99% 年化）
@@ -175,7 +16,7 @@ npm run dev   # Mac 也可用工作區根的 start-dev-portfolio.command（不�
 - **CSS 變數系統**：避免硬編碼顏色，`:root` 是深色、`[data-theme="light"]` 覆寫
 - **視覺語言是「測繪桌 Survey Table」**（2026-09-26 起翻新，2026-09-27 併入 main，`2222999`）：
   冷紙底、製圖格線、圓角 0、髮絲線、Plex Mono 等寬數字。跌色（磚紅）與朱砂註記
-  刻意分成兩個色，朱砂只用在帶文字與虛線引線的「注意」註記。細節見 `.claude/rules/design.md`
+  刻意分成兩個色，朱砂只用在帶文字與虛線引線的「注意」註記。細節見下方「視覺與動畫」
 - **字體自架**：拉丁兩支走 `next/font/local`，繁中走腳本產生的 `@font-face` 切片（見本條末段），
   檔案 commit 在 `src/app/fonts/`，
   由 `scripts/build-fonts.py` 產生（需要 Python + fonttools，**不在建置流程內**，
@@ -240,7 +81,7 @@ npm run dev   # Mac 也可用工作區根的 start-dev-portfolio.command（不�
   涉及 `src/instrumentation-client.ts` 與 `src/app/error.tsx` 兩處，改回靜態就會退回原狀。
 - **`globals.css` 有一行 `@source not "../../**/*.md";`，別刪**。Tailwind v4 的
   自動內容偵測會把 repo 裡的 `.md` 也當成模板掃，於是文件裡隨手寫的 class 名
-  （包括 AGENTS.md 舉例用的）會被當成真的在用而產出 CSS。這行把 markdown 排除掉。
+  （包括設計文件裡舉例用的）會被當成真的在用而產出 CSS。這行把 markdown 排除掉。
 - **CSP 由 `src/proxy.ts` 每 request 產生 nonce，政策在 `src/lib/csp.ts`**，
   不放 `next.config.ts`（那裡的 headers 是靜態的，發不出每次不同的 nonce）。
   三件事改之前先看清楚：
@@ -335,7 +176,8 @@ npm run dev   # Mac 也可用工作區根的 start-dev-portfolio.command（不�
 - **手動帳戶**：不適用 addByAmount；FAB 與部分 query 自動排除
 - **服務選擇**：全部用免費額度可運作；個人單用不會撞限
 
-## 八、已知 trade-off（暫不動）
+## 已知取捨
+
 
 | 項目 | 為什麼 |
 |---|---|
@@ -343,55 +185,67 @@ npm run dev   # Mac 也可用工作區根的 start-dev-portfolio.command（不�
 | AppHeader unreadCount 每頁 fetch | DRY 違規但只是一個 COUNT query，成本低 |
 | CSV 匯入的交易寫入與帳戶更新不是原子的 | insert 成功、update 失敗時流水在但餘額沒跟上，且重試會被「帳戶已有交易」擋住。錯誤訊息已提示去看變動紀錄。要做成原子需要新 RPC 與 migration |
 
-## 九、使用者操作（程式碼無法代勞）
+## 視覺與動畫
 
-部署後仍待使用者完成：
+### 定位
 
-1. **必做**：到 Supabase SQL Editor 跑 `supabase/alerts.sql`（alerts + notifications 兩張表）
-2. **選做**：要 email 警示就在 Vercel 加 `RESEND_API_KEY`，告知 AI 接 Resend SDK 到 `alerts-scan.ts`
-3. **例行**：每年 5 月報稅前到 `/settings` 下載年度稅務報表 CSV
-4. **待辦：把 CSP 從只回報改成實際攔截**。目前 `src/lib/csp.ts` 的
-   `CSP_ENFORCE = false`，發的是 `Content-Security-Policy-Report-Only`，
-   瀏覽器照常渲染、只在 console 記違規。
-   **公開頁已在 2026-09-03 用 production build 實測完畢**——`/demo`、`/demo/whatif`、
-   `/demo/report`、`/demo/history`、`/login` 走一遍，console 沒有任何
-   `Refused to …` 或 `[Report Only] Refused …`。
-   **剩下的只有你能做**：登入、`/settings` 的 MFA QR、Google OAuth 這三段要真實帳號。
-   那三段 console 也乾淨之後，把 `CSP_ENFORCE` 翻成 `true`。
-   翻的時候 `csp.test.ts` 會有兩條測試轉紅，那是刻意的提醒，一併更新即可。
+StackWorth 是工具型 UI，核心指標是資料可讀性，不是視覺衝擊。
 
-   > 實測時 console 會有一則 `An unknown error occurred when fetching the script.`，
-   > 那是 service worker 註冊失敗，**不是 CSP**：同一支 `/sw.js` 用 `fetch()` 拿得到 200，
-   > 而且 `sw.js` 被 proxy matcher 排除、根本沒有 CSP 標頭。在瀏覽器沙箱裡才會出現。
+### 設計優先級
 
-## 十、未做但討論過的功能（按曾認可的優先級）
+數字可讀性 > 資訊密度 > 視覺效果
 
-| 優先 | 項目 | 工作量 |
-|---|---|---|
-| 高 | Email 警示（接 Resend） | 小 |
-| 中 | DRIP 自動再投資（配息觸發加碼） | 小 |
-| 中 | 被動收入面板再拆細（月/季/年） | 小 |
-| 中 | 多基準幣別（EUR/USD as base — 使用者 2026/6 月可能搬歐洲） | 中 |
-| 中 | 匿名 read-only 分享連結 | 中 |
-| 低 | 券商 CSV 格式自動辨識（富邦/永豐/Binance/MAX） | 大（需真實 sample） |
-| 低 | 自動同步券商持倉（Binance/Coinbase API key） | 大 |
-| 低 | 匯率歷史 snapshot（修 cost basis 累積誤差） | 中 |
+禁止為了「比較漂亮」犧牲：
+- 表格數字對齊
+- 財務數值的字重與對比
+- 圖表的資訊密度
 
-## 十一、開發約定
+### 視覺語言：測繪桌 Survey Table（2026-09-26 起）
 
-- 每個改動獨立 commit（使用者要求可回滾）
-- Commit message 用繁中，簡短說明動機 + 做了什麼 + 驗證結果
-- 重大 schema 變更必須提醒「請到 Supabase 跑 supabase/X.sql」
-- 不擅自做使用者沒明說的決定；遇到設計方向選擇先問
-- 不可逆操作（刪檔、覆寫、rebase --force）執行前先確認
-- 跑 build / test 失敗就停下來修，不要 push 失敗的東西
-- **`package.json` 加 `overrides` 時，一併寫下它的退場條件**（2026-09-03 加）。
-  這裡曾有一條 `overrides.next.postcss = "8.5.10"`，寫下當時是資安修補；
-  等 `next` 自己帶的 postcss 超過那個版本之後，同一條就變成把相依壓回舊版。
-  override 沒有到期日，`npm audit` 也不會提醒——只能靠升級時順手複查。
-  該條已於 2026-09-03 隨 Next 16.3.4 升級刪除。
+- 色票：冷紙 #E7EEF0、石墨 #101820、測量藍 #195F7A、朱砂 #D14B32、藍灰 #91A8A8。
+  實際值一律走 `globals.css` 的 CSS 變數，兩個主題各自設計、各自量對比
+- 母題：製圖格線、十字軸線、測量註記、套準記號、直角／斜角控制項、髮絲線、等寬數字
+- 圓角全站 0。斜角（clip-path）只給每頁唯一的主按鈕——clip-path 會裁掉 outline，
+  那顆的焦點環改畫成 inset box-shadow
+- 顏色慣例：賺綠虧紅（西方慣例），不改。**跌色與朱砂註記是兩個色**：
+  跌色是資料，朱砂是「請注意」的註記，朱砂一律搭文字與虛線引線，不單靠顏色
+- 字體：IBM Plex Sans（內文、標題）＋ IBM Plex Mono（數字、註記）＋ Noto Sans TC。
+  沒有襯線字體
+- CSS 變數系統（`globals.css`）維持現有架構：`:root` 是深色，`[data-theme="light"]` 覆寫
 
-## 十二、近期 commit 歷程（最新在前）
+### 動畫
 
-執行 `git log --oneline -20` 看完整紀錄。每個 commit 訊息寫了動機與驗證結果。
-完整開發階段見 `docs/StackWorth-專案紀實.pdf` 第 6 章。
+允許 `motion`（Motion for React）與 `gsap`，限制如下：
+
+- 只放在隔離的 `"use client"` 葉節點元件裡，server component 不碰
+- 同一棵元件樹不混用 GSAP 與 Motion
+- 只動 transform 與 opacity，不動 width／height／top／left
+- 一律尊重 `prefers-reduced-motion`：位移換成淡入或直接到終點
+- 動作必須在說明狀態（哪一列變了、指示線移到哪），不做純裝飾
+- 簡單的進場、hover 仍優先用 CSS；`useCountUp.ts`（rAF）與 `useFlipRows.ts`
+  （Web Animations API）照舊可用
+- **GSAP 的授權是 GreenSock Standard "no charge" License，不是開源授權**（OSI 未認可）。
+  免費商用，但不能拿來做與 Webflow 競爭的視覺建站工具；本專案不受影響
+- React Bits 可以當素材來源，但要改寫成符合本節規則的版本（tokens、reduced-motion、
+  不做游標跟隨之類的裝飾），不整包安裝
+- Lenis（平滑捲動）仍然禁止：工具型 UI 不劫持捲動
+
+### 介紹頁例外（`/about`，2026-10-11 起）
+
+公開介紹頁 `/about` 是唯一允許「展示性動作」的頁面，工具頁（含 `/demo`）照舊：
+
+- 允許：主圖描線、註記依序落下、各區塊捲進視野時淡入上移（一次，不重播）
+- 實作限 CSS keyframe／transition 加一支 IntersectionObserver（`RevealRoot`），不裝 motion／gsap
+- 仍然只動 transform、opacity（描線用 SVG 的 stroke-dashoffset）
+- 仍然尊重 `prefers-reduced-motion`：描線直接畫完，位移換成淡入
+- 仍然禁止：Lenis、捲動劫持、捲動綁定的逐格播放（scrubbing）、游標跟隨
+- 沒有 JS 時內容必須照常顯示（隱藏規則以 `html[data-reveal-ready]` 為前提）
+- 頁面上的數字一律取自 `/demo` 同一份資料與計算管線，不另寫行銷用數字
+
+### 禁止
+
+- 禁止套 movie-app 的 cinematic 風格（整頁捲動劇場、Lenis）到這個專案
+- 禁止引入新的 UI library，除非另行確認
+- 禁止套通用 SaaS 設計（紫藍漸層、glassmorphism、置中 hero、陰影卡片堆疊）
+- 圖表以 Recharts（已整合）為主，不引入其他圖表庫；手刻 SVG 可以
+- 禁止硬編碼顏色，統一用 CSS 變數

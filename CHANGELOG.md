@@ -311,8 +311,8 @@
 ### Migration
 - 需先套用 `supabase/migrations/20260718032234_stackworth_v1.sql` 才能使用新的需登入頁面（決策日誌、歷史重播、月報）。請先在測試資料庫執行；本版本沒有直接修改 production。
 
-[Unreleased]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.3.0...HEAD
-[1.3.0]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.2.0...v1.3.0
-[1.2.0]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/zhuang060329-bit/portfolio-tracker/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/zhuang060329-bit/portfolio-tracker/releases/tag/v1.0.0
+[Unreleased]: https://github.com/wppypewo/portfolio-tracker/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/wppypewo/portfolio-tracker/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/wppypewo/portfolio-tracker/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/wppypewo/portfolio-tracker/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/wppypewo/portfolio-tracker/releases/tag/v1.0.0

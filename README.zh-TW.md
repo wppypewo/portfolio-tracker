@@ -1,6 +1,6 @@
 # StackWorth
 
-[![CI](https://github.com/zhuang060329-bit/portfolio-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/zhuang060329-bit/portfolio-tracker/actions/workflows/ci.yml)
+[![CI](https://github.com/wppypewo/portfolio-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/wppypewo/portfolio-tracker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.3.0-informational.svg)](CHANGELOG.md)
 
@@ -85,7 +85,7 @@ https://portfolio-tracker-two-rho.vercel.app/demo ，不需要帳號。
 ## 本機執行
 
 ```bash
-git clone https://github.com/zhuang060329-bit/portfolio-tracker
+git clone https://github.com/wppypewo/portfolio-tracker
 cd portfolio-tracker
 npm install
 cp .env.local.example .env.local   # 填入設定值，變數表見 docs/REFERENCE.md
@@ -109,7 +109,7 @@ npm run dev
 
 ## 作者
 
-[@zhuang060329-bit](https://github.com/zhuang060329-bit)，為自己的多資產、多幣別組合做的每日工具。
+[@wppypewo](https://github.com/wppypewo)，為自己的多資產、多幣別組合做的每日工具。
 
 ## 授權
 

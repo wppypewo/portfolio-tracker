@@ -1,6 +1,6 @@
 # StackWorth
 
-[![CI](https://github.com/zhuang060329-bit/portfolio-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/zhuang060329-bit/portfolio-tracker/actions/workflows/ci.yml)
+[![CI](https://github.com/wppypewo/portfolio-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/wppypewo/portfolio-tracker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.3.0-informational.svg)](CHANGELOG.md)
 
@@ -85,7 +85,7 @@ Amount masking remains available in the authenticated app. Printed monthly repor
 ## Running locally
 
 ```bash
-git clone https://github.com/zhuang060329-bit/portfolio-tracker
+git clone https://github.com/wppypewo/portfolio-tracker
 cd portfolio-tracker
 npm install
 cp .env.local.example .env.local   # fill in; see docs/REFERENCE.md for the variable table
@@ -109,7 +109,7 @@ Known limits: replay and reports use bounded snapshot queries and surface trunca
 
 ## Author
 
-Built by [@zhuang060329-bit](https://github.com/zhuang060329-bit) as a daily-use tool for a multi-asset, multi-currency portfolio.
+Built by [@wppypewo](https://github.com/wppypewo) as a daily-use tool for a multi-asset, multi-currency portfolio.
 
 ## License
 

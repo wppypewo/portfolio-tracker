@@ -26,7 +26,7 @@ src/app/fonts/noto-sans-tc.css（手寫 @font-face + unicode-range）：
 
 NotoSansTC-big5.woff2 仍然產生：它是切片的來源，也是分享圖（scripts/demo-og/）用的整包字。
 改了 UI 文案之後跑 `--tc-slices` 重切即可（不需要重新下載上游字體）。
-新字沒進 UI 片也不會變豆腐，只是多下載一片。取捨的實測數字見 AGENTS.md。
+新字沒進 UI 片也不會變豆腐，只是多下載一片。取捨的實測數字見 docs/DESIGN_NOTES.md。
 """
 
 import pathlib

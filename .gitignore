@@ -46,3 +46,14 @@ design-imports/
 # 上游變數字體原檔約 12.5 MB，只是本機快取；產出的 woff2 才進版控。
 /.font-src/
 /.venv-fonts/
+
+# AI 代理人的本機工作檔（2026-10-25 移出版控，只留在本機）
+/AGENTS.md
+/CLAUDE.md
+/.claude/
+/PROJECT_STATE.md
+/DESIGN_DECISIONS.md
+/docs/prompts/
+/docs/research/
+/docs/records/
+/docs/V1_BASELINE.md

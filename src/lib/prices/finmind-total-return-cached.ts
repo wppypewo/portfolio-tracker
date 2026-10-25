@@ -14,7 +14,7 @@ import { fetchTwTotalReturnSeries } from "./finmind-total-return";
  * 失敗（含額度用完）會往上丟，不會被快取，下一次請求會重試。
  *
  * 用 unstable_cache 而不是 "use cache"：後者要開 Cache Components，
- * 這個專案沒開（全站因 CSP nonce 是動態渲染，見 AGENTS.md 第七節）。
+ * 這個專案沒開（全站因 CSP nonce 是動態渲染，見 docs/DESIGN_NOTES.md「設計決策」）。
  * 回呼裡不能碰 cookies / headers；consumeApiQuota 用的是 service client，不讀 cookie。
  */
 export const getCachedTwTotalReturnSeries = unstable_cache(

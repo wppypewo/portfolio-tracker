@@ -19,7 +19,7 @@
     "@supabase/supabase-js": "^2.116.0",
     "next": "16.4.3",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react-dom": "19.3.1",
     "recharts": "^3.8.1",
     "zod": "^4.4.3"
   },

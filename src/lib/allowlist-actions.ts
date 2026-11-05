@@ -32,7 +32,15 @@ export async function deleteUser(
     return { error: "不能刪除自己" };
   }
 
-  const svc = createServiceClient();
+  // 缺 env 時 createServiceClient 會 throw；不接的話 admin 頁直接落到錯誤邊界。
+  // 與 profile-actions.ts 的 deleteMyAccount 同一套處理。
+  let svc: ReturnType<typeof createServiceClient>;
+  try {
+    svc = createServiceClient();
+  } catch {
+    console.error("[deleteAllowlistUser] service client 初始化失敗");
+    return { error: "刪除功能暫時無法使用，請檢查伺服器環境變數" };
+  }
   const { error } = await svc.auth.admin.deleteUser(userId);
   if (error) {
     // 不印 userId：admin 操作 log 也不需要把被刪除者的 id 留下來。

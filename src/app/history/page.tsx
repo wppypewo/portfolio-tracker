@@ -101,7 +101,9 @@ export default async function HistoryPage({
           "account_id,snapshot_date,quantity,unit_price,fx_rate,value_base,cost_basis_twd,cost_basis_native,realized_pnl_twd,account_status",
         )
         .lte("snapshot_date", endDate)
-        .order("snapshot_date", { ascending: true })
+        // 由新到舊：撞到筆數上限時被砍的是最舊那段（缺口訊息也這樣寫），
+        // 期末重播要用的最新資料一定拿得到。下游重播函式都自己排序，不依賴這裡的順序。
+        .order("snapshot_date", { ascending: false })
         .order("account_id", { ascending: true })
         .range(from, to);
       return { data: res.data, error: res.error };
@@ -111,7 +113,9 @@ export default async function HistoryPage({
         .from("account_status_history")
         .select("account_id,status,effective_at,source")
         .lte("effective_at", `${endDate}T23:59:59+08:00`)
-        .order("effective_at", { ascending: true })
+        // 由新到舊：撞到筆數上限時被砍的是最舊那段（缺口訊息也這樣寫），
+        // 期末重播要用的最新資料一定拿得到。下游重播函式都自己排序，不依賴這裡的順序。
+        .order("effective_at", { ascending: false })
         .order("account_id", { ascending: true })
         .range(from, to);
       return { data: res.data, error: res.error };

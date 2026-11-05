@@ -59,7 +59,10 @@ export async function deleteAccount(
     .from("accounts")
     .delete()
     .eq("id", accountId);
-  if (deleteError) return { error: deleteError.message };
+  if (deleteError) {
+    console.error(`[deleteAccount] 刪除失敗 code=${deleteError.code ?? "unknown"}`);
+    return { error: "刪除失敗，資料未變更。請重新整理後再試" };
+  }
 
   revalidatePath("/");
   redirect("/");

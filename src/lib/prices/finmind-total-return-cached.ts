@@ -1,6 +1,6 @@
 // 僅供伺服器端使用（裡面會經 api-budget 用到 service client）。嚴禁在前端 import 此檔。
 import { unstable_cache } from "next/cache";
-import { fetchTwTotalReturnSeries } from "./finmind-total-return";
+import { fetchTwSplits, fetchTwTotalReturnSeries } from "./finmind-total-return";
 
 /**
  * 含息序列的快取版，給帳戶頁用。
@@ -21,4 +21,15 @@ export const getCachedTwTotalReturnSeries = unstable_cache(
   (symbol: string) => fetchTwTotalReturnSeries(symbol),
   ["tw-total-return-series"],
   { revalidate: 3600 },
+);
+
+/**
+ * 分割事件的快取版，給首頁與試算頁的 0050 對照用。
+ * 這兩頁每次渲染都會抓 0050 收盤，不快取的話每開一次首頁多扣 1 次 FinMind 額度。
+ * 分割一年頂多幾次，快取一天；同一個代號一天只扣一次。失敗不會被快取。
+ */
+export const getCachedTwSplits = unstable_cache(
+  (symbol: string) => fetchTwSplits(symbol),
+  ["tw-splits"],
+  { revalidate: 86400 },
 );

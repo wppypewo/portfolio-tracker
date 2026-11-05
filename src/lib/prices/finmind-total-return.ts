@@ -82,6 +82,17 @@ async function fetchDataset(
   return json.data as FinmindRow[];
 }
 
+/**
+ * 只抓分割事件，扣 1 次 FinMind 額度。失敗往上丟。
+ * 給只需要還原分割、不還原配息的原始收盤用（首頁與試算頁的 0050 對照）。
+ */
+export async function fetchTwSplits(symbol: string): Promise<SplitEvent[]> {
+  await consumeApiQuota("finmind");
+  return parseFinmindSplits(
+    await fetchDataset("TaiwanStockSplitPrice", symbol, false),
+  );
+}
+
 export type TwTotalReturnSeries = {
   series: DailyClose[];
   dividendCount: number;

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { scanAlerts } from "./alerts-scan";
 
@@ -120,5 +120,59 @@ describe("scanAlerts", () => {
 
     expect(result.triggered).toBe(0);
     expect(calls.some((c) => c.table === "alerts" && c.op === "update")).toBe(false);
+  });
+
+  describe("配置偏離每天提醒一次", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const driftAlert = (lastTriggeredAt: string) => ({
+      ...priceAlert,
+      type: "allocation_drift",
+      account_id: null,
+      threshold: 5,
+      last_triggered_at: lastTriggeredAt,
+    });
+    const tables = (lastTriggeredAt: string) => ({
+      alerts: [driftAlert(lastTriggeredAt)],
+      profiles: [{ user_id: "me", allocation_targets: { us_stock: 50 } }],
+      accounts: [account("me")],
+    });
+
+    it("前一天觸發過、相隔不到 24 小時，今天仍然提醒", async () => {
+      // cron 排在 06:00 UTC，Hobby 方案在那個小時內浮動：
+      // 昨天 06:50 跑、今天 06:20 跑，只隔 23.5 小時。
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-11-06T06:20:00Z"));
+      const { client, calls } = fakeSupabase(tables("2026-11-05T06:50:00Z"));
+
+      const result = await scanAlerts(client);
+
+      expect(result.triggered).toBe(1);
+      expect(calls.map((c) => `${c.table}:${c.op}`)).toContain("notifications:insert");
+    });
+
+    it("同一個台北日已經觸發過就不再提醒", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-11-06T06:20:00Z"));
+      const { client, calls } = fakeSupabase(tables("2026-11-06T06:05:00Z"));
+
+      const result = await scanAlerts(client);
+
+      expect(result.triggered).toBe(0);
+      expect(calls.some((c) => c.op === "insert")).toBe(false);
+    });
+
+    it("以台北日切換：UTC 同一天、台北已跨日時照常提醒", async () => {
+      // 2026-11-05T15:30Z 是台北 11-05 23:30；2026-11-05T16:30Z 是台北 11-06 00:30。
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-11-05T16:30:00Z"));
+      const { client } = fakeSupabase(tables("2026-11-05T15:30:00Z"));
+
+      const result = await scanAlerts(client);
+
+      expect(result.triggered).toBe(1);
+    });
   });
 });

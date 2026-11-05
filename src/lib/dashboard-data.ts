@@ -210,27 +210,42 @@ export function buildDashboardData(input: DashboardInputs): DashboardData {
     }))
     .sort((a, b) => b.actual + b.target - a.actual - a.target);
 
-  const byDate = new Map<string, number>();
   const byAccount = new Map<string, { date: string; value: number }[]>();
   for (const snapshot of snapRows) {
     if (!activeAccountIds.has(snapshot.account_id)) continue;
     const value = Number(snapshot.value_base);
-    byDate.set(
-      snapshot.snapshot_date,
-      (byDate.get(snapshot.snapshot_date) ?? 0) + value,
-    );
     const rows = byAccount.get(snapshot.account_id) ?? [];
     rows.push({ date: snapshot.snapshot_date, value });
     byAccount.set(snapshot.account_id, rows);
   }
-  const lineData = [...byDate.entries()]
-    .map(([date, value]) => ({ date, value }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  for (const rows of byAccount.values()) {
+    rows.sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  // 各帳戶的快照日不一定相同：cron 只替有代號的非手動帳戶寫每日快照，
+  // 手動帳戶只在建立或異動當天有一筆，報價失敗的帳戶那天也沒有。
+  // 若直接按日相加，缺快照的帳戶那天等於 0，淨值曲線下陷，TWR、回撤、Sharpe 都把它當成虧損。
+  // 與 history-replay 同一口徑：每個日期取各帳戶「當天或之前最近一筆」快照，帳戶第一筆快照之前不計入。
+  const allDates = [...new Set(
+    [...byAccount.values()].flatMap((rows) => rows.map((row) => row.date)),
+  )].sort();
+  const byDate = new Map<string, number>(allDates.map((date) => [date, 0]));
+  for (const rows of byAccount.values()) {
+    let index = 0;
+    let carried: number | null = null;
+    for (const date of allDates) {
+      while (index < rows.length && rows[index].date <= date) {
+        carried = rows[index].value;
+        index++;
+      }
+      if (carried !== null) byDate.set(date, (byDate.get(date) ?? 0) + carried);
+    }
+  }
+  const lineData = allDates.map((date) => ({ date, value: byDate.get(date) ?? 0 }));
   const hasLine = lineData.length >= 2;
 
   const accountDay = new Map<string, number | null>();
   for (const [id, rows] of byAccount) {
-    rows.sort((a, b) => a.date.localeCompare(b.date));
     if (rows.length < 2) {
       accountDay.set(id, null);
       continue;

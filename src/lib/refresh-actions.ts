@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { refreshAccountPrices } from "@/lib/refresh-prices";
+import { applyAccountMutation } from "@/lib/account-mutation";
 
 // 手動刷新自己的報價（RLS client → 只碰得到自己的帳戶）。
 // 冷卻 10 分鐘：以自己 active 非手動帳戶的 max(last_priced_at, updated_at) 判斷，
@@ -11,6 +12,9 @@ import { refreshAccountPrices } from "@/lib/refresh-prices";
 // 只持有台股的人冷卻永遠判定已過，可以連按把全站共用的每日額度打光。
 // updated_at 由 apply_account_mutation 每次寫入時設為 now()，刷新成功一定會動到它；
 // 代價是剛交易、調整過的帳戶也會進冷卻，但交易本身已經抓過一次最新報價。
+// 全部報價都失敗時不會有任何寫入，冷卻原本不會開始：上游一直回錯（代號錯、對方故障），
+// 每按一次就再扣一次共用額度。所以全數失敗時對其中一個帳戶送空 patch，
+// 只把 updated_at 設為 now()，冷卻照同一套規則生效，不另存狀態。
 
 const COOLDOWN_MS = 10 * 60 * 1000;
 
@@ -27,13 +31,15 @@ export async function refreshMyPrices(): Promise<RefreshState> {
 
   const { data: rows, error: qErr } = await supabase
     .from("accounts")
-    .select("last_priced_at,updated_at")
+    .select("id,last_priced_at,updated_at")
     .neq("price_market", "manual")
     .not("symbol", "is", null)
     .eq("status", "active");
   if (qErr) {
     // 原本直接回 qErr.message，那是 PostgREST 的原文，會把欄位名與 policy 名帶到前端。
-    console.error(`[refreshMyPrices] 查詢帳戶失敗 code=${qErr.code ?? "unknown"}`);
+    console.error(
+      `[refreshMyPrices] 查詢帳戶失敗 code=${qErr.code ?? "unknown"}`,
+    );
     return { ok: false, error: "讀取帳戶失敗，請稍後再試" };
   }
   if (!rows || rows.length === 0)
@@ -51,7 +57,11 @@ export async function refreshMyPrices(): Promise<RefreshState> {
 
   const res = await refreshAccountPrices(supabase);
   revalidatePath("/");
-  if (res.ok === 0 && res.failed > 0)
+  if (res.ok === 0 && res.failed > 0) {
+    // 空 patch：不改任何欄位，只讓 RPC 把 updated_at 設為 now()，啟動冷卻。
+    // 失敗不影響回給使用者的訊息；applyAccountMutation 已把錯誤 code 印進 log。
+    await applyAccountMutation(supabase, { accountId: rows[0].id });
     return { ok: false, error: res.errors[0] ?? "全部刷新失敗" };
+  }
   return { ok: true, refreshed: res.ok, failed: res.failed };
 }

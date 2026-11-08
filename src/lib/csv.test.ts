@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { escapeCsvCell } from "./csv";
+import { escapeCsvCell, unescapeCsvCell } from "./csv";
 
 describe("escapeCsvCell", () => {
   it.each(["=1+1", "+SUM(A1:A2)", "-2+3", "@cmd", "\tformula"])(
@@ -22,5 +22,19 @@ describe("escapeCsvCell", () => {
     expect(escapeCsvCell("台股帳戶")).toBe("台股帳戶");
     expect(escapeCsvCell(null)).toBe("");
     expect(escapeCsvCell(undefined)).toBe("");
+  });
+});
+
+describe("unescapeCsvCell", () => {
+  it.each(["=1+1", "+SUM(A1:A2)", "-現金", "@cmd", "\tformula"])(
+    "還原 escapeCsvCell 加上的前導單引號：%s",
+    (value) => {
+      expect(unescapeCsvCell(`'${value}`)).toBe(value);
+    },
+  );
+
+  it("其他以單引號開頭的文字原樣保留", () => {
+    expect(unescapeCsvCell("'95 年存的")).toBe("'95 年存的");
+    expect(unescapeCsvCell("台股帳戶")).toBe("台股帳戶");
   });
 });

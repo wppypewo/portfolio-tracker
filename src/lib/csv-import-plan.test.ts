@@ -569,3 +569,31 @@ describe("往返：匯出檔 → 匯入 → 帳戶終態", () => {
     expect(plan.errors.every((e) => e.includes("成本基礎"))).toBe(true);
   });
 });
+
+describe("parseRows：自家匯出檔的防公式前綴", () => {
+  it("帳戶名稱與備註去掉匯出時加的前導單引號", () => {
+    const cols = mapHeader(EXPORT_CSV_HEADER.map((h) => h.toLowerCase()));
+    const line = [
+      "2026-01-02T00:00:00Z",
+      "'-現金部位",
+      "manual",
+      "",
+      "TWD",
+      "create",
+      "1",
+      "1",
+      "1",
+      "1000",
+      "1000",
+      "0",
+      "0",
+      "1000",
+      "1000",
+      "'=加碼",
+    ].join(",");
+    const { rows, errors } = parseRows([EXPORT_CSV_HEADER.join(","), line], cols);
+    expect(errors).toEqual([]);
+    expect(rows[0].accountName).toBe("-現金部位");
+    expect(rows[0].note).toBe("=加碼");
+  });
+});

@@ -22,6 +22,7 @@ function account(over: Partial<PlanAccount> = {}): PlanAccount {
     realizedPnlTwd: 0,
     hasExistingTransactions: false,
     existingKeys: new Set<string>(),
+    replaceableCreateId: null,
     ...over,
   };
 }
@@ -153,6 +154,74 @@ describe("buildImportPlan：部位異動只允許寫進全新帳戶", () => {
     expect(plan.imported).toBe(1);
     expect(plan.transactions[0].type).toBe("dividend");
     expect(plan.skipped).toBe(1);
+  });
+});
+
+describe("buildImportPlan：只有一筆 create 的帳戶視為全新", () => {
+  const CREATE_AT = new Date("2026-11-08T03:00:00.000Z");
+  function createOnly(over: Partial<PlanAccount> = {}): PlanAccount {
+    return account({
+      hasExistingTransactions: true,
+      existingKeys: new Set([dedupeKey("create", CREATE_AT)]),
+      replaceableCreateId: "tx-create",
+      ...over,
+    });
+  }
+
+  it("部位列照收，那筆 create 列入待刪除", () => {
+    const plan = buildImportPlan([buyRow()], accounts(createOnly()), WITH_COST);
+    expect(plan.imported).toBe(1);
+    expect(plan.skipped).toBe(0);
+    expect(plan.replacedTransactionIds).toEqual(["tx-create"]);
+    expect(plan.accountPatches[0].patch.quantity).toBe(110);
+  });
+
+  it("只有配息時不取代 create", () => {
+    const plan = buildImportPlan(
+      [row({ amountTwd: 900 })],
+      accounts(createOnly()),
+      WITH_COST,
+    );
+    expect(plan.imported).toBe(1);
+    expect(plan.replacedTransactionIds).toEqual([]);
+    expect(plan.accountPatches[0].patch.quantity).toBeUndefined();
+  });
+
+  it("檔案裡同時間的 create 不算重複，否則刪了舊的、新的卻沒寫進去", () => {
+    const plan = buildImportPlan(
+      [buyRow({ type: "create", occurredAt: CREATE_AT })],
+      accounts(createOnly()),
+      WITH_COST,
+    );
+    expect(plan.imported).toBe(1);
+    expect(plan.replacedTransactionIds).toEqual(["tx-create"]);
+  });
+
+  it("部位列全被退回時不取代 create", () => {
+    const plan = buildImportPlan([buyRow()], accounts(createOnly()), NO_COST);
+    expect(plan.imported).toBe(0);
+    expect(plan.replacedTransactionIds).toEqual([]);
+  });
+
+  it("沒有可取代的 create（已有兩筆以上交易）時照舊退回", () => {
+    const plan = buildImportPlan(
+      [buyRow()],
+      accounts(createOnly({ replaceableCreateId: null })),
+      WITH_COST,
+    );
+    expect(plan.imported).toBe(0);
+    expect(plan.replacedTransactionIds).toEqual([]);
+    expect(plan.errors[0]).toContain("已有交易紀錄");
+  });
+
+  it("多個帳戶時只列出有部位列進來的那一個", () => {
+    const other = createOnly({ id: "acc-2", name: "0050", replaceableCreateId: "tx-other" });
+    const plan = buildImportPlan(
+      [buyRow(), row({ accountName: "0050", amountTwd: 300 })],
+      accounts(createOnly(), other),
+      WITH_COST,
+    );
+    expect(plan.replacedTransactionIds).toEqual(["tx-create"]);
   });
 });
 

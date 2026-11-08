@@ -112,8 +112,13 @@ export async function importTransactionsCsv(
         a.last_unit_price == null ? null : Number(a.last_unit_price),
       lastFxRate: a.last_fx_rate == null ? null : Number(a.last_fx_rate),
       realizedPnlTwd: Number(a.realized_pnl_twd ?? 0),
-      hasExistingTransactions: (seen?.size ?? 0) > 0,
-      existingKeys: seen ?? new Set<string>(),
+      hasExistingTransactions: (seen?.count ?? 0) > 0,
+      existingKeys: seen?.keys ?? new Set<string>(),
+      // 唯一一筆交易是 create 才可取代；有第二筆就是真的有歷史，照舊退回部位列。
+      replaceableCreateId:
+        seen && seen.count === 1 && seen.createIds.length === 1
+          ? seen.createIds[0]
+          : null,
     });
   }
 
@@ -133,6 +138,30 @@ export async function importTransactionsCsv(
       `[importTransactionsCsv] 寫入交易失敗 code=${insErr.code ?? "unknown"}`,
     );
     return { ok: false, error: "寫入交易失敗，沒有任何資料被匯入" };
+  }
+
+  // 被匯入歷史取代的 create 占位紀錄。先寫新交易再刪舊的：
+  // 刪除失敗時投入會重複計入，但資料都還在；反過來先刪，寫入失敗就丟了那筆 create。
+  // 加上 type = create 條件，萬一 id 對不上也不會刪到別種交易；
+  // 要求回傳刪除的列，RLS 擋下時 delete 不會報錯、只會刪 0 列，必須自己比對筆數。
+  if (plan.replacedTransactionIds.length > 0) {
+    const { data: deleted, error: delErr } = await supabase
+      .from("transactions")
+      .delete()
+      .in("id", plan.replacedTransactionIds)
+      .eq("type", "create")
+      .select("id");
+    if (delErr || (deleted ?? []).length !== plan.replacedTransactionIds.length) {
+      console.error(
+        `[importTransactionsCsv] 刪除被取代的建立紀錄失敗 code=${delErr?.code ?? "count-mismatch"}`,
+      );
+      return {
+        ok: false,
+        error:
+          "交易已寫入，但帳戶原本的建立紀錄沒有刪除，投入金額會重複計算，帳戶餘額也尚未更新。" +
+          "請到變動紀錄確認，不要重複匯入",
+      };
+    }
   }
 
   // 交易已經寫進去了，接著才更新帳戶終態。兩者不在同一個 transaction 裡：
@@ -161,6 +190,16 @@ export async function importTransactionsCsv(
   return { ok: true, imported: plan.imported, skipped, errors };
 }
 
+/** 單一帳戶的既有交易摘要。 */
+type AccountHistory = {
+  /** `型別|ISO 時間` 指紋。 */
+  keys: Set<string>;
+  /** 交易筆數。指紋會合併同時間同型別的列，不能拿 keys.size 當筆數。 */
+  count: number;
+  /** create 交易的 id。 */
+  createIds: string[];
+};
+
 /**
  * 撈出這些帳戶既有交易的指紋，供重複偵測與「帳戶是否全新」判斷。
  * 查詢失敗回 null——寧可整份退回，也不要因為查不到而把重複偵測整個關掉。
@@ -168,8 +207,8 @@ export async function importTransactionsCsv(
 async function loadHistory(
   supabase: Awaited<ReturnType<typeof createClient>>,
   accountIds: string[],
-): Promise<Map<string, Set<string>> | null> {
-  const byAccount = new Map<string, Set<string>>();
+): Promise<Map<string, AccountHistory> | null> {
+  const byAccount = new Map<string, AccountHistory>();
   if (accountIds.length === 0) return byAccount;
 
   // 逐頁取。原本寫 .limit(20000)，但 PostgREST 的 max-rows（Supabase 預設
@@ -179,7 +218,7 @@ async function loadHistory(
   const { data, error } = await fetchAllPages(async (from, to) => {
     const res = await supabase
       .from("transactions")
-      .select("account_id,type,created_at")
+      .select("id,account_id,type,created_at")
       .in("account_id", accountIds)
       .order("id", { ascending: true })
       .range(from, to);
@@ -193,9 +232,15 @@ async function loadHistory(
   }
 
   for (const t of data ?? []) {
-    const set = byAccount.get(t.account_id) ?? new Set<string>();
-    set.add(dedupeKey(t.type, new Date(t.created_at)));
-    byAccount.set(t.account_id, set);
+    const h = byAccount.get(t.account_id) ?? {
+      keys: new Set<string>(),
+      count: 0,
+      createIds: [],
+    };
+    h.keys.add(dedupeKey(t.type, new Date(t.created_at)));
+    h.count += 1;
+    if (t.type === "create") h.createIds.push(t.id);
+    byAccount.set(t.account_id, h);
   }
   return byAccount;
 }

@@ -19,7 +19,10 @@ import {
 } from "./csv-import-helpers";
 import { unescapeCsvCell } from "./csv";
 
-/** 會改變部位或成本的型別。這些列只允許寫進「還沒有任何交易」的帳戶。 */
+/**
+ * 會改變部位或成本的型別。這些列只允許寫進「還沒有任何交易」的帳戶，
+ * 或「只有一筆建立紀錄」的帳戶（那筆建立紀錄會被匯入的歷史取代）。
+ */
 const POSITION_TYPES: ReadonlySet<TxnType> = new Set<TxnType>([
   "create",
   "adjust_quantity",
@@ -62,8 +65,15 @@ export type PlanAccount = {
   lastUnitPrice: number | null;
   lastFxRate: number | null;
   realizedPnlTwd: number;
-  /** 帳戶在 DB 裡是否已有交易。有的話部位異動列一律退回。 */
+  /** 帳戶在 DB 裡是否已有交易。有的話部位異動列一律退回（見 replaceableCreateId）。 */
   hasExistingTransactions: boolean;
+  /**
+   * 帳戶唯一一筆交易是 create 時，那筆交易的 id；其他情況為 null。
+   * 使用者常先在介面建好帳戶、再匯入歷史，那筆 create 只是「今天投入一次」的占位。
+   * 這種帳戶視為全新：匯入至少一筆部位列時，刪掉這筆 create，由匯入的歷史取代，
+   * 否則 create 的投入會跟歷史裡的買進重複計入。
+   */
+  replaceableCreateId: string | null;
   /** 既有交易的 `型別|ISO 時間` 指紋，用於重複偵測。 */
   existingKeys: ReadonlySet<string>;
 };
@@ -90,6 +100,8 @@ export type PlannedAccountPatch = {
 export type ImportPlan = {
   transactions: PlannedTransaction[];
   accountPatches: PlannedAccountPatch[];
+  /** 要刪除的 create 交易 id：被匯入歷史取代的占位紀錄。 */
+  replacedTransactionIds: string[];
   imported: number;
   skipped: number;
   errors: string[];
@@ -262,17 +274,28 @@ export function buildImportPlan(
 
     // 部位異動會設定絕對狀態。寫進已有歷史的帳戶等於用另一段歷史的終值
     // 覆蓋現況，且錯得很安靜，所以只允許寫進全新的帳戶。
-    if (isPositionType(row.type) && account.hasExistingTransactions) {
+    // 只有一筆 create 的帳戶算全新：那筆 create 會被匯入的歷史取代。
+    const replaceable = account.replaceableCreateId != null;
+    if (
+      isPositionType(row.type) &&
+      account.hasExistingTransactions &&
+      !replaceable
+    ) {
       skipped++;
       errors.push(
         `第 ${row.lineNo} 列：帳戶「${account.name}」已有交易紀錄，` +
-          `部位異動只能匯入全新帳戶；配息與利息不受此限`,
+          `部位異動只能匯入全新帳戶（或只有建立紀錄的帳戶）；配息與利息不受此限`,
       );
       continue;
     }
 
     const key = `${account.id}|${dedupeKey(row.type, row.occurredAt)}`;
-    if (account.existingKeys.has(dedupeKey(row.type, row.occurredAt))) {
+    // 可取代的帳戶唯一的既有指紋就是那筆 create。它會被刪掉，
+    // 不能拿來擋檔案裡同時間的 create，否則刪了舊的、新的又沒寫進去。
+    if (
+      !replaceable &&
+      account.existingKeys.has(dedupeKey(row.type, row.occurredAt))
+    ) {
       skipped++;
       errors.push(
         `第 ${row.lineNo} 列：同帳戶同時間已有同型別的紀錄，視為重複匯入`,
@@ -298,6 +321,7 @@ export function buildImportPlan(
 
   const transactions: PlannedTransaction[] = [];
   const accountPatches: PlannedAccountPatch[] = [];
+  const replacedTransactionIds: string[] = [];
 
   for (const [accountId, bucket] of acceptedByAccount) {
     const account = accountsById.get(accountId);
@@ -354,6 +378,12 @@ export function buildImportPlan(
       realized_pnl_twd: Number(account.realizedPnlTwd ?? 0) + realizedDelta,
     };
 
+    if (lastPositionRow && account.replaceableCreateId != null) {
+      // 有部位列進來，原本那筆 create 就由匯入的歷史取代。
+      // 只有配息、利息時不動它：那筆 create 仍是唯一的部位紀錄。
+      replacedTransactionIds.push(account.replaceableCreateId);
+    }
+
     if (lastPositionRow) {
       // 終態取時間上最後一列。成本基礎是帳戶當前值（匯出時每列都印同一個數字），
       // 取最後一列與取任何一列等價，取最後一列是為了語意一致。
@@ -363,7 +393,7 @@ export function buildImportPlan(
         patch.manual_value_base = lastPositionRow.valueBase;
       } else {
         patch.quantity = lastPositionRow.quantityAfter;
-        // 帳戶是全新的（部位異動只允許匯進全新帳戶），沒有報價就顯示為零。
+        // 帳戶是全新的（部位異動只允許匯進全新或只有 create 的帳戶），沒有報價就顯示為零。
         // 先用最後一列的歷史價填上，下一次刷新報價會蓋成當前價。
         patch.last_unit_price = lastPositionRow.unitPrice;
         patch.last_fx_rate = lastPositionRow.fxRate;
@@ -376,6 +406,7 @@ export function buildImportPlan(
   return {
     transactions,
     accountPatches,
+    replacedTransactionIds,
     imported: transactions.length,
     skipped,
     errors,

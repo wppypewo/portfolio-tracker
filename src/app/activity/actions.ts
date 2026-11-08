@@ -76,7 +76,7 @@ export async function importTransactionsCsv(
   const { data: accountRows, error: accErr } = await supabase
     .from("accounts")
     .select(
-      "id,name,price_market,quantity,manual_value_base,last_unit_price,last_fx_rate,realized_pnl_twd",
+      "id,name,price_market,quantity,manual_value_base,last_unit_price,last_fx_rate,realized_pnl_twd,updated_at",
     );
   if (accErr) {
     console.error(
@@ -99,7 +99,9 @@ export async function importTransactionsCsv(
   }
 
   const accountsByName = new Map<string, PlanAccount>();
+  const updatedAtById = new Map<string, string>();
   for (const a of relevant) {
+    updatedAtById.set(a.id, a.updated_at);
     const seen = history.get(a.id);
     accountsByName.set(a.name.trim(), {
       id: a.id,
@@ -130,58 +132,27 @@ export async function importTransactionsCsv(
     return { ok: true, imported: 0, skipped, errors };
   }
 
-  const { error: insErr } = await supabase.from("transactions").insert(
-    plan.transactions.map((t) => ({ ...t, user_id: user.id })),
-  );
-  if (insErr) {
+  // 寫入交易、刪除被取代的 create、更新帳戶終態，三步在 RPC 裡同一個交易完成
+  // （supabase/migrations/20261108180000_import_transactions_csv.sql），任一步失敗整筆回滾。
+  // 規劃是在交易外算的，帶上讀到的 updated_at，中間有別的寫入就拒絕，不用舊狀態覆蓋。
+  const { error: rpcErr } = await supabase.rpc("import_transactions_csv", {
+    p_transactions: plan.transactions,
+    p_account_patches: plan.accountPatches.map(({ accountId, patch }) => ({
+      account_id: accountId,
+      patch: { ...patch, expected_updated_at: updatedAtById.get(accountId) },
+    })),
+    p_replaced_ids: plan.replacedTransactionIds,
+  });
+  if (rpcErr) {
+    // 與 account-mutation.ts 同一套判準：P0001 是 SQL 裡自己寫的中文說明，可以顯示；
+    // 其他 SQLSTATE 可能帶出表名與 policy 名稱，只印 code。
+    if (rpcErr.code === "P0001") {
+      return { ok: false, error: `${rpcErr.message}（沒有任何資料被匯入）` };
+    }
     console.error(
-      `[importTransactionsCsv] 寫入交易失敗 code=${insErr.code ?? "unknown"}`,
+      `[importTransactionsCsv] 匯入 RPC 失敗 code=${rpcErr.code ?? "unknown"}`,
     );
-    return { ok: false, error: "寫入交易失敗，沒有任何資料被匯入" };
-  }
-
-  // 被匯入歷史取代的 create 占位紀錄。先寫新交易再刪舊的：
-  // 刪除失敗時投入會重複計入，但資料都還在；反過來先刪，寫入失敗就丟了那筆 create。
-  // 加上 type = create 條件，萬一 id 對不上也不會刪到別種交易；
-  // 要求回傳刪除的列，RLS 擋下時 delete 不會報錯、只會刪 0 列，必須自己比對筆數。
-  if (plan.replacedTransactionIds.length > 0) {
-    const { data: deleted, error: delErr } = await supabase
-      .from("transactions")
-      .delete()
-      .in("id", plan.replacedTransactionIds)
-      .eq("type", "create")
-      .select("id");
-    if (delErr || (deleted ?? []).length !== plan.replacedTransactionIds.length) {
-      console.error(
-        `[importTransactionsCsv] 刪除被取代的建立紀錄失敗 code=${delErr?.code ?? "count-mismatch"}`,
-      );
-      return {
-        ok: false,
-        error:
-          "交易已寫入，但帳戶原本的建立紀錄沒有刪除，投入金額會重複計算，帳戶餘額也尚未更新。" +
-          "請到變動紀錄確認，不要重複匯入",
-      };
-    }
-  }
-
-  // 交易已經寫進去了，接著才更新帳戶終態。兩者不在同一個 transaction 裡：
-  // 這裡若失敗，流水在、帳戶餘額沒跟上，而且重試會被「帳戶已有交易」擋住。
-  // 訊息必須講清楚，讓使用者知道要去看變動紀錄而不是重按一次。
-  for (const { accountId, patch } of plan.accountPatches) {
-    const { error: updErr } = await supabase
-      .from("accounts")
-      .update(patch)
-      .eq("id", accountId);
-    if (updErr) {
-      console.error(
-        `[importTransactionsCsv] 更新帳戶失敗 code=${updErr.code ?? "unknown"}`,
-      );
-      return {
-        ok: false,
-        error:
-          "交易已寫入但帳戶餘額更新失敗。請到變動紀錄確認已匯入的內容，不要重複匯入",
-      };
-    }
+    return { ok: false, error: "匯入失敗，沒有任何資料被匯入。請稍後再試" };
   }
 
   revalidatePath("/activity");

@@ -61,5 +61,15 @@ export async function applyAccountMutation(
     p_transaction: args.transaction ?? null,
     p_snapshots: args.snapshots ?? [],
   });
-  return { error: error ? error.message : null };
+  if (!error) return { error: null };
+  // 與 reversal-actions.ts、contributions.ts 同一套判準。這個回傳值會被 9 個
+  // 呼叫端直接顯示在畫面上（含 refreshMyPrices 的 errors[0]）：
+  // P0001 是 plpgsql raise exception，訊息是 SQL 裡自己寫的中文說明
+  // （帳戶不存在或無權限、剛被其他操作更新），顯示出來才有用。
+  // 其他 SQLSTATE 是底層錯誤（RLS、約束違反），原文會帶出表名與 policy 名稱，只印 code 到 log。
+  if (error.code === "P0001") return { error: error.message };
+  console.error(
+    `[applyAccountMutation] RPC 失敗 code=${error.code ?? "unknown"}`,
+  );
+  return { error: "寫入失敗，資料未變更。請重新整理後再試" };
 }

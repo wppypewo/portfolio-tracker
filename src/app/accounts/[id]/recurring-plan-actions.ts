@@ -86,7 +86,8 @@ export async function createRecurringPlan(
           "資料庫還沒有級距設定的欄位，請先套用 supabase/migrations/20260930180000_recurring_tier_config.sql",
       };
     }
-    return { error: insertError.message };
+    console.error(`[createRecurringPlan] 寫入失敗 code=${insertError.code ?? "unknown"}`);
+    return { error: "建立計畫失敗，資料未變更。請稍後再試" };
   }
 
   revalidatePath(`/accounts/${accountId}`);
@@ -118,7 +119,10 @@ export async function togglePlan(
     .from("recurring_plans")
     .update({ active, updated_at: new Date().toISOString() })
     .eq("id", planId);
-  if (updateError) return { error: updateError.message };
+  if (updateError) {
+    console.error(`[togglePlan] 更新失敗 code=${updateError.code ?? "unknown"}`);
+    return { error: "更新計畫失敗，資料未變更。請重新整理後再試" };
+  }
 
   revalidatePath(`/accounts/${plan.account_id}`);
   return { ok: active ? "計畫已啟用" : "計畫已暫停" };
@@ -148,7 +152,10 @@ export async function deletePlan(
     .from("recurring_plans")
     .delete()
     .eq("id", planId);
-  if (deleteError) return { error: deleteError.message };
+  if (deleteError) {
+    console.error(`[deletePlan] 刪除失敗 code=${deleteError.code ?? "unknown"}`);
+    return { error: "刪除計畫失敗，資料未變更。請重新整理後再試" };
+  }
 
   revalidatePath(`/accounts/${plan.account_id}`);
   return { ok: "計畫已刪除" };

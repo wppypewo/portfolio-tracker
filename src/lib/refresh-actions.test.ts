@@ -28,6 +28,11 @@ vi.mock("@/lib/refresh-prices", () => ({
   refreshAccountPrices: (...args: unknown[]) => refreshAccountPrices(...args),
 }));
 
+const applyAccountMutation = vi.fn();
+vi.mock("@/lib/account-mutation", () => ({
+  applyAccountMutation: (...args: unknown[]) => applyAccountMutation(...args),
+}));
+
 import { refreshMyPrices } from "./refresh-actions";
 
 const iso = (msAgo: number) => new Date(Date.now() - msAgo).toISOString();
@@ -36,6 +41,7 @@ const MIN = 60_000;
 beforeEach(() => {
   vi.clearAllMocks();
   getUser.mockResolvedValue({ data: { user: { id: "u1" } } });
+  applyAccountMutation.mockResolvedValue({ error: null });
 });
 
 describe("refreshMyPrices", () => {
@@ -119,5 +125,81 @@ describe("refreshMyPrices", () => {
     const r = await refreshMyPrices();
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toBe("VOO: 上游 429");
+  });
+
+  it("全數刷新失敗：以空 patch 碰一下帳戶，讓冷卻開始計時", async () => {
+    // 沒有這一步，全數失敗時沒有任何寫入，下一次按刷新冷卻判定已過，
+    // 又會再扣一次全站共用的每日額度。
+    selectResult.mockResolvedValue({
+      data: [
+        {
+          id: "acc-1",
+          last_priced_at: iso(20 * MIN),
+          updated_at: iso(20 * MIN),
+        },
+        { id: "acc-2", last_priced_at: null, updated_at: iso(30 * MIN) },
+      ],
+      error: null,
+    });
+    refreshAccountPrices.mockResolvedValue({
+      ok: 0,
+      failed: 2,
+      errors: ["VOO: Twelve Data 找不到 VOO 的報價"],
+    });
+    await refreshMyPrices();
+    expect(applyAccountMutation).toHaveBeenCalledTimes(1);
+    expect(applyAccountMutation).toHaveBeenCalledWith(expect.anything(), {
+      accountId: "acc-1",
+    });
+  });
+
+  it("碰帳戶失敗時仍回原本的抓價錯誤", async () => {
+    selectResult.mockResolvedValue({
+      data: [{ id: "acc-1", last_priced_at: null, updated_at: iso(20 * MIN) }],
+      error: null,
+    });
+    refreshAccountPrices.mockResolvedValue({
+      ok: 0,
+      failed: 1,
+      errors: ["0050: FinMind 找不到台股 0050 資料（代號是否正確？）"],
+    });
+    applyAccountMutation.mockResolvedValue({
+      error: "寫入失敗，資料未變更。請重新整理後再試",
+    });
+    const r = await refreshMyPrices();
+    expect(r).toEqual({
+      ok: false,
+      error: "0050: FinMind 找不到台股 0050 資料（代號是否正確？）",
+    });
+  });
+
+  it("部分成功：成功的寫入已啟動冷卻，不另外碰帳戶", async () => {
+    selectResult.mockResolvedValue({
+      data: [{ id: "acc-1", last_priced_at: null, updated_at: iso(20 * MIN) }],
+      error: null,
+    });
+    refreshAccountPrices.mockResolvedValue({
+      ok: 1,
+      failed: 1,
+      errors: ["X: 失敗"],
+    });
+    const r = await refreshMyPrices();
+    expect(r).toEqual({ ok: true, refreshed: 1, failed: 1 });
+    expect(applyAccountMutation).not.toHaveBeenCalled();
+  });
+
+  it("查詢帳戶清單失敗（failed=0）：沒有扣額度，不碰帳戶", async () => {
+    selectResult.mockResolvedValue({
+      data: [{ id: "acc-1", last_priced_at: null, updated_at: iso(20 * MIN) }],
+      error: null,
+    });
+    refreshAccountPrices.mockResolvedValue({
+      ok: 0,
+      failed: 0,
+      queryFailed: true,
+      errors: ["查詢帳戶清單失敗 code=XX000"],
+    });
+    await refreshMyPrices();
+    expect(applyAccountMutation).not.toHaveBeenCalled();
   });
 });

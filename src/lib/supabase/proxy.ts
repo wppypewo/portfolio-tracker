@@ -1,6 +1,28 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// path 是 prefix 本身，或在 prefix 底下（prefix + "/" 開頭）。
+// 不用單純的 startsWith：startsWith("/auth") 也會放行 /authors、/author-x，
+// 日後新增這類路由時，會在沒人注意的情況下變成不用登入就能看。
+export function isUnder(path: string, prefix: string): boolean {
+  return path === prefix || path.startsWith(`${prefix}/`);
+}
+
+// 未登入也能看的路徑：/login、/auth/*（OAuth callback）、/demo（公開展示頁）、
+// /methodology（公開指標說明頁，從 demo 連入）、/about（公開介紹頁）。
+const PUBLIC_PREFIXES = ["/login", "/auth", "/demo", "/methodology", "/about"];
+
+// 已登入但還在 AAL1 時也放行的路徑，避免 redirect loop。
+const MFA_EXEMPT_PREFIXES = ["/auth/mfa", "/auth/signout", "/login"];
+
+export function isPublicPath(path: string): boolean {
+  return PUBLIC_PREFIXES.some((p) => isUnder(path, p));
+}
+
+export function isMfaExemptPath(path: string): boolean {
+  return MFA_EXEMPT_PREFIXES.some((p) => isUnder(path, p));
+}
+
 // Session 刷新 + 未登入導向。Next 16 用 Proxy（root src/proxy.ts）每個 request 呼叫此函式。
 //
 // extraRequestHeaders 是給 CSP 用的（x-nonce 與 Content-Security-Policy）。
@@ -52,17 +74,8 @@ export async function updateSession(
 
   const path = request.nextUrl.pathname;
 
-  // 未登入，且不在 /login、/auth/*（OAuth callback）、/demo（公開展示頁）、
-  // /methodology（公開指標說明頁，從 demo 連入）或 /about（公開介紹頁）→ 導向登入頁
-  // （根路徑例外，導向介紹頁）。
-  if (
-    !user &&
-    !path.startsWith("/login") &&
-    !path.startsWith("/auth") &&
-    !path.startsWith("/demo") &&
-    !path.startsWith("/methodology") &&
-    !path.startsWith("/about")
-  ) {
+  // 未登入且不在公開路徑（見 PUBLIC_PREFIXES）→ 導向登入頁（根路徑例外，導向介紹頁）。
+  if (!user && !isPublicPath(path)) {
     const url = request.nextUrl.clone();
     // 根路徑是第一次來的人最常打的網址：沒登入的人先看介紹頁，
     // 介紹頁上有登入入口；其他受保護的頁面照舊直接到登入頁。
@@ -71,13 +84,8 @@ export async function updateSession(
   }
 
   // 已登入但有 MFA factor 且 session 仍為 AAL1 → 導向 /auth/mfa 升級到 AAL2。
-  // /auth/mfa、/auth/signout、/login 不檢查避免 redirect loop。
-  if (
-    user &&
-    !path.startsWith("/auth/mfa") &&
-    !path.startsWith("/auth/signout") &&
-    !path.startsWith("/login")
-  ) {
+  // MFA_EXEMPT_PREFIXES 的路徑不檢查，避免 redirect loop。
+  if (user && !isMfaExemptPath(path)) {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (
       aal &&

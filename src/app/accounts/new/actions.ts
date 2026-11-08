@@ -63,8 +63,11 @@ async function persistCreate(args: {
     })
     .select("id")
     .single();
+  // 資料庫原始訊息可能帶出表名、欄位、限制名稱，只記 code，前端給固定訊息。
+  // 與 alert-actions.ts、activity/actions.ts 同一套做法。
   if (accErr || !account) {
-    return { error: `建立帳戶失敗：${accErr?.message ?? "未知錯誤"}` };
+    console.error(`[createAccount] 建立帳戶失敗 code=${accErr?.code ?? "unknown"}`);
+    return { error: "建立帳戶失敗，資料未變更。請稍後再試" };
   }
 
   const { error: txErr } = await supabase.from("transactions").insert({
@@ -77,7 +80,9 @@ async function persistCreate(args: {
     value_after_base: args.valueBase,
     cashflow_twd: -args.valueBase, // 建立帳戶 = 一次性投入：負現金流
   });
-  if (txErr) return { error: `寫入交易失敗：${txErr.message}` };
+  if (txErr) {
+    return rollbackCreatedAccount(supabase, account.id, "transactions", txErr.code);
+  }
 
   const { error: snapErr } = await supabase.from("account_snapshots").insert({
     user_id: user.id,
@@ -88,9 +93,36 @@ async function persistCreate(args: {
     fx_rate: args.fxToBase,
     value_base: args.valueBase,
   });
-  if (snapErr) return { error: `寫入快照失敗：${snapErr.message}` };
+  if (snapErr) {
+    return rollbackCreatedAccount(supabase, account.id, "account_snapshots", snapErr.code);
+  }
 
   redirect("/");
+}
+
+// 三段 insert 不在同一個 transaction 裡。後兩段失敗時，帳戶列已經寫進去了：
+// 沒有 create 交易的帳戶會讓成本與現金流對不起來，使用者看到失敗訊息再按一次
+// 還會多出一個同名帳戶。這裡把剛建的帳戶刪掉；transactions 與 account_snapshots
+// 對 accounts 都是 on delete cascade（supabase/schema.sql），已寫入的部分一起清掉。
+// 刪除本身也可能失敗，那時明講要使用者去首頁確認，不要讓人以為什麼都沒留下。
+async function rollbackCreatedAccount(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  accountId: string,
+  stage: "transactions" | "account_snapshots",
+  code: string | undefined,
+): Promise<FormState> {
+  console.error(`[createAccount] 寫入 ${stage} 失敗 code=${code ?? "unknown"}`);
+  const { error: delErr } = await supabase
+    .from("accounts")
+    .delete()
+    .eq("id", accountId);
+  if (delErr) {
+    console.error(`[createAccount] 回滾帳戶失敗 code=${delErr.code ?? "unknown"}`);
+    return {
+      error: "建立帳戶未完成，且無法自動清除。請到首頁確認是否出現不完整的帳戶並手動刪除",
+    };
+  }
+  return { error: "建立帳戶失敗，資料未變更。請稍後再試" };
 }
 
 // ===== 股票（美股/台股）=====

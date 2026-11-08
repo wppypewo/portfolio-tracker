@@ -33,11 +33,14 @@ export const config = {
   // 排除靜態資源、圖檔與 cron route（cron 自己驗 CRON_SECRET）。
   // sw.js / offline.html / manifest 必須公開可達：SW 註冊與 PWA 安裝
   // 都發生在瀏覽器背景 fetch，被 307 到 /login 會整個裝不起來。
+  // robots.txt 同理：內容是 Disallow: /，爬蟲被導去 /login 就讀不到。
+  // 只排除根目錄這一個檔（加 $），/robots.txt.bak 之類仍要登入。
+  // 行為由 proxy.matcher.test.ts 釘住。
   //
   // 這些排除掉的路徑也拿不到 CSP 標頭。offline.html 是純靜態頁、
   // sw.js 由 worker-src 管，影響有限；matcher 本身跟登入導向綁在一起，
   // 為了 CSP 動它風險大於收益。
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/cron|sw\\.js|offline\\.html|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/cron|sw\\.js|offline\\.html|manifest\\.webmanifest|robots\\.txt$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

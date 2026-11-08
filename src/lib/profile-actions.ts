@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { mfaSatisfied } from "@/lib/supabase/mfa-guard";
 import { DeleteMyAccountSchema } from "@/lib/schemas/action/delete-my-account";
 import {
   SetAllocationTargetsSchema,
@@ -116,6 +117,11 @@ export async function deleteMyAccount(
 
   if (parsed.data.confirmEmail.toLowerCase() !== user.email.toLowerCase()) {
     return { error: "輸入的 email 與登入帳號不符" };
+  }
+
+  // 縱深防禦：proxy 已擋 AAL1，這裡再檢查一次，見 mfa-guard.ts
+  if (!(await mfaSatisfied(supabase))) {
+    return { error: "請先完成兩步驟驗證再刪除帳號" };
   }
 
   // createServiceClient 在缺 env 時會 throw。放著不接的話 server action 直接炸掉，

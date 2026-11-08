@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { isAdmin } from "@/lib/admin";
+import { mfaSatisfied } from "@/lib/supabase/mfa-guard";
 
 export type FormState = { error?: string } | undefined;
 
@@ -14,6 +15,10 @@ async function requireAdmin() {
   } = await supabase.auth.getUser();
   if (!user || !isAdmin(user.email)) {
     return { ok: false as const, error: "需要 admin 權限" };
+  }
+  // 縱深防禦：proxy 已擋 AAL1，這裡再檢查一次，見 mfa-guard.ts
+  if (!(await mfaSatisfied(supabase))) {
+    return { ok: false as const, error: "請先完成兩步驟驗證再操作" };
   }
   return { ok: true as const, currentUserId: user.id };
 }

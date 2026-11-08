@@ -6,8 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const getUser = vi.fn();
 const signOut = vi.fn();
+const getAAL = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({ auth: { getUser, signOut } }),
+  createClient: async () => ({
+    auth: {
+      getUser,
+      signOut,
+      getSession: async () => ({ data: { session: { access_token: "tok" } } }),
+      mfa: { getAuthenticatorAssuranceLevel: getAAL },
+    },
+  }),
 }));
 
 const adminDeleteUser = vi.fn();
@@ -46,6 +54,7 @@ beforeEach(() => {
   adminDeleteUser.mockResolvedValue({ error: null });
   createServiceClient.mockReturnValue({ auth: { admin: { deleteUser: adminDeleteUser } } });
   signOut.mockResolvedValue({ error: null });
+  getAAL.mockResolvedValue({ data: { currentLevel: "aal1", nextLevel: "aal1" }, error: null });
   errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -54,6 +63,28 @@ afterEach(() => {
 });
 
 describe("deleteUser（admin 刪別人）", () => {
+  it("有設 MFA 但 session 還在 AAL1：拒絕，不建 service client", async () => {
+    getAAL.mockResolvedValue({ data: { currentLevel: "aal1", nextLevel: "aal2" }, error: null });
+    const r = await deleteUser(undefined, fd({ userId: OTHER_ID }));
+    expect(r).toEqual({ error: "請先完成兩步驟驗證再操作" });
+    expect(createServiceClient).not.toHaveBeenCalled();
+    expect(adminDeleteUser).not.toHaveBeenCalled();
+  });
+
+  it("AAL 查詢失敗：拒絕（fail closed）", async () => {
+    getAAL.mockResolvedValue({ data: null, error: { message: "x" } });
+    const r = await deleteUser(undefined, fd({ userId: OTHER_ID }));
+    expect(r).toEqual({ error: "請先完成兩步驟驗證再操作" });
+    expect(createServiceClient).not.toHaveBeenCalled();
+  });
+
+  it("有設 MFA 且已到 AAL2：照常刪除", async () => {
+    getAAL.mockResolvedValue({ data: { currentLevel: "aal2", nextLevel: "aal2" }, error: null });
+    const r = await deleteUser(undefined, fd({ userId: OTHER_ID }));
+    expect(r).toBeUndefined();
+    expect(adminDeleteUser).toHaveBeenCalledWith(OTHER_ID);
+  });
+
   it("未登入：拒絕，不建 service client", async () => {
     getUser.mockResolvedValue({ data: { user: null } });
     const r = await deleteUser(undefined, fd({ userId: OTHER_ID }));
@@ -107,6 +138,22 @@ describe("deleteUser（admin 刪別人）", () => {
 });
 
 describe("deleteMyAccount（使用者刪自己）", () => {
+  it("有設 MFA 但 session 還在 AAL1：拒絕，不建 service client、不登出", async () => {
+    getAAL.mockResolvedValue({ data: { currentLevel: "aal1", nextLevel: "aal2" }, error: null });
+    const r = await deleteMyAccount(undefined, fd({ confirmEmail: ME.email }));
+    expect(r).toEqual({ error: "請先完成兩步驟驗證再刪除帳號" });
+    expect(createServiceClient).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("有設 MFA 且已到 AAL2：照常刪除並登出", async () => {
+    getAAL.mockResolvedValue({ data: { currentLevel: "aal2", nextLevel: "aal2" }, error: null });
+    await deleteMyAccount(undefined, fd({ confirmEmail: ME.email }));
+    expect(adminDeleteUser).toHaveBeenCalledWith(ME.id);
+    expect(redirect).toHaveBeenCalledWith("/login");
+  });
+
   it("沒填 email：schema 擋下，不碰 auth", async () => {
     const r = await deleteMyAccount(undefined, fd({ confirmEmail: "  " }));
     expect(r?.error).toBe("請輸入你的 email 以確認");

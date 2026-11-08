@@ -177,10 +177,16 @@ export async function scanAlerts(supabase: SupabaseClient) {
             continue;
           }
           // 價格警示觸發後關閉，避免天天重發
-          await supabase
+          const { error: updateError } = await supabase
             .from("alerts")
             .update({ active: false, last_triggered_at: nowIso })
             .eq("id", alert.id);
+          // 通知已寫入，所以仍算觸發；但停用失敗代表下次 cron 會再發一次，要回報出來。
+          if (updateError) {
+            errors.push(
+              `alert ${alert.id}: 通知已寫入但停用警示失敗 code=${updateError.code ?? "unknown"}，下次掃描可能重發`,
+            );
+          }
           triggered++;
         }
       } else if (alert.type === "allocation_drift") {
@@ -232,10 +238,16 @@ export async function scanAlerts(supabase: SupabaseClient) {
             );
             continue;
           }
-          await supabase
+          const { error: updateError } = await supabase
             .from("alerts")
             .update({ last_triggered_at: nowIso })
             .eq("id", alert.id);
+          // 同上：last_triggered_at 沒更新，24 小時去重就失效。
+          if (updateError) {
+            errors.push(
+              `alert ${alert.id}: 通知已寫入但更新觸發時間失敗 code=${updateError.code ?? "unknown"}，下次掃描可能重發`,
+            );
+          }
           triggered++;
         }
       }

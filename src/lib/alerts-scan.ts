@@ -7,7 +7,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * 為了避免每天觸發同一個警示產生噪音，我們用 last_triggered_at 做去重：
  * - price_above / price_below：每觸發一次就停掉（active=false）。使用者要再次
  *   收到提醒就要自己重新啟用，避免「突破 X」之後天天提醒。
- * - allocation_drift：24 小時內只觸發一次。配置偏離是慢變數，每天提醒一次足夠。
+ * - allocation_drift：同一個台北日只觸發一次。配置偏離是慢變數，每天提醒一次足夠。
+ *   不用「24 小時內」判斷：cron 每天跑一次，但 Vercel Hobby 方案的觸發時間在排定的
+ *   那個小時內浮動（±59 分），抓價耗時也不固定，兩次掃描常常相隔不到 24 小時，
+ *   用 24 小時會變成隔天才再提醒。
  */
 
 type AlertRow = {
@@ -37,6 +40,10 @@ type ProfileSlim = {
   user_id: string;
   allocation_targets: Record<string, number> | null;
 };
+
+function taipeiDay(d: Date): string {
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
+}
 
 function valueOf(a: AccountSlim): number {
   if (a.price_market === "manual") return Number(a.manual_value_base ?? 0);
@@ -120,7 +127,7 @@ export async function scanAlerts(supabase: SupabaseClient) {
 
   const now = new Date();
   const nowIso = now.toISOString();
-  const dayAgo = new Date(now.getTime() - 24 * 3600 * 1000).toISOString();
+  const todayKey = taipeiDay(now);
 
   for (const alert of (alerts ?? []) as AlertRow[]) {
     try {
@@ -177,8 +184,11 @@ export async function scanAlerts(supabase: SupabaseClient) {
           triggered++;
         }
       } else if (alert.type === "allocation_drift") {
-        // 24 小時內若已觸發就跳過
-        if (alert.last_triggered_at && alert.last_triggered_at > dayAgo) {
+        // 今天（台北日）已觸發過就跳過
+        if (
+          alert.last_triggered_at &&
+          taipeiDay(new Date(alert.last_triggered_at)) === todayKey
+        ) {
           continue;
         }
         const profile = profilesMap.get(alert.user_id);

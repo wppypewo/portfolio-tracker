@@ -228,3 +228,56 @@ describe("情境：收入的期間分類與股息/利息拆分", () => {
     expect(data.summary.yieldOnCost).toBeCloseTo(6, 5);
   });
 });
+
+describe("情境：手動帳戶沒有每日快照", () => {
+  // cron 只替有代號的非手動帳戶寫每日快照；手動帳戶只有建立當天一筆。
+  // 曲線與 TWR 要沿用手動帳戶最近一筆快照，不能把沒快照的日子當成 0。
+  it("價格不動時，曲線維持 200k、TWR ≈ 0、無回撤", () => {
+    const start = "2026-06-01";
+    const data = buildDashboardData(
+      inputs({
+        accounts: [
+          acct({ id: "s", price_market: "tw", symbol: "0050", quantity: 1000, last_unit_price: 100, cost_basis_twd: 100_000 }),
+          acct({ id: "m", manual_value_base: 100_000, cost_basis_twd: 100_000 }),
+        ],
+        snapRows: [
+          ...snaps("s", start, Array(40).fill(100_000)),
+          { account_id: "m", snapshot_date: start, value_base: 100_000 },
+        ],
+        cfRows: [
+          { created_at: "2026-06-01T02:00:00Z", cashflow_twd: -100_000 },
+          { created_at: "2026-06-01T03:00:00Z", cashflow_twd: -100_000 },
+        ],
+      }),
+    );
+    expect(data.series).toHaveLength(40);
+    expect(data.series.every((point) => point.value === 200_000)).toBe(true);
+    expect(data.summary.dayChange).toBe(0);
+    expect(data.summary.twrCum).toBeCloseTo(0, 10);
+    expect(data.summary.maxDrawdown).toBeNull();
+  });
+
+  it("帳戶第一筆快照之前不計入，加入當天的投入由 TWR 扣除", () => {
+    const data = buildDashboardData(
+      inputs({
+        accounts: [
+          acct({ id: "s", price_market: "tw", symbol: "0050", quantity: 1000, last_unit_price: 100, cost_basis_twd: 100_000 }),
+          acct({ id: "m", manual_value_base: 50_000, cost_basis_twd: 50_000 }),
+        ],
+        snapRows: [
+          ...snaps("s", "2026-06-01", Array(40).fill(100_000)),
+          { account_id: "m", snapshot_date: "2026-06-11", value_base: 50_000 },
+        ],
+        cfRows: [
+          { created_at: "2026-06-01T02:00:00Z", cashflow_twd: -100_000 },
+          { created_at: "2026-06-11T02:00:00Z", cashflow_twd: -50_000 },
+        ],
+      }),
+    );
+    expect(data.series[9].value).toBe(100_000);
+    expect(data.series[10].value).toBe(150_000);
+    expect(data.series.at(-1)!.value).toBe(150_000);
+    expect(data.summary.twrCum).toBeCloseTo(0, 10);
+    expect(data.summary.maxDrawdown).toBeNull();
+  });
+});

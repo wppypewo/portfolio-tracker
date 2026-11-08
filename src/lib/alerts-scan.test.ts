@@ -8,7 +8,7 @@ type Row = Record<string, unknown>;
 // await 時依表名回傳預先放好的資料。insert / update 記到 calls 供斷言。
 function fakeSupabase(
   tables: Record<string, Row[]>,
-  opts: { insertError?: { code: string } } = {},
+  opts: { insertError?: { code: string }; updateError?: { code: string } } = {},
 ) {
   const calls: { table: string; op: string; payload?: unknown }[] = [];
   const from = (table: string) => {
@@ -31,7 +31,7 @@ function fakeSupabase(
       then: (resolve: (v: unknown) => void) => {
         calls.push({ table, op, payload });
         if (op === "insert") return resolve({ error: opts.insertError ?? null });
-        if (op === "update") return resolve({ error: null });
+        if (op === "update") return resolve({ error: opts.updateError ?? null });
         return resolve({ data: tables[table] ?? [], error: null });
       },
     };
@@ -120,5 +120,35 @@ describe("scanAlerts", () => {
 
     expect(result.triggered).toBe(0);
     expect(calls.some((c) => c.table === "alerts" && c.op === "update")).toBe(false);
+  });
+
+  it("價格警示停用失敗時回報錯誤（通知已寫入仍算觸發）", async () => {
+    const { client } = fakeSupabase(
+      { alerts: [priceAlert], accounts: [account("me")] },
+      { updateError: { code: "40001" } },
+    );
+
+    const result = await scanAlerts(client);
+
+    expect(result.triggered).toBe(1);
+    expect(result.errors[0]).toMatch(/停用警示失敗 code=40001/);
+  });
+
+  it("配置偏離更新觸發時間失敗時回報錯誤", async () => {
+    const { client } = fakeSupabase(
+      {
+        alerts: [
+          { ...priceAlert, type: "allocation_drift", account_id: null, threshold: 5 },
+        ],
+        profiles: [{ user_id: "me", allocation_targets: { us_stock: 50 } }],
+        accounts: [account("me")],
+      },
+      { updateError: { code: "40001" } },
+    );
+
+    const result = await scanAlerts(client);
+
+    expect(result.triggered).toBe(1);
+    expect(result.errors[0]).toMatch(/更新觸發時間失敗 code=40001/);
   });
 });

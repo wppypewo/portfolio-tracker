@@ -38,3 +38,12 @@ export function escapeCsvCell(value: string | null | undefined): string {
 
   return cell;
 }
+
+/**
+ * escapeCsvCell 的反向：匯入自家匯出檔時，把防公式注入加上的前導 ' 拿掉。
+ * 只在 ' 後面緊接 = + - @ \t \r 時才拿，其餘以 ' 開頭的文字原樣保留。
+ * 不還原的話，名稱以 - 開頭的帳戶匯出再匯入會變成「'-…」，對不上原帳戶。
+ */
+export function unescapeCsvCell(cell: string): string {
+  return /^'[=+\-@\t\r]/.test(cell) ? cell.slice(1) : cell;
+}

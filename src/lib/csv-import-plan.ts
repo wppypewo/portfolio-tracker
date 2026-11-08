@@ -17,6 +17,7 @@ import {
   type ColumnIndex,
   type TxnType,
 } from "./csv-import-helpers";
+import { unescapeCsvCell } from "./csv";
 
 /** 會改變部位或成本的型別。這些列只允許寫進「還沒有任何交易」的帳戶。 */
 const POSITION_TYPES: ReadonlySet<TxnType> = new Set<TxnType>([
@@ -139,7 +140,7 @@ function numCell(cols: string[], index: number): number | null {
 
 function textCell(cols: string[], index: number): string | null {
   if (index < 0) return null;
-  return (cols[index] ?? "").trim() || null;
+  return unescapeCsvCell((cols[index] ?? "").trim()).trim() || null;
 }
 
 /**
@@ -157,7 +158,7 @@ export function parseRows(
     const cells = parseCsvLine(lines[i]);
     const lineNo = i + 1;
     const dateStr = (cells[cols.date] ?? "").trim();
-    const accountName = (cells[cols.account] ?? "").trim();
+    const accountName = unescapeCsvCell((cells[cols.account] ?? "").trim()).trim();
     const typeRaw = (cells[cols.type] ?? "").trim();
 
     if (!dateStr || !accountName) {

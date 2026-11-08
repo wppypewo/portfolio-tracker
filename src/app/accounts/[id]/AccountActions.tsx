@@ -339,6 +339,12 @@ export function AccountActions({
                 onChange={(e) => setOccurredAt(e.target.value)}
                 className="field"
               />
+              {/* 補登只寫當天與今天的快照，限制說明見 docs/DESIGN_NOTES.md「已知取捨」 */}
+              {isBackdating && (
+                <span className="border-l border-dashed border-[var(--c-annot)] pl-1.5 font-normal text-[var(--c-annot-text)]">
+                  補登只會更新當天與今天的快照，中間幾天的走勢仍是補登前的股數，可能顯示一段假的下跌。
+                </span>
+              )}
             </label>
 
             <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">

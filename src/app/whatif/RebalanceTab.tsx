@@ -123,8 +123,15 @@ export function RebalanceTab({ data }: { data: RebalanceData }) {
                       </span>
                     )}
                   </th>
-                  <td className="tnum px-3 py-3 text-right text-[var(--c-muted)]">
-                    {r.targetPct.toFixed(0)}%
+                  <td
+                    className="tnum px-3 py-3 text-right text-[var(--c-muted)]"
+                    title={
+                      r.targetPct !== r.rawTargetPct
+                        ? `設定值 ${r.rawTargetPct}%，已按比例正規化`
+                        : undefined
+                    }
+                  >
+                    {Number.isInteger(r.targetPct) ? r.targetPct.toFixed(0) : r.targetPct.toFixed(1)}%
                   </td>
                   <td className="tnum px-3 py-3 text-right">{r.actualPct.toFixed(1)}%</td>
                   <td

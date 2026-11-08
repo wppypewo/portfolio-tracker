@@ -10,8 +10,13 @@ import type { ScenarioHolding } from "./scenario";
 
 export type RebalanceRow = {
   assetClass: string;
-  /** 使用者設定的目標比例（原始值，未正規化） */
+  /**
+   * 目標比例（已正規化，各類加總為 100）。目標加總不是 100 時，
+   * 「偏離」「差額」「本次配置」都以正規化後的比例計算，這裡跟著用同一個口徑。
+   */
   targetPct: number;
+  /** 使用者在設定頁填的原始目標比例（未正規化） */
+  rawTargetPct: number;
   /** 目前實際比例 */
   actualPct: number;
   /** 實際 − 目標，正數代表超配 */
@@ -146,11 +151,13 @@ export function planRebalance({
       const currentTwd = byClass.get(cls) ?? 0;
       const contributionForClass = alloc.get(cls) ?? 0;
       const afterValue = currentTwd + contributionForClass;
-      const targetPct = cleanTargets[cls] ?? 0;
+      const rawTargetPct = cleanTargets[cls] ?? 0;
+      const targetPct = weight(cls) * 100;
       const actualPct = totalTwd > 0 ? (currentTwd / totalTwd) * 100 : 0;
       return {
         assetClass: cls,
-        targetPct,
+        targetPct: round2(targetPct),
+        rawTargetPct,
         actualPct: round2(actualPct),
         driftPp: round2(actualPct - targetPct),
         currentTwd: round2(currentTwd),
@@ -159,7 +166,7 @@ export function planRebalance({
         gapTwd: round2(weight(cls) * totalTwd - currentTwd),
         contributionTwd: round2(contributionForClass),
         afterPct: finalTotal > 0 ? round2((afterValue / finalTotal) * 100) : 0,
-        untargeted: !(targetPct > 0),
+        untargeted: !(rawTargetPct > 0),
       };
     })
     .sort((a, b) => b.gapTwd - a.gapTwd || a.assetClass.localeCompare(b.assetClass));

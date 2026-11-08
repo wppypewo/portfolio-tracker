@@ -170,4 +170,22 @@ describe("planRebalance", () => {
     expect(sum).toBeLessThanOrEqual(33_333 + 0.01);
     expect(sum + r.unallocatedTwd).toBeCloseTo(33_333, 1);
   });
+
+  it("目標加總不是 100 時，目標與偏離用正規化後的比例，與差額同口徑", () => {
+    // 只填 stock 30、fund 20（加總 50）→ 正規化為 60 / 40。
+    // 實際 70 / 30：偏離應為 +10 / −10，而不是對原始值算出的 +40 / +10。
+    const r = planRebalance({
+      holdings: [holding("stock", 700_000), holding("fund", 300_000)],
+      targets: { stock: 30, fund: 20 },
+    });
+    const stock = row(r, "stock");
+    const fund = row(r, "fund");
+    expect(stock.targetPct).toBe(60);
+    expect(stock.rawTargetPct).toBe(30);
+    expect(stock.driftPp).toBe(10);
+    expect(fund.driftPp).toBe(-10);
+    // 偏離方向與差額方向一致：超配者差額為負
+    expect(stock.gapTwd).toBe(-100_000);
+    expect(fund.gapTwd).toBe(100_000);
+  });
 });

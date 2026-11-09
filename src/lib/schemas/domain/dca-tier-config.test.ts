@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_DCA_TIER_CONFIG } from "@/lib/dca-tiers";
 import {
+  DEFAULT_DECISION_LEAD_DAYS,
   DcaTierConfigSchema,
   dcaTierConfigErrorMessage,
   parseStoredDcaTierConfig,
@@ -23,6 +24,7 @@ function tierForm(overrides: Record<string, string> = {}): FormData {
     tierUpMult1: "0.9",
     tierUpPct2: "20",
     tierUpMult2: "0.8",
+    tierLeadDays: "1",
     ...overrides,
   };
   const formData = new FormData();
@@ -31,6 +33,12 @@ function tierForm(overrides: Record<string, string> = {}): FormData {
   }
   return formData;
 }
+
+/** 指標預設值存進 DB 後的樣子：多了決定金額的提前天數。 */
+const STORED_DEFAULT = {
+  ...DEFAULT_DCA_TIER_CONFIG,
+  decisionLeadDays: DEFAULT_DECISION_LEAD_DAYS,
+};
 
 const parseForm = (overrides?: Record<string, string>) =>
   DcaTierConfigSchema.safeParse(readDcaTierConfigForm(tierForm(overrides)));
@@ -45,7 +53,7 @@ describe("DcaTierConfigSchema：表單輸入", () => {
   it("指標預設值的表單字串解析後等於 DEFAULT_DCA_TIER_CONFIG", () => {
     const parsed = parseForm();
     expect(parsed.success).toBe(true);
-    if (parsed.success) expect(parsed.data).toEqual(DEFAULT_DCA_TIER_CONFIG);
+    if (parsed.success) expect(parsed.data).toEqual(STORED_DEFAULT);
   });
 
   it("級距順序亂填時，存成由淺到深", () => {
@@ -60,7 +68,7 @@ describe("DcaTierConfigSchema：表單輸入", () => {
       tierUpMult2: "0.9",
     });
     expect(parsed.success).toBe(true);
-    if (parsed.success) expect(parsed.data).toEqual(DEFAULT_DCA_TIER_CONFIG);
+    if (parsed.success) expect(parsed.data).toEqual(STORED_DEFAULT);
   });
 
   it("回撤門檻填正數或 0 時拒絕，訊息指出是第幾級", () => {
@@ -107,6 +115,22 @@ describe("DcaTierConfigSchema：表單輸入", () => {
     expect(errorOf({ tierUpPct2: "10" })).toBe("高於均線減碼的門檻不能重複");
   });
 
+  it("提前天數：0 到 10 的整數，留空用預設值", () => {
+    for (const [value, expected] of [
+      ["5", 5],
+      ["0", 0],
+      ["10", 10],
+      ["", DEFAULT_DECISION_LEAD_DAYS],
+    ] as const) {
+      const parsed = parseForm({ tierLeadDays: value });
+      expect(parsed.success).toBe(true);
+      if (parsed.success) expect(parsed.data.decisionLeadDays).toBe(expected);
+    }
+    expect(errorOf({ tierLeadDays: "11" })).toBe("提前天數必須介於 0 到 10 之間");
+    expect(errorOf({ tierLeadDays: "-1" })).toBe("提前天數必須介於 0 到 10 之間");
+    expect(errorOf({ tierLeadDays: "1.5" })).toBe("提前天數必須是整數");
+  });
+
   it("均線天數必須是 20 到 500 的整數", () => {
     expect(errorOf({ tierMaLength: "19" })).toBe("均線天數必須介於 20 到 500 之間");
     expect(errorOf({ tierMaLength: "501" })).toBe(
@@ -125,14 +149,19 @@ describe("parseStoredDcaTierConfig：讀回 DB 的值", () => {
   });
 
   it("存進去的設定讀得回來", () => {
+    const config = { ...DEFAULT_DCA_TIER_CONFIG, decisionLeadDays: 5 };
+    expect(parseStoredDcaTierConfig(config)).toEqual({ kind: "valid", config });
+  });
+
+  it("2026-11-09 前存的設定沒有提前天數：讀回來當 1", () => {
     expect(parseStoredDcaTierConfig(DEFAULT_DCA_TIER_CONFIG)).toEqual({
       kind: "valid",
-      config: DEFAULT_DCA_TIER_CONFIG,
+      config: STORED_DEFAULT,
     });
   });
 
   it("沒有減碼級距的設定也算有效", () => {
-    const config = { ...DEFAULT_DCA_TIER_CONFIG, premium: [] };
+    const config = { ...STORED_DEFAULT, premium: [] };
     expect(parseStoredDcaTierConfig(config)).toEqual({ kind: "valid", config });
   });
 

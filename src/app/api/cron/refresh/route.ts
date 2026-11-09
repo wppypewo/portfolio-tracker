@@ -66,7 +66,8 @@ async function runDuePlans(supabase: SupabaseClient) {
   let tierFailed = 0;
   const errors: string[] = [];
 
-  // 級距要用最新的收盤判定，不能拿帳戶頁那份快取一小時的序列，所以 fresh。
+  // 級距用決定日（扣款日往前推計劃設定的天數）當天或之前的收盤判定（切法見 seriesUpToDecisionDate），
+  // 不能拿帳戶頁那份快取一小時的序列，所以 fresh。
   // 每抓一檔扣 3 次 FinMind 額度，同一次執行裡每個代號只抓一次。
   const loadSeries = memoizeSeriesLoader((symbol: string) =>
     fetchTwTotalReturnSeries(symbol, { fresh: true }),

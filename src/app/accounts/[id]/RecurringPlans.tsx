@@ -12,6 +12,12 @@ import { useActionAnnounce } from "@/components/a11y/use-action-announce";
 import { SurveyLabel, Tag, EmptyPlot } from "@/components/survey";
 import { DEFAULT_DCA_TIER_CONFIG } from "@/lib/dca-tiers";
 import type { DcaTierStatus } from "@/lib/dca-tier-status";
+import { tierDecisionDate } from "@/lib/recurring-tier-amount";
+import {
+  DEFAULT_DECISION_LEAD_DAYS,
+  MAX_DECISION_LEAD_DAYS,
+  parseStoredDcaTierConfig,
+} from "@/lib/schemas/domain/dca-tier-config";
 
 export type Plan = {
   id: string;
@@ -284,6 +290,13 @@ function TierStrip({
   const cronSkipText = plan.active
     ? "自動執行時如果還是算不出級距，當天不會買入，隔天再試。"
     : "";
+  // cron 判定級距用的收盤日界線（扣款日往前推提前天數），與 recurring-tier-amount.ts 同一個算法。
+  const storedTier = parseStoredDcaTierConfig(plan.tier_config);
+  const leadDays =
+    storedTier.kind === "valid"
+      ? storedTier.config.decisionLeadDays
+      : DEFAULT_DECISION_LEAD_DAYS;
+  const decisionDate = tierDecisionDate(plan.next_run_date, leadDays);
 
   return (
     <div className="mt-3 border-t border-[var(--c-border)] pt-3">
@@ -354,7 +367,9 @@ function TierStrip({
               {plan.active && (
                 <>
                   <span className="tnum">{plan.next_run_date}</span>{" "}
-                  自動執行時會用當時最新的收盤（通常是前一個交易日）重算級距，金額可能與這裡不同；算不出級距時當天不買，隔天再試。
+                  自動執行時會用{" "}
+                  <span className="tnum">{decisionDate}</span>
+                  （扣款日前 {leadDays} 天）當天或之前最後一個交易日的收盤重算級距，金額可能與這裡不同；算不出級距時當天不買，隔天再試。
                 </>
               )}
             </p>
@@ -458,6 +473,19 @@ function TierConfigFields() {
           className={`field ${controlFieldH} py-0`}
         />
       </label>
+      <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)] sm:max-w-[calc(50%-0.375rem)]">
+        扣款日前幾天決定金額（0-{MAX_DECISION_LEAD_DAYS}）
+        <input
+          name="tierLeadDays"
+          type="number"
+          min="0"
+          max={MAX_DECISION_LEAD_DAYS}
+          step="1"
+          required
+          defaultValue={DEFAULT_DECISION_LEAD_DAYS}
+          className={`field ${controlFieldH} py-0`}
+        />
+      </label>
       <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
         <TierRows
           legend="回撤加碼（相對前高，填負數）"
@@ -478,7 +506,7 @@ function TierConfigFields() {
       </div>
       <p className="text-[length:var(--fs-micro)] font-normal leading-5 text-[var(--c-muted)]">
         {
-          "預設值與 TradingView 指標「DCA 七級距加減碼 v2 (含息序列)」相同。上面的「每次金額」是 1 倍時的基準金額，建議金額取整到百元；回撤與高於均線同時成立時以回撤為準。排程日的自動執行會用當時最新的收盤（通常是前一個交易日）重算級距後買入；算不出級距時當天不買，隔天再試。"
+          "預設值與 TradingView 指標「DCA 七級距加減碼 v2 (含息序列)」相同。上面的「每次金額」是 1 倍時的基準金額，建議金額取整到百元；回撤與高於均線同時成立時以回撤為準。「扣款日前幾天決定金額」是你在券商改金額的那天：例如每月 15 日扣款、10 日收盤後看指標改金額，就填 5。排程日的自動執行會用那天（遇假日則是之前最後一個交易日）的收盤重算級距後買入，與你看到的指標一致；算不出級距時當天不買，隔天再試。"
         }
       </p>
     </div>

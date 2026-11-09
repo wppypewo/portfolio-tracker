@@ -21,6 +21,7 @@ describe.skipIf(!url)("import_transactions_csv (integration)", () => {
     await db.connect();
     await resetAndApply(db, join(__dirname, "..", ".."), [
       "supabase/test-schema.sql",
+      "supabase/rpc-mutations.sql",
       "supabase/migrations/20260718032234_stackworth_v1.sql",
       "supabase/migrations/20260810230000_transaction_fee.sql",
       "supabase/migrations/20261108180000_import_transactions_csv.sql",

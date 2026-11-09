@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { allocationDrifts } from "./allocation-drift";
 
 /**
  * 警示掃描：cron 抓完價後呼叫，掃所有 active alerts 看哪些觸發。
@@ -200,24 +201,19 @@ export async function scanAlerts(supabase: SupabaseClient) {
         const profile = profilesMap.get(alert.user_id);
         const targets = profile?.allocation_targets ?? {};
         const accounts = userAccountsMap.get(alert.user_id) ?? [];
-        const total = accounts.reduce((s, a) => s + valueOf(a), 0);
-        if (total <= 0) continue;
-        const byClass = new Map<string, number>();
-        for (const a of accounts) {
-          byClass.set(
-            a.asset_class,
-            (byClass.get(a.asset_class) ?? 0) + valueOf(a),
-          );
-        }
+        // 目標加總不是 100 時正規化，與再平衡試算、警示頁同一個口徑（見 allocation-drift.ts）。
+        const drifts = allocationDrifts(
+          accounts.map((a) => ({ assetClass: a.asset_class, valueTwd: valueOf(a) })),
+          targets,
+        );
         const breaches: string[] = [];
-        for (const [cls, tgt] of Object.entries(targets)) {
-          const tNum = Number(tgt);
-          if (!Number.isFinite(tNum) || tNum <= 0) continue;
-          const actual = ((byClass.get(cls) ?? 0) / total) * 100;
-          const drift = actual - tNum;
-          if (Math.abs(drift) >= alert.threshold) {
-            const sign = drift > 0 ? "+" : "−";
-            breaches.push(`${cls}: 實際 ${actual.toFixed(1)}% (${sign}${Math.abs(drift).toFixed(1)}%)`);
+        for (const d of drifts) {
+          if (Math.abs(d.driftPp) >= alert.threshold) {
+            const sign = d.driftPp > 0 ? "+" : "−";
+            breaches.push(
+              `${d.assetClass}: 實際 ${d.actualPct.toFixed(1)}%，目標 ${d.targetPct.toFixed(1)}% ` +
+                `(${sign}${Math.abs(d.driftPp).toFixed(1)}%)`,
+            );
           }
         }
         if (breaches.length > 0) {

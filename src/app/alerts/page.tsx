@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/AppHeader";
 import { PageHead } from "@/components/survey";
 import { getUnreadCount } from "@/lib/notifications";
+import { allocationDrifts } from "@/lib/allocation-drift";
 import {
   AlertsClient,
   type AlertAccount,
@@ -79,26 +80,17 @@ export default async function AlertsPage() {
     ccy: a.native_currency,
   }));
 
-  // 目前最大配置偏離（與 cron 同義：只看有設目標的類別，取 max|actual − target|）
+  // 目前最大配置偏離（與 cron 同義：只看有設目標的類別，取 max|actual − target|，
+  // 目標加總不是 100 時正規化，見 allocation-drift.ts）
   const targets =
     ((profile?.allocation_targets ?? {}) as Record<string, number>) || {};
   const driftList = (driftAccounts ?? []) as DriftAccount[];
-  const total = driftList.reduce((s, a) => s + valueOf(a), 0);
-  let currentDrift: number | null = null;
-  if (total > 0) {
-    const byClass = new Map<string, number>();
-    for (const a of driftList) {
-      byClass.set(a.asset_class, (byClass.get(a.asset_class) ?? 0) + valueOf(a));
-    }
-    let maxDrift = -1;
-    for (const [cls, tgt] of Object.entries(targets)) {
-      const tNum = Number(tgt);
-      if (!Number.isFinite(tNum) || tNum <= 0) continue;
-      const actual = ((byClass.get(cls) ?? 0) / total) * 100;
-      maxDrift = Math.max(maxDrift, Math.abs(actual - tNum));
-    }
-    if (maxDrift >= 0) currentDrift = maxDrift;
-  }
+  const drifts = allocationDrifts(
+    driftList.map((a) => ({ assetClass: a.asset_class, valueTwd: valueOf(a) })),
+    targets,
+  );
+  const currentDrift: number | null =
+    drifts.length > 0 ? Math.max(...drifts.map((d) => Math.abs(d.driftPp))) : null;
 
   const alerts: AlertItem[] = (
     (alertRows ?? []) as unknown as {

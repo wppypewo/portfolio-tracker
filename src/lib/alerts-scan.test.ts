@@ -110,7 +110,7 @@ describe("scanAlerts", () => {
         alerts: [
           { ...priceAlert, type: "allocation_drift", account_id: null, threshold: 5 },
         ],
-        profiles: [{ user_id: "me", allocation_targets: { us_stock: 50 } }],
+        profiles: [{ user_id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } }],
         accounts: [account("me")],
       },
       { insertError: { code: "500" } },
@@ -136,7 +136,11 @@ describe("scanAlerts", () => {
     });
     const tables = (lastTriggeredAt: string) => ({
       alerts: [driftAlert(lastTriggeredAt)],
-      profiles: [{ user_id: "me", allocation_targets: { us_stock: 50 } }],
+      // 目標 us_stock 50 / tw_stock 50，實際全在 us_stock：偏離 +50 / −50，一定超過門檻。
+      // 只填 us_stock 50 的話正規化後目標是 100%，偏離為 0，測不到觸發。
+      profiles: [
+        { user_id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } },
+      ],
       accounts: [account("me")],
     });
 
@@ -174,6 +178,50 @@ describe("scanAlerts", () => {
 
       expect(result.triggered).toBe(1);
     });
+
+    describe("目標加總不是 100 時用正規化比例，與再平衡試算同口徑", () => {
+      // 目標 us_stock 30 / fund 20（加總 50）→ 正規化為 60 / 40。
+      const mixed = (fundValue: number) => ({
+        alerts: [driftAlert("2026-11-01T06:00:00Z")],
+        profiles: [{ user_id: "me", allocation_targets: { us_stock: 30, fund: 20 } }],
+        accounts: [
+          { ...account("me"), quantity: 1.5 }, // 1.5 × 500 × 32 = 24000
+          {
+            ...account("me"),
+            id: "acc-2",
+            asset_class: "fund",
+            price_market: "manual",
+            manual_value_base: fundValue,
+          },
+        ],
+      });
+
+      it("實際 60 / 40 等於正規化目標，不提醒（原本會算成 +30 / +20 而誤報）", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-06T06:20:00Z"));
+        const { client, calls } = fakeSupabase(mixed(16000));
+
+        const result = await scanAlerts(client);
+
+        expect(result.triggered).toBe(0);
+        expect(calls.some((c) => c.op === "insert")).toBe(false);
+      });
+
+      it("實際 75 / 25 時偏離 +15 / −15，通知帶正規化後的目標", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-11-06T06:20:00Z"));
+        const { client, calls } = fakeSupabase(mixed(8000));
+
+        const result = await scanAlerts(client);
+
+        expect(result.triggered).toBe(1);
+        const body = String(
+          (calls.find((c) => c.op === "insert")?.payload as { body: string }).body,
+        );
+        expect(body).toContain("us_stock: 實際 75.0%，目標 60.0% (+15.0%)");
+        expect(body).toContain("fund: 實際 25.0%，目標 40.0% (−15.0%)");
+      });
+    });
   });
 
   it("價格警示停用失敗時回報錯誤（通知已寫入仍算觸發）", async () => {
@@ -194,7 +242,7 @@ describe("scanAlerts", () => {
         alerts: [
           { ...priceAlert, type: "allocation_drift", account_id: null, threshold: 5 },
         ],
-        profiles: [{ user_id: "me", allocation_targets: { us_stock: 50 } }],
+        profiles: [{ user_id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } }],
         accounts: [account("me")],
       },
       { updateError: { code: "40001" } },

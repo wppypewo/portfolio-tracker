@@ -73,9 +73,11 @@ describe.skipIf(!url)("import_transactions_csv (integration)", () => {
       replaced,
     ]);
 
+  // 以字串取回 updated_at，保留微秒；pg driver 轉成 Date 只剩毫秒，比對會誤判為已被更新。
+  // 格式與 app 從 PostgREST 拿到的相同。
   const updatedAt = async (id: string) =>
-    (await db.query("select updated_at from accounts where id = $1", [id])).rows[0]
-      .updated_at as Date;
+    (await db.query("select to_json(updated_at) #>> '{}' as v from accounts where id = $1", [id]))
+      .rows[0].v as string;
 
   it("正常路徑：寫交易、刪掉被取代的 create、更新帳戶，投入只算一次", async () => {
     await call(
@@ -87,7 +89,7 @@ describe.skipIf(!url)("import_transactions_csv (integration)", () => {
             quantity: 12,
             cost_basis_twd: 43200,
             realized_pnl_twd: 0,
-            expected_updated_at: (await updatedAt(ACC)).toISOString(),
+            expected_updated_at: await updatedAt(ACC),
           },
         },
       ],
@@ -119,7 +121,7 @@ describe.skipIf(!url)("import_transactions_csv (integration)", () => {
   });
 
   it("讀取後帳戶被別的操作更新過就拒絕，什麼都不寫", async () => {
-    const stale = (await updatedAt(ACC)).toISOString();
+    const stale = await updatedAt(ACC);
     await db.query("update accounts set quantity = 11, updated_at = now() + interval '1 second' where id = $1", [ACC]);
     await expect(
       call(

@@ -4,6 +4,7 @@ import {
   TIER_SERIES_MAX_AGE_DAYS,
   memoizeSeriesLoader,
   resolveCronTierAmount,
+  tierDecisionDate,
 } from "./recurring-tier-amount";
 import { buildTotalReturnSeries } from "./total-return-series";
 import {
@@ -14,6 +15,8 @@ import {
 import fixture from "./__fixtures__/finmind-0050.json";
 
 const TW_ACCOUNT = { price_market: "tw", symbol: "0050" };
+// 多數測試的排程日與 today 同一天，序列最後一筆在前一天。
+const RUN_DATE = "2026-09-30";
 // 設定的均線天數下限是 20，所以測試序列一律 20 筆。
 const SHORT_CONFIG = { ...DEFAULT_DCA_TIER_CONFIG, maLength: 20 };
 /** 前 19 天持平在 100，最後一天是 last。 */
@@ -53,7 +56,7 @@ describe("resolveCronTierAmount", () => {
     const loadSeries = vi.fn();
 
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 8000, tier_config: null },
+      plan: { amount_twd: 8000, tier_config: null, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries,
@@ -68,7 +71,7 @@ describe("resolveCronTierAmount", () => {
 
     const result = await resolveCronTierAmount({
       // Supabase 的 numeric 讀回來是字串。
-      plan: { amount_twd: "8000.00", tier_config: DEFAULT_DCA_TIER_CONFIG },
+      plan: { amount_twd: "8000.00", tier_config: DEFAULT_DCA_TIER_CONFIG, next_run_date: "2026-10-01" },
       account: TW_ACCOUNT,
       today: "2026-10-01",
       loadSeries,
@@ -85,7 +88,7 @@ describe("resolveCronTierAmount", () => {
 
   it("回撤加碼：基準 3333、×1.25，取整到百元", async () => {
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 3333, tier_config: SHORT_CONFIG },
+      plan: { amount_twd: 3333, tier_config: SHORT_CONFIG, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries: loaderOf("2026-09-29", flatThen(88)),
@@ -101,7 +104,7 @@ describe("resolveCronTierAmount", () => {
 
   it("常態級距也回 tiered：金額是取整後的基準金額", async () => {
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 8000, tier_config: SHORT_CONFIG },
+      plan: { amount_twd: 8000, tier_config: SHORT_CONFIG, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries: loaderOf("2026-09-29", flatThen(100)),
@@ -117,7 +120,7 @@ describe("resolveCronTierAmount", () => {
 
   it("取整後不是正數時用基準金額，與帳戶頁一致", async () => {
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 40, tier_config: SHORT_CONFIG },
+      plan: { amount_twd: 40, tier_config: SHORT_CONFIG, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries: loaderOf("2026-09-29", flatThen(100)),
@@ -130,7 +133,7 @@ describe("resolveCronTierAmount", () => {
     const loadSeries = vi.fn();
 
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 8000, tier_config: { maLength: 200 } },
+      plan: { amount_twd: 8000, tier_config: { maLength: 200 }, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries,
@@ -148,7 +151,7 @@ describe("resolveCronTierAmount", () => {
     const loadSeries = vi.fn();
 
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 8000, tier_config: DEFAULT_DCA_TIER_CONFIG },
+      plan: { amount_twd: 8000, tier_config: DEFAULT_DCA_TIER_CONFIG, next_run_date: RUN_DATE },
       account,
       today: "2026-09-30",
       loadSeries,
@@ -162,7 +165,7 @@ describe("resolveCronTierAmount", () => {
     const cause = new Error("FinMind TaiwanStockSplitPrice 回應 HTTP 402");
 
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 8000, tier_config: DEFAULT_DCA_TIER_CONFIG },
+      plan: { amount_twd: 8000, tier_config: DEFAULT_DCA_TIER_CONFIG, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries: vi.fn().mockRejectedValue(cause),
@@ -176,7 +179,7 @@ describe("resolveCronTierAmount", () => {
     cause.name = "ApiBudgetExceededError";
 
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 8000, tier_config: DEFAULT_DCA_TIER_CONFIG },
+      plan: { amount_twd: 8000, tier_config: DEFAULT_DCA_TIER_CONFIG, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries: vi.fn().mockRejectedValue(cause),
@@ -190,7 +193,7 @@ describe("resolveCronTierAmount", () => {
 
   it("序列是空的：把判定的錯誤帶出", async () => {
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: 8000, tier_config: DEFAULT_DCA_TIER_CONFIG },
+      plan: { amount_twd: 8000, tier_config: DEFAULT_DCA_TIER_CONFIG, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries: async () => ({ series: [], dividendCount: 0 }),
@@ -200,7 +203,8 @@ describe("resolveCronTierAmount", () => {
   });
 
   it(`序列最後一筆剛好 ${TIER_SERIES_MAX_AGE_DAYS} 天前仍採用，多一天就不採用`, async () => {
-    const plan = { amount_twd: 8000, tier_config: SHORT_CONFIG };
+    // 排程日 10-01、預設提前 1 天，決定日是 09-30（與 today 同一天）。
+    const plan = { amount_twd: 8000, tier_config: SHORT_CONFIG, next_run_date: "2026-10-01" };
     const closes = flatThen(88);
 
     // 2026-09-16 到 2026-09-30 是 14 天。
@@ -224,11 +228,82 @@ describe("resolveCronTierAmount", () => {
     });
   });
 
+  it("預設提前 1 天：排程日當天的收盤不算，與扣款前看到的指標一致", async () => {
+    // 前 20 天持平，排程日當天跌到 88（回撤 12%）。
+    // 把當天算進去會是 ×1.25；扣款前能看到的最新一根是 09-29，應是 ×1。
+    const result = await resolveCronTierAmount({
+      plan: { amount_twd: 8000, tier_config: SHORT_CONFIG, next_run_date: "2026-09-30" },
+      account: TW_ACCOUNT,
+      today: "2026-09-30",
+      loadSeries: loaderOf("2026-09-30", [...Array<number>(20).fill(100), 88]),
+    });
+
+    expect(result).toEqual({
+      kind: "tiered",
+      amount: 8000,
+      multiplier: 1,
+      asOf: "2026-09-29",
+    });
+  });
+
+  it("隔天重試仍以排程日為界，不改用重試當天之前的收盤", async () => {
+    const result = await resolveCronTierAmount({
+      plan: { amount_twd: 8000, tier_config: SHORT_CONFIG, next_run_date: "2026-09-30" },
+      account: TW_ACCOUNT,
+      today: "2026-10-01",
+      loadSeries: loaderOf("2026-10-01", [...Array<number>(20).fill(100), 88, 70]),
+    });
+
+    expect(result).toMatchObject({ kind: "tiered", multiplier: 1, asOf: "2026-09-29" });
+  });
+
+  it("提前 5 天決定：15 日扣款看 10 日的收盤，之後幾天的漲跌不算", async () => {
+    const plan = {
+      amount_twd: 8000,
+      tier_config: { ...SHORT_CONFIG, decisionLeadDays: 5 },
+      next_run_date: "2026-11-15",
+    };
+
+    // 11-10 以前持平，11-11 起跌到 88：決定日看不到這段跌幅，應是 ×1。
+    const after = await resolveCronTierAmount({
+      plan,
+      account: TW_ACCOUNT,
+      today: "2026-11-16",
+      loadSeries: loaderOf("2026-11-13", [...Array<number>(20).fill(100), 88, 88, 88]),
+    });
+    expect(after).toEqual({ kind: "tiered", amount: 8000, multiplier: 1, asOf: "2026-11-10" });
+
+    // 11-10 當天就跌到 88：使用者收盤後看得到，應是 ×1.25。
+    const onDay = await resolveCronTierAmount({
+      plan,
+      account: TW_ACCOUNT,
+      today: "2026-11-16",
+      loadSeries: loaderOf("2026-11-13", [...Array<number>(20).fill(100), 88, 90, 90, 90]),
+    });
+    expect(onDay).toEqual({ kind: "tiered", amount: 10000, multiplier: 1.25, asOf: "2026-11-10" });
+  });
+
+  it("新舊以決定日衡量：提前天數加上晚幾天執行，不會被誤判成過舊", async () => {
+    // 決定日 11-10，序列最後一筆 10-28（相隔 13 天），today 11-16 已相隔 19 天。
+    const result = await resolveCronTierAmount({
+      plan: {
+        amount_twd: 8000,
+        tier_config: { ...SHORT_CONFIG, decisionLeadDays: 5 },
+        next_run_date: "2026-11-15",
+      },
+      account: TW_ACCOUNT,
+      today: "2026-11-16",
+      loadSeries: loaderOf("2026-10-28", flatThen(100)),
+    });
+
+    expect(result).toMatchObject({ kind: "tiered", asOf: "2026-10-28" });
+  });
+
   it.each([0, -8000, "abc"])("基準金額 %s 無效：回錯誤", async (amount) => {
     const loadSeries = vi.fn();
 
     const result = await resolveCronTierAmount({
-      plan: { amount_twd: amount, tier_config: DEFAULT_DCA_TIER_CONFIG },
+      plan: { amount_twd: amount, tier_config: DEFAULT_DCA_TIER_CONFIG, next_run_date: RUN_DATE },
       account: TW_ACCOUNT,
       today: "2026-09-30",
       loadSeries,
@@ -236,6 +311,17 @@ describe("resolveCronTierAmount", () => {
 
     expect(result).toEqual({ kind: "error", error: "定期定額金額無效" });
     expect(loadSeries).not.toHaveBeenCalled();
+  });
+});
+
+describe("tierDecisionDate", () => {
+  it.each([
+    ["2026-11-15", 5, "2026-11-10"],
+    ["2026-11-15", 0, "2026-11-15"],
+    ["2026-03-02", 5, "2026-02-25"],
+    ["2027-01-03", 5, "2026-12-29"],
+  ])("%s 前 %i 天是 %s", (runDate, leadDays, expected) => {
+    expect(tierDecisionDate(runDate, leadDays)).toBe(expected);
   });
 });
 

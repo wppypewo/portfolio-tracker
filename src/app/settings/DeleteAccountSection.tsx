@@ -5,7 +5,7 @@ import { deleteMyAccount, type FormState } from "@/lib/profile-actions";
 import { useActionAnnounce } from "@/components/a11y/use-action-announce";
 
 /**
- * 刪除帳戶區（危險區）。
+ * 刪除使用者帳號區（危險區）。資產帳戶的刪除在各帳戶頁，兩者用「帳號／資產帳戶」分開稱呼。
  *
  * 二次確認用「手打自己的 email」而不是單純再按一次按鈕：這是不可逆且會連鎖
  * 清掉所有資料的操作，按鈕連點防不了誤觸。email 比對在 server action 內做，
@@ -30,7 +30,7 @@ export function DeleteAccountSection({ email }: { email: string | null }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
           <span className="text-[length:var(--fs-md)] font-semibold text-[var(--c-down)]">
-            刪除帳戶
+            刪除我的 StackWorth 帳號
           </span>
           <span className="mt-0.5 block text-[length:var(--fs-micro)] text-[var(--c-muted)]">
             永久刪除所有資料，無法復原。
@@ -42,7 +42,7 @@ export function DeleteAccountSection({ email }: { email: string | null }) {
             onClick={() => setConfirm(true)}
             className="btn btn-outline-danger whitespace-nowrap"
           >
-            刪除帳戶
+            刪除帳號
           </button>
         )}
       </div>
@@ -56,7 +56,7 @@ export function DeleteAccountSection({ email }: { email: string | null }) {
             送出後會立刻刪除下列全部資料，且沒有回收桶：
           </p>
           <ul className="mt-2 list-inside list-[square] space-y-1 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
-            <li>帳戶與持倉、所有交易紀錄、每日淨值快照</li>
+            <li>所有資產帳戶與持倉、交易紀錄、每日淨值快照</li>
             <li>投資決策與覆盤紀錄</li>
             <li>定期定額計劃與執行紀錄</li>
             <li>警示規則與通知</li>
@@ -96,7 +96,7 @@ export function DeleteAccountSection({ email }: { email: string | null }) {
               disabled={pending || !matched}
               className="btn btn-danger"
             >
-              {pending ? "刪除中…" : "永久刪除我的帳戶"}
+              {pending ? "刪除中…" : "永久刪除我的帳號"}
             </button>
             <button
               type="button"

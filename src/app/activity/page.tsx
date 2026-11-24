@@ -89,6 +89,7 @@ export default async function ActivityPage() {
           sub={
             <>
               所有帳戶的變動，依時間倒序 · 最近 <span className="tnum">{rows.length}</span> 筆
+              {rows.length >= 200 && "（這裡最多列 200 筆，更早的紀錄在「下載 CSV」裡）"}
             </>
           }
           action={

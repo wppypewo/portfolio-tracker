@@ -231,7 +231,7 @@ export default async function AccountDetail({
 
         {account.status === "archived" && (
           <p className="mt-4 border-l border-dashed border-[var(--c-annot)] pl-2 text-[length:var(--fs-sm)] text-[var(--c-annot-text)]">
-            此帳戶已歸檔：cron 不會自動抓價，首頁總值不計入此帳戶。
+            此帳戶已封存：系統不會再自動抓價，總覽的總值也不算它。要恢復，按頁面下方的「取消封存」。
           </p>
         )}
 
@@ -392,7 +392,7 @@ export default async function AccountDetail({
                     <span className="font-semibold text-[var(--c-annot-text)]">
                       注意
                     </span>{" "}
-                    讀不到定期定額計劃。若剛部署新版，請確認資料庫已套用最新的 migration。
+                    讀不到定期定額計劃，資料沒有變動。重新整理再試一次。
                   </p>
                 ) : tierSymbol ? (
                   <Suspense
@@ -403,10 +403,17 @@ export default async function AccountDetail({
                 ) : (
                   <RecurringPlanList plans={plans} />
                 )}
-                <AddRecurringPlanForm
-                  accountId={account.id}
-                  tierAvailable={account.price_market === "tw"}
-                />
+                {/* 封存帳戶送出新計畫會被 server 擋下（帳戶已封存），乾脆不給填 */}
+                {account.status === "archived" ? (
+                  <p className="text-[length:var(--fs-micro)] text-[var(--c-muted)]">
+                    封存中的帳戶不能新增定期定額；取消封存後就能設定。
+                  </p>
+                ) : (
+                  <AddRecurringPlanForm
+                    accountId={account.id}
+                    tierAvailable={account.price_market === "tw"}
+                  />
+                )}
               </div>
             </section>
           )}

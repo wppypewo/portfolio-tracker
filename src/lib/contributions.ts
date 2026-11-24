@@ -192,7 +192,7 @@ export async function executeRecurringPlan(args: {
   }
 
   if (account.status === "archived") {
-    return { ok: false, error: "帳戶已歸檔" };
+    return { ok: false, error: "帳戶已封存" };
   }
   if (account.price_market === "manual" || !account.symbol) {
     return { ok: false, error: "手動帳戶無法執行定期定額" };

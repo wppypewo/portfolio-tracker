@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAnnounceValue } from "@/components/a11y/use-action-announce";
 import { createClient } from "@/lib/supabase/client";
+import { authErrorToZh } from "@/lib/auth-error-zh";
 import { AUTH_ERROR, AUTH_LABEL, AUTH_MAIN, AUTH_OK, AuthCard } from "@/components/AuthCard";
 
 type Mode = "signIn" | "signUp" | "reset";
@@ -38,7 +39,7 @@ export default function LoginPage() {
     });
     if (e) {
       setLoading(false);
-      setError(`Google 登入失敗：${e.message}`);
+      setError(authErrorToZh(e, "Google 登入失敗，請再試一次"));
     }
   }
 
@@ -56,7 +57,7 @@ export default function LoginPage() {
       });
       setLoading(false);
       if (e1) {
-        setError(e1.message);
+        setError(authErrorToZh(e1, "註冊失敗，請稍後再試"));
       } else {
         // 保留在 signUp mode 顯示成功訊息，使用者讀完自己按「返回登入」
         setMessage(
@@ -72,7 +73,7 @@ export default function LoginPage() {
       });
       setLoading(false);
       if (e2) {
-        setError(e2.message);
+        setError(authErrorToZh(e2, "寄送重設信失敗，請稍後再試"));
       } else {
         setMessage(
           `若 ${email} 為已註冊帳號，重設密碼信已寄出。\n` +
@@ -86,7 +87,7 @@ export default function LoginPage() {
       });
       if (e3) {
         setLoading(false);
-        setError(e3.message);
+        setError(authErrorToZh(e3, "登入失敗，請稍後再試"));
       } else {
         // 這裡刻意用整頁重載，不是 router.push()。
         // signInWithPassword 剛把 Supabase session cookie 寫進瀏覽器，

@@ -83,6 +83,9 @@ function PlanRow({
     FormState,
     FormData
   >(deletePlan, undefined);
+  // 刪除要按兩次。計畫依 ADR 不能編輯，刪錯了得把金額、日期、級距整份重填，
+  // 而且它就排在「暫停」旁邊，一次點錯就沒了。
+  const [askingDelete, setAskingDelete] = useState(false);
 
   // 這三支成功時都回 ok 字串（已執行本期定期定額／計畫已暫停／計畫已刪除），
   // hook 直接沿用，不另外給成功句。
@@ -218,16 +221,40 @@ function PlanRow({
               {plan.active ? "暫停" : "啟用"}
             </button>
           </form>
-          <form action={deleteAction}>
-            <input type="hidden" name="planId" value={plan.id} />
+          {askingDelete ? (
+            <form
+              action={deleteAction}
+              role="group"
+              aria-label="確認刪除這個定期定額計畫"
+              className="flex items-center gap-1"
+            >
+              <input type="hidden" name="planId" value={plan.id} />
+              <button
+                type="button"
+                onClick={() => setAskingDelete(false)}
+                disabled={deletePending}
+                className={`${controlH} btn btn-ghost btn-sm btn-fit`}
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                autoFocus
+                disabled={deletePending}
+                className={`${controlH} btn btn-danger btn-sm btn-fit whitespace-nowrap`}
+              >
+                {deletePending ? "刪除中…" : "確認刪除"}
+              </button>
+            </form>
+          ) : (
             <button
-              type="submit"
-              disabled={deletePending}
+              type="button"
+              onClick={() => setAskingDelete(true)}
               className={`${controlH} btn btn-ghost btn-ghost-danger btn-sm btn-fit underline`}
             >
               刪除
             </button>
-          </form>
+          )}
         </div>
       </div>
       {tiered && (

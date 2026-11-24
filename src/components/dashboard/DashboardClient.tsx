@@ -37,7 +37,7 @@ export function DashboardClient({
   const heroRef = useRef<HTMLDivElement>(null);
 
   if (!demo && data.holdings.length === 0) {
-    return <FirstRun />;
+    return <FirstRun archivedCount={data.archivedCount} />;
   }
 
   const allocation = (
@@ -193,7 +193,32 @@ export function DashboardClient({
   );
 }
 
-function FirstRun() {
+/**
+ * 沒有有效帳戶時的首頁。帳戶全都封存的人不是新手，不該叫他「從第一個資產開始」，
+ * 改成告訴他帳戶都還在、去哪裡看。CSV 匯入要對得上既有帳戶名稱，
+ * 一個帳戶都沒有時按下去只會失敗，所以這裡不放匯入鍵，只說先建帳戶。
+ */
+function FirstRun({ archivedCount }: { archivedCount: number }) {
+  if (archivedCount > 0) {
+    return (
+      <section className="mx-auto mt-14 max-w-[520px] rounded-[var(--r-card)] border border-[var(--c-border)] bg-[var(--c-surface)] px-6 py-11 text-center sm:px-8">
+        <h2 className="text-[length:var(--fs-xl)] font-semibold tracking-[-0.02em]">
+          <span className="tnum">{archivedCount}</span> 個帳戶都已封存
+        </h2>
+        <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
+          封存的帳戶和紀錄都還在，只是不算進總資產。到帳戶頁按「取消封存」就會回來。
+        </p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Link href="/?archived=1" className="btn btn-primary">
+            查看封存帳戶
+          </Link>
+          <Link href="/accounts/new" className="btn btn-outline">
+            建立新帳戶
+          </Link>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="mx-auto mt-14 max-w-[520px] rounded-[var(--r-card)] border border-[var(--c-border)] bg-[var(--c-surface)] px-6 py-11 text-center sm:px-8">
       <svg
@@ -211,7 +236,7 @@ function FirstRun() {
       </h2>
       <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
         建立帳戶後，這裡會開始累積淨值趨勢、損益、配置與大盤對照。
-        已有歷史紀錄時，也可以直接從 CSV 匯入。
+        已有歷史紀錄的話，先建好同名帳戶，再到「活動紀錄」匯入 CSV。
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
         <Link
@@ -219,12 +244,6 @@ function FirstRun() {
           className="btn btn-primary"
         >
           建立第一個帳戶
-        </Link>
-        <Link
-          href="/activity"
-          className="btn btn-outline"
-        >
-          匯入 CSV
         </Link>
       </div>
     </section>

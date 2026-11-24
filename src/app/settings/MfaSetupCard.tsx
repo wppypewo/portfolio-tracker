@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { authErrorToZh } from "@/lib/auth-error-zh";
 import { useAnnounceValue } from "@/components/a11y/use-action-announce";
 
 /**
@@ -45,7 +46,7 @@ export function MfaSetupCard() {
   async function load() {
     setLoading(true);
     const { data, error: e } = await supabase.auth.mfa.listFactors();
-    if (e) setError(e.message);
+    if (e) setError(authErrorToZh(e, "讀不到驗證器，請重新整理"));
     setFactors((data?.totp ?? []) as Factor[]);
     setLoading(false);
   }
@@ -73,7 +74,7 @@ export function MfaSetupCard() {
     });
     setBusy(false);
     if (e || !data) {
-      setError(e?.message ?? "啟用失敗");
+      setError(authErrorToZh(e, "啟用失敗，請再試一次"));
       return;
     }
     setEnrollment({
@@ -96,7 +97,7 @@ export function MfaSetupCard() {
     });
     if (e1 || !ch) {
       setBusy(false);
-      setError(e1?.message ?? "challenge 失敗");
+      setError(authErrorToZh(e1, "無法開始驗證，請再試一次"));
       return;
     }
     const { error: e2 } = await supabase.auth.mfa.verify({
@@ -106,7 +107,7 @@ export function MfaSetupCard() {
     });
     setBusy(false);
     if (e2) {
-      setError(e2.message);
+      setError(authErrorToZh(e2, "驗證失敗，請再試一次"));
       return;
     }
     setEnrollment(null);
@@ -130,7 +131,7 @@ export function MfaSetupCard() {
     const { error: e } = await supabase.auth.mfa.unenroll({ factorId });
     setBusy(false);
     if (e) {
-      setError(e.message);
+      setError(authErrorToZh(e, "停用失敗，請再試一次"));
       return;
     }
     setConfirmFactorId(null);

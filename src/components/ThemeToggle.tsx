@@ -52,13 +52,7 @@ export function useThemePref(): ThemePref | null {
   return useSyncExternalStore(subscribe, getPrefSnapshot, getServerSnapshot);
 }
 
-export function setThemePref(pref: ThemePref) {
-  const resolved: ResolvedTheme =
-    pref === "system"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : pref;
+function applyTheme(pref: ThemePref, resolved: ResolvedTheme) {
   document.documentElement.dataset.theme = resolved;
   document.documentElement.dataset.themePref = pref;
   try {
@@ -68,6 +62,26 @@ export function setThemePref(pref: ThemePref) {
     // ignore
   }
   window.dispatchEvent(new Event("theme:change"));
+}
+
+export function setThemePref(pref: ThemePref) {
+  const resolved: ResolvedTheme =
+    pref === "system"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+      : pref;
+  // 深淺色切換用 View Transition 整頁交叉淡化（時長、曲線見 globals.css 的
+  // ::view-transition-*）。不再對 body 背景做 transition：各元件的顏色各自
+  // 過渡，起訖時間不同步，看起來像一塊塊陸續變色。
+  // 實際主題沒變（例如 system → 目前就是的那一色）時直接套用，不播動畫。
+  // 不支援的瀏覽器直接切換。減少動態效果時照樣淡化：淡入淡出沒有位移。
+  const changed = document.documentElement.dataset.theme !== resolved;
+  if (changed && typeof document.startViewTransition === "function") {
+    document.startViewTransition(() => applyTheme(pref, resolved));
+  } else {
+    applyTheme(pref, resolved);
+  }
 }
 
 /**

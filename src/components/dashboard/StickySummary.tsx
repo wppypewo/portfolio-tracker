@@ -58,7 +58,7 @@ export function StickySummary({
     <div
       aria-hidden="true"
       style={{ top }}
-      className={`fixed inset-x-0 z-30 border-b border-[var(--c-line-strong)] bg-[var(--c-page)] transition-opacity duration-200 md:hidden ${
+      className={`fixed inset-x-0 z-30 border-b border-[var(--c-line-strong)] bg-[var(--c-page)] transition-opacity duration-(--dur-base) ease-(--ease-state) md:hidden ${
         shown ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
     >

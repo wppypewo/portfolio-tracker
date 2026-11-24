@@ -15,10 +15,26 @@
    font-mono：數字、註記、軸標與代碼，Plex Mono。
    Mono 只收 ASCII，中文一律掉到 Noto Sans TC；inline 讓 utility 直接吃
    next/font 掛在 <html> 上的變數，不在建置期展開。 */
-/* 繁中字族。@font-face 在 src/app/fonts/noto-sans-tc.css（腳本產生的切片），
-   不跟主題走，所以獨立一條，不放進下方深淺色的 token 區塊。 */
+/* 繁中字族與動效 token 都不跟主題走，所以獨立一塊，不放進下方深淺色的 token 區塊。
+   字族的 @font-face 在 src/app/fonts/noto-sans-tc.css（腳本產生的切片）。 */
 :root {
   --font-tc: "StackWorth TC";
+
+  /* 動效語言：全站只用這四條曲線、五個時長。同一類變化用同一組，不在元件裡另寫數字。
+     - enter：東西出現（浮層、提示、選項）。起步快、尾段減速，落定得乾淨。
+     - exit：東西離開。加速離場，時長約進場的 2/3，讓位給下一個狀態。
+     - move：已在畫面上的東西換位置（FLIP 重排、進度條、長條）。
+     - state：hover、選中、邊框與顏色這類原地的狀態變化。
+     命名避開 Tailwind 內建的 --ease-in / --ease-out，免得蓋掉 ease-out 之類 utility 的定義。 */
+  --ease-enter: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-move: cubic-bezier(0.2, 0, 0, 1);
+  --ease-state: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-press: 90ms;
+  --dur-fast: 120ms;
+  --dur-state: 140ms;
+  --dur-base: 180ms;
+  --dur-move: 260ms;
 }
 
 @theme inline {
@@ -224,7 +240,9 @@ body {
   font-family: var(--font-sans), var(--font-tc), "Noto Sans TC", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  /* 不對 body 的底色與字色做 transition：元件各自的顏色是瞬間換的，只有 body 慢慢變，
+     切換那 0.25 秒裡底色和卡片色不同步，看起來是閃一下。深淺色改由 ThemeToggle
+     用 View Transition 把整頁新舊兩張畫面交叉淡化，所有顏色同一刻到位。 */
 }
 
 /* 跳至主內容連結。不用 clip 隱藏法而是移出畫面上方，取得焦點時滑入，
@@ -242,7 +260,7 @@ body {
   font-size: 13px;
   font-weight: 600;
   box-shadow: var(--c-shadow);
-  transition: transform 140ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--dur-base) var(--ease-enter);
 }
 
 .skip-link:focus {
@@ -273,7 +291,7 @@ main:focus {
 }
 
 .amt {
-  transition: filter 0.2s ease;
+  transition: filter var(--dur-base) var(--ease-state);
 }
 
 [data-privacy="on"] .amt {
@@ -360,7 +378,7 @@ main:focus {
   font-weight: 500;
   box-shadow: var(--c-shadow);
   pointer-events: none;
-  animation: action-toast-life 4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: action-toast-life 4s var(--ease-enter) forwards;
 }
 
 .action-toast-mark {
@@ -412,9 +430,12 @@ main:focus {
 /* Bencho Create menu 的核心原則是「觸發鈕本身展開成選單」，而不是從別處跳出
    一張面板。這裡保留同一錨點、短促按壓回饋與緊接出現的選項，但沿用本專案
    tokens 與 inline SVG，不引入原元件需要的 Framer Motion / Lucide。 */
+/* 面板的進出場走共用的 .pop（transition 版，收到一半再點開會從當下接回去），
+   起點在這裡指定：從 FAB 所在的右下角長出來，收起時縮回同一角。
+   選項各自錯開淡入仍用 keyframe；收起時跟著整塊一起淡出，不再各自錯開。 */
 .create-menu-panel {
+  --pop-from: translateY(8px) scale(0.94);
   transform-origin: bottom right;
-  animation: create-menu-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 .create-menu-trigger[aria-expanded="true"] svg {
@@ -422,11 +443,11 @@ main:focus {
 }
 
 .create-menu-trigger svg {
-  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--dur-base) var(--ease-enter);
 }
 
 .create-menu-item {
-  animation: create-menu-item-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: create-menu-item-in var(--dur-base) var(--ease-enter) both;
 }
 
 .create-menu-item:nth-child(2) {
@@ -435,17 +456,6 @@ main:focus {
 
 .create-menu-item:nth-child(3) {
   animation-delay: 56ms;
-}
-
-@keyframes create-menu-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 @keyframes create-menu-item-in {
@@ -473,11 +483,11 @@ main:focus {
   border: 1px solid var(--c-border);
   border-radius: var(--r-control);
   background: var(--c-surface);
-  transition: border-color 140ms ease;
+  transition: border-color var(--dur-state) var(--ease-state);
 }
 
 .inline-confirm-body {
-  animation: inline-confirm-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: inline-confirm-in var(--dur-base) var(--ease-enter);
 }
 
 @keyframes inline-confirm-in {
@@ -510,11 +520,13 @@ main:focus {
 }
 
 .mfa-reveal {
-  animation: detailsReveal 180ms ease-out;
+  animation: detailsReveal var(--dur-base) var(--ease-enter);
 }
 
+/* 進度條長到新的比例是「位移」：用 move 曲線，時長與 FLIP 重排一致。 */
 .motion-progress {
-  transition-duration: 300ms;
+  transition-duration: var(--dur-move);
+  transition-timing-function: var(--ease-move);
 }
 
 .chart-reveal {
@@ -523,7 +535,7 @@ main:focus {
 }
 
 details[open] > *:not(summary) {
-  animation: detailsReveal 160ms ease-out;
+  animation: detailsReveal var(--dur-base) var(--ease-enter);
 }
 
 @keyframes detailsReveal {
@@ -578,7 +590,7 @@ details[open] > summary::before {
 
 .ledger-row-in {
   opacity: 0;
-  animation: ledgerRowIn 0.32s ease forwards;
+  animation: ledgerRowIn var(--dur-move) var(--ease-enter) forwards;
 }
 
 /* 月報歸因的分岔條從零軸往外長：方向本身就是資訊（正往右、負往左），
@@ -594,7 +606,7 @@ details[open] > summary::before {
 }
 
 .parcel-grow {
-  animation: parcel-grow 0.42s cubic-bezier(0.2, 0, 0, 1) 120ms backwards;
+  animation: parcel-grow 0.42s var(--ease-move) 120ms backwards;
 }
 
 .proj-range {
@@ -635,8 +647,8 @@ a,
 button,
 [role="button"] {
   transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 140ms;
+  transition-timing-function: var(--ease-state);
+  transition-duration: var(--dur-state);
 }
 
 input,
@@ -945,7 +957,69 @@ textarea:disabled {
 }
 
 .tooltip-pop {
-  animation: tooltip-in 0.12s ease both;
+  animation: tooltip-in var(--dur-fast) var(--ease-enter) both;
+}
+
+/* ── 浮層進出場 ──────────────────────────────────────────────────────
+   抽屜、下拉選單、快速記帳面板共用。掛上就從 --pop-from 過渡到原位（@starting-style），
+   關閉時 usePresence 先標 data-closing 讓它播離場，--dur-fast 之後才卸載。
+   用 transition 不用 animation：離場途中再打開，會從當下的位置接回去，不會從頭重播。
+   位移方向由呼叫端用 [--pop-from:…] 指定，要指回觸發點：頂部選單往上收、底部面板往下收。
+   不支援 @starting-style 的瀏覽器（Safari 17.4 以前）進場就是瞬間出現，離場照常。 */
+.pop {
+  transition-property: opacity, transform;
+  transition-duration: var(--pop-dur, var(--dur-base));
+  transition-timing-function: var(--pop-ease, var(--ease-enter));
+}
+
+@starting-style {
+  .pop {
+    opacity: 0;
+    transform: var(--pop-from, none);
+  }
+}
+
+.pop[data-closing] {
+  opacity: 0;
+  transform: var(--pop-from, none);
+  transition-duration: var(--pop-exit-dur, var(--dur-fast));
+  transition-timing-function: var(--ease-exit);
+  pointer-events: none;
+}
+
+/* 遮罩比面板早 30ms 淡完：面板還在收的最後一刻，底下的頁面已經清楚了，
+   視線自然落回原處。遮罩只淡不動，用 enter 曲線讓它一開始就退得明顯。 */
+.pop-scrim[data-closing] {
+  transition-duration: calc(var(--pop-exit-dur, var(--dur-fast)) - 30ms);
+  transition-timing-function: var(--ease-enter);
+}
+
+/* 遮罩是整片可點的 <button>，套到全站的按下縮放會讓四邊往內縮，像畫面在晃。 */
+.pop-scrim:active {
+  transform: none;
+}
+
+/* 數值更新的提示：總資產這類大數字刷新後，底下閃一層極淡的測量藍再退掉。
+   不做跳數、不做位移（大字 1px 位移會在子像素間糊一下），只用底色交代「這個數剛換過」。
+   漲跌方向旁邊的變動數字已經講了，這裡用中性色，不重複上紅綠。 */
+.value-flash {
+  animation: value-flash 640ms var(--ease-state);
+}
+
+@keyframes value-flash {
+  from {
+    background-color: var(--c-accent-soft);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+/* 深淺色切換：整頁新舊畫面交叉淡化，取代各元件各自的顏色 transition。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-base);
+  animation-timing-function: var(--ease-state);
 }
 
 /* 套準記號框：在容器四角外側各畫一個 L 形角標，像製圖紙的裁切記號。
@@ -1160,7 +1234,7 @@ html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
 
 @layer base {
   main {
-    animation: page-in 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation: page-in var(--dur-base) var(--ease-enter) both;
   }
 
   /* 首頁改由各區塊自己依序進場，整頁一起淡入會把節奏蓋掉，所以關掉外層那層。
@@ -1170,11 +1244,11 @@ html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
   }
 
   /* 五個一級區塊依序進場：Hero → 四格 → 持倉與配置 → 趨勢 → 績效。
-     40ms 一階、單個 0.28s，最後一塊在 440ms 結束。順序本身就是版面的閱讀順序，
+     40ms 一階、單個 --dur-move（260ms），最後一塊在 420ms 結束。順序本身就是版面的閱讀順序，
      動作是在講「先看這個，再看那個」，不是裝飾。
      backwards 讓元素在延遲期間先保持在起點，否則會先閃現再退回去。 */
   .ledger > * {
-    animation: page-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+    animation: page-in var(--dur-move) var(--ease-enter) backwards;
   }
   .ledger > *:nth-child(2) {
     animation-delay: 40ms;
@@ -1189,9 +1263,13 @@ html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
     animation-delay: 160ms;
   }
 
+  /* 按下去縮一點，放開彈回。按下用 --dur-press 立刻有反應，放開走一般的 --dur-state。
+     a.btn 是長得像按鈕的連結（例如「新增帳戶」），按下的回饋要和 <button> 一致。 */
   button:not(:disabled):active,
-  [role="button"]:not(:disabled):active {
+  [role="button"]:not(:disabled):active,
+  a.btn:not([aria-disabled="true"]):active {
     transform: scale(0.985);
+    transition-duration: var(--dur-press);
   }
 
   /* 焦點環：全站唯一來源。整條包在 :where() 裡讓權重歸零，加上它住在 base layer，
@@ -1255,9 +1333,17 @@ html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
 
   /* 按下去的縮放是幾何變化；顏色與邊框的 hover / active 回饋照留。 */
   button:not(:disabled):active,
-  [role="button"]:not(:disabled):active {
+  [role="button"]:not(:disabled):active,
+  a.btn:not([aria-disabled="true"]):active {
     transform: none;
   }
+
+  /* 浮層只淡入淡出，不位移。寫在 layer 之外，蓋得過呼叫端的 [--pop-from:…] utility。 */
+  .pop {
+    --pop-from: none;
+  }
+
+  /* 數值閃底是顏色變化，不屬於前庭刺激，照留。深淺色的交叉淡化同理。 */
 
   /* skip-link 滑入：終點狀態要留，過程不要。展開記號已改成 +／− 字元，本來就沒有過程。 */
   details > summary::before,
@@ -1274,7 +1360,6 @@ html[data-reveal-ready] [data-reveal]:not([data-inview]) .pipe-flow {
   .animate-spin,
   .animate-pulse,
   .action-toast,
-  .create-menu-panel,
   .create-menu-item,
   .mfa-reveal,
   .inline-confirm-body {

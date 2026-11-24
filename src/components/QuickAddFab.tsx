@@ -5,6 +5,7 @@ import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { addByAmount, type FormState } from "@/app/accounts/[id]/actions";
 import { useActionAnnounce } from "@/components/a11y/use-action-announce";
 import { SurveyLabel } from "@/components/survey";
+import { usePresence } from "@/components/usePresence";
 
 type Account = {
   id: string;
@@ -38,6 +39,9 @@ export function QuickAddFab({ accounts }: { accounts: Account[] }) {
   const restoreRef = useRef<HTMLElement | null>(null);
   const previousPending = useRef(false);
   const menuId = `quick-create-${useId().replace(/:/g, "")}`;
+  const menu = usePresence(menuOpen);
+  // 手機版面板整張從底部滑出、收回，比桌機的小幅位移走得遠，離場給到 180ms。
+  const sheet = usePresence(quickAddOpen, 180);
 
   useEffect(() => {
     if (previousPending.current && !pending && !state?.error) {
@@ -150,13 +154,15 @@ export function QuickAddFab({ accounts }: { accounts: Account[] }) {
 
   return (
     <>
-      {menuOpen && (
+      {menu.mounted && (
         <div
           ref={menuRef}
           id={menuId}
           role="group"
           aria-label="快速建立"
-          className="create-menu-panel fixed bottom-[calc(max(1rem,env(safe-area-inset-bottom))+64px)] right-4 z-40 w-[220px] overflow-hidden border border-[var(--c-line-strong)] bg-[var(--c-surface)] shadow-[var(--c-shadow)] sm:hidden"
+          inert={menu.closing}
+          data-closing={menu.closing || undefined}
+          className="create-menu-panel pop fixed bottom-[calc(max(1rem,env(safe-area-inset-bottom))+64px)] right-4 z-40 w-[220px] overflow-hidden border border-[var(--c-line-strong)] bg-[var(--c-surface)] shadow-[var(--c-shadow)] sm:hidden"
         >
           <button
             type="button"
@@ -219,19 +225,27 @@ export function QuickAddFab({ accounts }: { accounts: Account[] }) {
         </svg>
       </button>
 
-      {quickAddOpen && (
+      {/* 遮罩與面板拆成兩層，才能各走各的節奏：遮罩只淡、比面板早 30ms 退完；
+          面板在手機是底部抽屜，整張從畫面下緣滑上來、收回去；sm 以上置中，只做小幅浮起。
+          時長與曲線用變數掛在外層，兩層都讀得到。 */}
+      {sheet.mounted && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--c-scrim)] sm:items-center sm:p-5"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) setQuickAddOpen(false);
-          }}
+          inert={sheet.closing}
+          className="fixed inset-0 z-50 flex items-end justify-center [--pop-exit-dur:180ms] sm:items-center sm:p-5 sm:[--pop-exit-dur:var(--dur-fast)]"
         >
+          <div
+            aria-hidden="true"
+            data-closing={sheet.closing || undefined}
+            onClick={() => setQuickAddOpen(false)}
+            className="pop pop-scrim absolute inset-0 bg-[var(--c-scrim)]"
+          />
           <div
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="快速加碼"
-            className="safe-bottom max-h-[92dvh] w-full max-w-md overflow-y-auto border border-[var(--c-line-strong)] bg-[var(--c-surface)] p-4 shadow-[var(--c-shadow)] sm:p-6"
+            data-closing={sheet.closing || undefined}
+            className="pop relative [--pop-from:translateY(100%)] [--pop-dur:var(--dur-move)] [--pop-ease:var(--ease-move)] sm:[--pop-from:translateY(8px)_scale(0.98)] sm:[--pop-dur:var(--dur-base)] sm:[--pop-ease:var(--ease-enter)] safe-bottom max-h-[92dvh] w-full max-w-md overflow-y-auto border border-[var(--c-line-strong)] bg-[var(--c-surface)] p-4 shadow-[var(--c-shadow)] sm:p-6"
           >
             <div className="flex items-center justify-between border-b border-[var(--c-line-strong)] pb-3">
               <div>

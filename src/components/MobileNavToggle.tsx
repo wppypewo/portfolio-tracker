@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { usePresence } from "./usePresence";
 
 type Item = {
   href: string;
@@ -33,6 +34,8 @@ export function MobileNavToggle({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const panelId = `mobile-nav-${useId().replace(/:/g, "")}`;
+  // 關閉時抽屜先往上收回頁首、遮罩先淡掉，--dur-fast 後才卸載。
+  const { mounted, closing } = usePresence(open);
 
   useEffect(() => {
     if (!open) return;
@@ -105,18 +108,24 @@ export function MobileNavToggle({
         </svg>
       </button>
 
-      {open && (
+      {/* 圖示直接換、不做漢堡變叉的變形：按鈕本身不是主角，抽屜從頁首往下展開才是在交代
+          「導覽從這裡出來」。收起時往上縮回同一條線。 */}
+      {mounted && (
         <>
           <button
             type="button"
             aria-label="關閉導覽"
             onClick={() => setOpen(false)}
-            className="fixed inset-0 top-[var(--header-h)] z-30 bg-[var(--c-scrim)] md:hidden"
+            tabIndex={closing ? -1 : undefined}
+            data-closing={closing || undefined}
+            className="pop pop-scrim fixed inset-0 top-[var(--header-h)] z-30 bg-[var(--c-scrim)] md:hidden"
           />
           <nav
             ref={panelRef}
             id={panelId}
-            className="safe-bottom fixed left-0 right-0 top-[var(--header-h)] z-40 flex max-h-[calc(100dvh-var(--header-h))] flex-col overflow-y-auto border-b border-[var(--c-line-strong)] bg-[var(--c-page)] px-4 pb-4 pt-1 md:hidden"
+            inert={closing}
+            data-closing={closing || undefined}
+            className="pop [--pop-from:translateY(-8px)] safe-bottom fixed left-0 right-0 top-[var(--header-h)] z-40 flex max-h-[calc(100dvh-var(--header-h))] flex-col overflow-y-auto border-b border-[var(--c-line-strong)] bg-[var(--c-page)] px-4 pb-4 pt-1 md:hidden"
             aria-label="主要導覽"
           >
             {/* 圖面索引表：一列一項，左邊等寬編號 01–09，列與列之間一條髮絲線。

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Sparkline, type SeriesPoint } from "./DashboardCharts";
 import { fmtUpdatedAt } from "@/lib/format";
 import { RefreshPricesButton } from "@/components/RefreshPricesButton";
@@ -20,6 +21,18 @@ export function Hero({
   const change30 =
     recent.length >= 2 ? recent[recent.length - 1].value - recent[0].value : 0;
   const up30 = change30 >= 0;
+
+  // 刷新報價後總額換值：不做 count-up（儀表板要克制，數字滾動也難讀），
+  // 只在換值那一刻給數字一層 640ms 褪去的淡底，告訴使用者「這裡變了」。
+  // 漲跌方向已經寫在下面的日變動，閃色用中性的 accent-soft，不分紅綠。
+  // 首次渲染不閃；key 改變讓 span 重掛，連續刷新也會重播。
+  const total = Math.round(s.total);
+  const [prevTotal, setPrevTotal] = useState(total);
+  const [flashKey, setFlashKey] = useState(0);
+  if (prevTotal !== total) {
+    setPrevTotal(total);
+    setFlashKey((k) => k + 1);
+  }
 
   return (
     <section className="grid grid-cols-1 gap-6 border-b border-[var(--c-border)] pb-7 pt-4 sm:grid-cols-[minmax(0,1fr)_190px] sm:items-end sm:gap-8 sm:pb-8 sm:pt-7">
@@ -46,8 +59,11 @@ export function Hero({
           {/* 尺寸線：數字底下一條兩端帶刻度的髮絲線，量的就是這個數字的寬度。
               用 border 畫而不是 SVG，寬度自動跟著數字走，不必量字。 */}
           <span className="relative min-w-0">
-            <span className="amt whitespace-nowrap text-[length:var(--fs-display)] font-semibold leading-[0.92] tracking-[-0.02em] tnum">
-              {Math.round(s.total).toLocaleString("en-US")}
+            <span
+              key={flashKey}
+              className={`amt whitespace-nowrap text-[length:var(--fs-display)] font-semibold leading-[0.92] tracking-[-0.02em] tnum ${flashKey ? "value-flash" : ""}`}
+            >
+              {total.toLocaleString("en-US")}
             </span>
             <span
               aria-hidden="true"

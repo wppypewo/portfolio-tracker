@@ -303,7 +303,7 @@ function CreatePanel({ accounts }: { accounts: AlertAccount[] }) {
               style={{ "--tc": t.color } as React.CSSProperties}
               // 選中：框線換成類型色並加粗成 2px（inset 陰影補 1px，不推擠版面），
               // 所以不只靠顏色分辨；底色維持 surface，不做色塊
-              className={`flex flex-col items-start gap-[3px] border p-3.5 text-left transition-[border-color,box-shadow] duration-150 ${
+              className={`flex flex-col items-start gap-[3px] border p-3.5 text-left transition-[border-color,box-shadow] duration-(--dur-state) ease-(--ease-state) ${
                 on
                   ? "border-[var(--tc)] bg-[var(--c-surface)] shadow-[inset_0_0_0_1px_var(--tc)]"
                   : "border-[var(--c-border)] bg-[var(--c-surface-soft)] hover:border-[var(--c-line-strong)]"
@@ -477,7 +477,7 @@ function AlertCard({
           {/* 刻度尺：底軌是髮絲框，填充用 scaleX 而不是 width，只動 transform */}
           <div className="h-1.5 flex-1 overflow-hidden border border-[var(--c-border)] bg-[var(--c-surface-soft)]">
             <span
-              className="motion-progress block h-full w-full origin-left transition-transform duration-300 ease-out"
+              className="motion-progress block h-full w-full origin-left transition-transform"
               style={{
                 transform: `scaleX(${info.closeness.toFixed(3)})`,
                 background: info.reached ? t.color : "var(--c-line-strong)",

@@ -108,7 +108,7 @@ export function AllocationCard({
                 <div
                   key={d.cls}
                   aria-hidden="true"
-                  className={`absolute p-px transition-opacity duration-200 ${dim ? "opacity-40" : ""}`}
+                  className={`absolute p-px transition-opacity duration-(--dur-state) ease-(--ease-state) ${dim ? "opacity-40" : ""}`}
                   style={{
                     left: pctX(r.x),
                     top: pctY(r.y),
@@ -183,7 +183,7 @@ export function AllocationCard({
                 aria-label={`${item.label}：實際 ${item.actual.toFixed(1)}%${
                   item.target > 0 ? `、目標 ${item.target.toFixed(0)}%` : ""
                 }${drift ? `、偏離 ${drift.text}${attention ? "，超過 5pp" : ""}` : ""}`}
-                className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_58px] items-center gap-2.5 border-b border-[var(--c-border-soft)] px-1.5 text-left transition-opacity duration-200 ${
+                className={`grid min-h-11 w-full grid-cols-[10px_minmax(0,1fr)_auto_58px] items-center gap-2.5 border-b border-[var(--c-border-soft)] px-1.5 text-left transition-opacity duration-(--dur-state) ease-(--ease-state) ${
                   activeCls && activeCls !== item.cls ? "opacity-40" : ""
                 }`}
                 onMouseEnter={() => onHover(item.cls)}

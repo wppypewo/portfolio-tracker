@@ -231,7 +231,7 @@ export default async function AccountDetail({
 
         {account.status === "archived" && (
           <p className="mt-4 border-l border-dashed border-[var(--c-annot)] pl-2 text-[length:var(--fs-sm)] text-[var(--c-annot-text)]">
-            此帳戶已歸檔：cron 不會自動抓價，首頁總值不計入此帳戶。
+            此帳戶已封存：系統不會再自動抓價，總覽的總值也不算它。要恢復，按頁面下方的「取消封存」。
           </p>
         )}
 
@@ -382,9 +382,12 @@ export default async function AccountDetail({
           {!isManual && (
             <section>
               <SectionHead title="定期定額" />
+              {/* 這段在講「立即執行」怎麼用；封存帳戶沒有這顆鍵，說明也不出現 */}
+              {account.status !== "archived" && (
               <p className="mt-2 text-[length:var(--fs-micro)] leading-5 text-[var(--c-muted)]">
                 「立即執行」會依當下市價換算股數買入，並把下次執行日推到下個月。執行前可改「本期金額」加碼或減碼，只影響這一次；計劃的每月金額與自動執行維持不變。級距計劃會把「本期金額」預填成依回撤與均線算出的建議金額，自動執行時也依級距買入。
               </p>
+              )}
               <div className="mt-3 flex flex-col gap-3">
                 {plansError ? (
                   // 查詢失敗時 plans 是空的，不能讓畫面說成「尚無計劃」。
@@ -392,8 +395,11 @@ export default async function AccountDetail({
                     <span className="font-semibold text-[var(--c-annot-text)]">
                       注意
                     </span>{" "}
-                    讀不到定期定額計劃。若剛部署新版，請確認資料庫已套用最新的 migration。
+                    讀不到定期定額計劃，資料沒有變動。重新整理再試一次。
                   </p>
+                ) : account.status === "archived" ? (
+                  // 封存帳戶不能執行，也就不必等級距的含息序列
+                  <RecurringPlanList plans={plans} archived />
                 ) : tierSymbol ? (
                   <Suspense
                     fallback={<RecurringPlanList plans={plans} tiersPending />}
@@ -403,10 +409,17 @@ export default async function AccountDetail({
                 ) : (
                   <RecurringPlanList plans={plans} />
                 )}
-                <AddRecurringPlanForm
-                  accountId={account.id}
-                  tierAvailable={account.price_market === "tw"}
-                />
+                {/* 封存帳戶送出新計畫會被 server 擋下（帳戶已封存），乾脆不給填 */}
+                {account.status === "archived" ? (
+                  <p className="text-[length:var(--fs-micro)] text-[var(--c-muted)]">
+                    封存中的帳戶不能新增或執行定期定額；取消封存後就能使用。
+                  </p>
+                ) : (
+                  <AddRecurringPlanForm
+                    accountId={account.id}
+                    tierAvailable={account.price_market === "tw"}
+                  />
+                )}
               </div>
             </section>
           )}

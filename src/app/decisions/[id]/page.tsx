@@ -7,7 +7,7 @@ import { calculateDecisionReviewMetrics } from "@/lib/decision-review-metrics";
 import { getUnreadCount } from "@/lib/notifications";
 import { fetchAllPages } from "@/lib/supabase/paginate";
 import { createClient } from "@/lib/supabase/server";
-import { archiveDecision } from "../actions";
+import { ArchiveToggle } from "./ArchiveToggle";
 import { ReviewForm } from "./ReviewForm";
 
 type ReviewRow = {
@@ -167,17 +167,16 @@ export default async function DecisionDetailPage({ params }: { params: Promise<{
             </>
           }
           action={
-            decision.status !== "archived" && (
-              <div className="flex items-center gap-2">
+            // 兩種狀態共用同一層外框，ArchiveToggle 才不會在封存／復原後被重新掛載：
+            // 重新掛載會把鍵盤焦點丟回頁首，剛按完「封存」就找不到「復原」。
+            <div className="flex items-center gap-2">
+              {decision.status !== "archived" && (
                 <Link href={`/decisions/${decision.id}/edit`} className="btn btn-outline">
                   編輯
                 </Link>
-                <form action={archiveDecision}>
-                  <input type="hidden" name="decisionId" value={decision.id} />
-                  <button className="btn btn-ghost">封存</button>
-                </form>
-              </div>
-            )
+              )}
+              <ArchiveToggle decisionId={decision.id} archived={decision.status === "archived"} />
+            </div>
           }
         />
 

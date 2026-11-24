@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { authErrorToZh } from "@/lib/auth-error-zh";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { useAnnounceValue } from "@/components/a11y/use-action-announce";
 import { AUTH_ERROR, AuthCard } from "@/components/AuthCard";
@@ -26,7 +27,7 @@ export function MfaVerifyForm() {
   useEffect(() => {
     (async () => {
       const { data, error: e } = await supabase.auth.mfa.listFactors();
-      if (e) setError(e.message);
+      if (e) setError(authErrorToZh(e, "讀不到驗證器，請重新整理"));
       const verified = (data?.totp ?? []).find((f) => f.status === "verified");
       if (verified) {
         setFactorId(verified.id);
@@ -49,7 +50,7 @@ export function MfaVerifyForm() {
     });
     if (e1 || !ch) {
       setBusy(false);
-      setError(e1?.message ?? "challenge 失敗");
+      setError(authErrorToZh(e1, "無法開始驗證，請再試一次"));
       return;
     }
     const { error: e2 } = await supabase.auth.mfa.verify({
@@ -59,7 +60,7 @@ export function MfaVerifyForm() {
     });
     if (e2) {
       setBusy(false);
-      setError(e2.message);
+      setError(authErrorToZh(e2, "驗證失敗，請再試一次"));
       return;
     }
     router.replace(next);

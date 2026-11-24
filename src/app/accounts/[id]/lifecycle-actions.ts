@@ -28,7 +28,7 @@ async function setStatus(
 
   revalidatePath("/");
   revalidatePath(`/accounts/${accountId}`);
-  return { ok: status === "archived" ? "帳戶已歸檔" : "帳戶已恢復" };
+  return { ok: status === "archived" ? "帳戶已封存" : "帳戶已恢復" };
 }
 
 export async function archiveAccount(

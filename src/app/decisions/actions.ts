@@ -285,24 +285,54 @@ export async function updateInvestmentDecision(
   redirect(`/decisions/${decisionId.data}`);
 }
 
-export async function archiveDecision(formData: FormData): Promise<void> {
+/**
+ * 封存或取消封存一筆決策。archived=true 封存，false 復原。
+ *
+ * 復原時要放回封存前的狀態：已經寫過檢討的回到 reviewed，沒寫過的回到 open。
+ * 狀態只看 decision_reviews 有沒有那一列，跟 submit_decision_review RPC 的判斷一致。
+ * 以前封存是單向的，按錯就再也不能編輯；失敗也只寫 log，畫面不說。
+ */
+export async function setDecisionArchived(
+  _previous: DecisionFormState,
+  formData: FormData,
+): Promise<DecisionFormState> {
   const decisionId = z.string().uuid().safeParse(formData.get("decisionId"));
-  if (!decisionId.success) return;
+  if (!decisionId.success) return { error: "找不到這筆決策，重新整理再試一次" };
+  const archive = formData.get("archived") === "true";
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) return { error: "登入已過期，請重新登入" };
+
+  let status: "archived" | "open" | "reviewed" = "archived";
+  if (!archive) {
+    const { data: review, error: reviewError } = await supabase
+      .from("decision_reviews")
+      .select("id")
+      .eq("decision_id", decisionId.data)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (reviewError) {
+      console.error("setDecisionArchived review lookup failed", { code: reviewError.code });
+      return { error: "復原失敗，資料沒有變動。請稍後再試" };
+    }
+    status = review ? "reviewed" : "open";
+  }
 
   const { error } = await supabase
     .from("investment_decisions")
-    .update({ status: "archived" })
+    .update({ status })
     .eq("id", decisionId.data)
     .eq("user_id", user.id);
-  if (error) console.error("archiveDecision failed", { code: error.code });
+  if (error) {
+    console.error("setDecisionArchived failed", { code: error.code });
+    return { error: `${archive ? "封存" : "復原"}失敗，資料沒有變動。請稍後再試` };
+  }
   revalidatePath("/decisions");
   revalidatePath(`/decisions/${decisionId.data}`);
+  return { ok: archive ? "決策已封存" : "決策已復原" };
 }
 
 function accountValueTwd(account: AccountContext): number {

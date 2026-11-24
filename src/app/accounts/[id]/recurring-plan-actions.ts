@@ -43,7 +43,7 @@ export async function createRecurringPlan(
     .eq("id", accountId)
     .single();
   if (accountError || !account) return { error: "找不到帳戶" };
-  if (account.status === "archived") return { error: "帳戶已歸檔" };
+  if (account.status === "archived") return { error: "帳戶已封存，先取消封存才能設定定期定額" };
   if (account.price_market === "manual") {
     return { error: "手動帳戶無法設定定期定額" };
   }

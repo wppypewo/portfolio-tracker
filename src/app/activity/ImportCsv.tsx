@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useEffect, useId, useState } from "react";
 import { importTransactionsCsv, type ImportResult } from "./actions";
 import { useActionAnnounce } from "@/components/a11y/use-action-announce";
 
@@ -9,6 +9,16 @@ export function ImportCsv() {
   const [open, setOpen] = useState(false);
   const panelId = `csv-import-panel-${useId().replace(/:/g, "")}`;
   const [fileName, setFileName] = useState<string | null>(null);
+  // 從快速新增的「匯入 CSV」連過來（/activity#csv-import）時直接打開，
+  // 不要讓人到了這裡還得再找一次那顆收合鍵。
+  useEffect(() => {
+    const openIfTargeted = () => {
+      if (window.location.hash === "#csv-import") setOpen(true);
+    };
+    openIfTargeted();
+    window.addEventListener("hashchange", openIfTargeted);
+    return () => window.removeEventListener("hashchange", openIfTargeted);
+  }, []);
   const [state, action, pending] = useActionState<ImportResult, FormData>(
     importTransactionsCsv,
     undefined,
@@ -17,7 +27,11 @@ export function ImportCsv() {
   useActionAnnounce(
     state,
     pending,
-    state?.ok ? `已匯入 ${state.imported} 筆，略過 ${state.skipped} 筆` : undefined,
+    state?.ok
+      ? state.imported === 0
+        ? `沒有匯入任何資料，跳過 ${state.skipped} 筆`
+        : `已匯入 ${state.imported} 筆，跳過 ${state.skipped} 筆`
+      : undefined,
   );
 
   return (
@@ -109,9 +123,18 @@ export function ImportCsv() {
                 {state.error}
               </p>
             ) : state.ok === true ? (
-              <div className="border border-[var(--c-up)] px-3.5 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-up)]">
+              // 一筆都沒進去時不能用成功的綠色：檔案讀到了，但資料沒有變動
+              <div
+                className={`border px-3.5 py-2.5 text-[length:var(--fs-sm)] ${
+                  state.imported === 0
+                    ? "border-[var(--c-warn)] text-[var(--c-warn)]"
+                    : "border-[var(--c-up)] text-[var(--c-up)]"
+                }`}
+              >
                 <div className="tnum">
-                  匯入 {state.imported} 筆 · 跳過 {state.skipped} 筆
+                  {state.imported === 0
+                    ? `沒有匯入任何資料 · 跳過 ${state.skipped} 筆`
+                    : `匯入 ${state.imported} 筆 · 跳過 ${state.skipped} 筆`}
                 </div>
                 {state.errors.length > 0 && (
                   <ul className="mt-1.5 list-disc pl-4 text-[length:var(--fs-micro)] text-[var(--c-down)]">

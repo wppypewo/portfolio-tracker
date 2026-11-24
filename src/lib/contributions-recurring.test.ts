@@ -301,7 +301,7 @@ describe("executeRecurringPlan", () => {
       ok: false,
       error: "手動帳戶無法執行定期定額",
     });
-    expect(archived).toEqual({ ok: false, error: "帳戶已歸檔" });
+    expect(archived).toEqual({ ok: false, error: "帳戶已封存" });
     expect(quoteMock).not.toHaveBeenCalled();
     expect(rpc).not.toHaveBeenCalled();
   });

@@ -104,7 +104,7 @@ export function AccountActions({
 
   /* 這幾支 action 成功時只做 revalidatePath、不回訊息，畫面靠重新渲染反映結果。
      視覺上看得出來，讀屏使用者沒有任何線索，所以成功句在這裡補。
-     歸檔／恢復自己會回 ok 字串，hook 會優先用那個。 */
+     封存／恢復自己會回 ok 字串，hook 會優先用那個。 */
   useActionAnnounce(updateState, updatePending, "報價已更新");
   useActionAnnounce(addState, addPending, "加碼已記錄");
   useActionAnnounce(sellState, sellPending, "賣出已記錄");
@@ -861,7 +861,7 @@ export function AccountActions({
         </details>
       )}
 
-      {/* === 歸檔 / 取消歸檔 === */}
+      {/* === 封存 / 取消封存 === */}
       <form action={archAction} className="mt-2 flex items-center gap-3">
         <input type="hidden" name="accountId" value={accountId} />
         <button
@@ -872,8 +872,8 @@ export function AccountActions({
           {archPending
             ? "處理中…"
             : isArchived
-              ? "取消歸檔（恢復顯示）"
-              : "歸檔此帳戶（不再抓價、不計入總值）"}
+              ? "取消封存（恢復顯示）"
+              : "封存此帳戶（不再抓價、不計入總值）"}
         </button>
         {archState?.error && (
           <span className="text-[length:var(--fs-micro)] text-[var(--c-down)]">{archState.error}</span>
@@ -889,14 +889,14 @@ export function AccountActions({
             onClick={() => setConfirmDelete(true)}
             className="btn btn-ghost btn-ghost-danger btn-sm btn-fit underline"
           >
-            刪除帳戶
+            刪除此資產帳戶
           </button>
         ) : (
           <div className="flex flex-wrap items-center gap-2 text-[length:var(--fs-micro)]">
             <span className="text-[var(--c-down)]">
               將永久刪除此帳戶與其全部交易紀錄、每日快照，無法復原；
               歷史績效曲線也會同步失去這段資料。若只是不想在總覽看到，
-              上方「封存」會保留所有紀錄。
+              上方「封存此帳戶」會保留所有紀錄。
             </span>
             <button
               type="submit"

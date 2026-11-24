@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { authErrorToZh } from "@/lib/auth-error-zh";
 import { useAnnounceValue } from "@/components/a11y/use-action-announce";
 import { AUTH_ERROR, AUTH_LABEL, AUTH_MAIN, AUTH_OK, AuthCard } from "@/components/AuthCard";
 
@@ -51,7 +52,7 @@ export default function ResetPasswordPage() {
     const { error: e1 } = await supabase.auth.updateUser({ password });
     setBusy(false);
     if (e1) {
-      setError(e1.message);
+      setError(authErrorToZh(e1, "密碼更新失敗，請再試一次"));
       return;
     }
     setSuccess(true);

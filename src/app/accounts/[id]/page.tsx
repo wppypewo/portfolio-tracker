@@ -382,9 +382,12 @@ export default async function AccountDetail({
           {!isManual && (
             <section>
               <SectionHead title="定期定額" />
+              {/* 這段在講「立即執行」怎麼用；封存帳戶沒有這顆鍵，說明也不出現 */}
+              {account.status !== "archived" && (
               <p className="mt-2 text-[length:var(--fs-micro)] leading-5 text-[var(--c-muted)]">
                 「立即執行」會依當下市價換算股數買入，並把下次執行日推到下個月。執行前可改「本期金額」加碼或減碼，只影響這一次；計劃的每月金額與自動執行維持不變。級距計劃會把「本期金額」預填成依回撤與均線算出的建議金額，自動執行時也依級距買入。
               </p>
+              )}
               <div className="mt-3 flex flex-col gap-3">
                 {plansError ? (
                   // 查詢失敗時 plans 是空的，不能讓畫面說成「尚無計劃」。
@@ -394,6 +397,9 @@ export default async function AccountDetail({
                     </span>{" "}
                     讀不到定期定額計劃，資料沒有變動。重新整理再試一次。
                   </p>
+                ) : account.status === "archived" ? (
+                  // 封存帳戶不能執行，也就不必等級距的含息序列
+                  <RecurringPlanList plans={plans} archived />
                 ) : tierSymbol ? (
                   <Suspense
                     fallback={<RecurringPlanList plans={plans} tiersPending />}
@@ -406,7 +412,7 @@ export default async function AccountDetail({
                 {/* 封存帳戶送出新計畫會被 server 擋下（帳戶已封存），乾脆不給填 */}
                 {account.status === "archived" ? (
                   <p className="text-[length:var(--fs-micro)] text-[var(--c-muted)]">
-                    封存中的帳戶不能新增定期定額；取消封存後就能設定。
+                    封存中的帳戶不能新增或執行定期定額；取消封存後就能使用。
                   </p>
                 ) : (
                   <AddRecurringPlanForm

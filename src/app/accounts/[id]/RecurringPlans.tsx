@@ -57,10 +57,13 @@ function PlanRow({
   plan,
   tier,
   tierPending,
+  archived,
 }: {
   plan: Plan;
   tier?: DcaTierStatus;
   tierPending: boolean;
+  /** 帳戶已封存：伺服器會拒絕執行，所以不畫執行欄位 */
+  archived: boolean;
 }) {
   const amountFieldId = useId();
   const feeFieldId = useId();
@@ -140,72 +143,74 @@ function PlanRow({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <form
-            action={execAction}
-            className="flex basis-full items-center gap-1.5 sm:basis-auto"
-          >
-            <input type="hidden" name="planId" value={plan.id} />
-            <label htmlFor={amountFieldId} className="sr-only">
-              {suggested !== null
-                ? "本期金額（TWD），已預填級距建議金額，留空則用基準金額"
-                : "本期金額（TWD），留空沿用計劃金額"}
-            </label>
-            <div className="relative flex-1 sm:flex-none">
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[length:var(--fs-micro)] text-[var(--c-faint)]"
-              >
-                NT$
-              </span>
-              <input
-                // 排程日一推進就重新掛載，把金額重設回計劃預設值。
-                // 否則 defaultValue 只在掛載時生效，上期打的覆寫金額會留在框裡，
-                // 下期不小心直接送出就沿用了上期的加減碼決定。
-                // 級距計畫的預設值是建議金額，收盤更新後建議金額變了也要重新掛載。
-                key={`${plan.next_run_date}:${amountDefault}`}
-                id={amountFieldId}
-                name="amount"
-                type="number"
-                step="any"
-                // 金額欄位是 numeric(20,2)，RPC 也先 round 到 2 位才驗證正數。
-                // min 設 0 會讓 0 通過瀏覽器驗證、白跑一趟 server 才被擋。
-                min="0.01"
-                disabled={!plan.active || awaitingTier}
-                defaultValue={amountDefault}
-                className={`${controlH} field w-full py-0 pl-9 pr-2 text-right tnum disabled:opacity-40 sm:w-[118px]`}
-              />
-            </div>
-            <label htmlFor={feeFieldId} className="sr-only">
-              本期手續費（TWD），留空沿用計劃設定
-            </label>
-            <div className="relative flex-1 sm:flex-none">
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[length:var(--fs-micro)] text-[var(--c-faint)]"
-              >
-                費
-              </span>
-              <input
-                // 與金額欄同理：排程日推進就重新掛載，避免上期的手續費留在框裡。
-                key={plan.next_run_date}
-                id={feeFieldId}
-                name="fee"
-                type="number"
-                step="any"
-                min="0"
-                disabled={!plan.active || awaitingTier}
-                defaultValue={planFee}
-                className={`${controlH} field w-full py-0 pl-7 pr-2 text-right tnum disabled:opacity-40 sm:w-[86px]`}
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={execPending || !plan.active || awaitingTier}
-              className={`${controlH} btn btn-neutral btn-sm btn-fit shrink-0`}
+          {!archived && (
+            <form
+              action={execAction}
+              className="flex basis-full items-center gap-1.5 sm:basis-auto"
             >
-              {execPending ? "執行中…" : "立即執行"}
-            </button>
-          </form>
+              <input type="hidden" name="planId" value={plan.id} />
+              <label htmlFor={amountFieldId} className="sr-only">
+                {suggested !== null
+                  ? "本期金額（TWD），已預填級距建議金額，留空則用基準金額"
+                  : "本期金額（TWD），留空沿用計劃金額"}
+              </label>
+              <div className="relative flex-1 sm:flex-none">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[length:var(--fs-micro)] text-[var(--c-faint)]"
+                >
+                  NT$
+                </span>
+                <input
+                  // 排程日一推進就重新掛載，把金額重設回計劃預設值。
+                  // 否則 defaultValue 只在掛載時生效，上期打的覆寫金額會留在框裡，
+                  // 下期不小心直接送出就沿用了上期的加減碼決定。
+                  // 級距計畫的預設值是建議金額，收盤更新後建議金額變了也要重新掛載。
+                  key={`${plan.next_run_date}:${amountDefault}`}
+                  id={amountFieldId}
+                  name="amount"
+                  type="number"
+                  step="any"
+                  // 金額欄位是 numeric(20,2)，RPC 也先 round 到 2 位才驗證正數。
+                  // min 設 0 會讓 0 通過瀏覽器驗證、白跑一趟 server 才被擋。
+                  min="0.01"
+                  disabled={!plan.active || awaitingTier}
+                  defaultValue={amountDefault}
+                  className={`${controlH} field w-full py-0 pl-9 pr-2 text-right tnum disabled:opacity-40 sm:w-[118px]`}
+                />
+              </div>
+              <label htmlFor={feeFieldId} className="sr-only">
+                本期手續費（TWD），留空沿用計劃設定
+              </label>
+              <div className="relative flex-1 sm:flex-none">
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[length:var(--fs-micro)] text-[var(--c-faint)]"
+                >
+                  費
+                </span>
+                <input
+                  // 與金額欄同理：排程日推進就重新掛載，避免上期的手續費留在框裡。
+                  key={plan.next_run_date}
+                  id={feeFieldId}
+                  name="fee"
+                  type="number"
+                  step="any"
+                  min="0"
+                  disabled={!plan.active || awaitingTier}
+                  defaultValue={planFee}
+                  className={`${controlH} field w-full py-0 pl-7 pr-2 text-right tnum disabled:opacity-40 sm:w-[86px]`}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={execPending || !plan.active || awaitingTier}
+                className={`${controlH} btn btn-neutral btn-sm btn-fit shrink-0`}
+              >
+                {execPending ? "執行中…" : "立即執行"}
+              </button>
+            </form>
+          )}
           <form action={toggleAction}>
             <input type="hidden" name="planId" value={plan.id} />
             <input
@@ -652,11 +657,14 @@ export function RecurringPlanList({
   plans,
   tiers,
   tiersPending = false,
+  archived = false,
 }: {
   plans: Plan[];
   tiers?: PlanTierStatuses;
   /** true 代表級距狀態還在算（Suspense 的 fallback）。 */
   tiersPending?: boolean;
+  /** 帳戶已封存，計畫只能暫停或刪除，不能執行 */
+  archived?: boolean;
 }) {
   if (plans.length === 0) {
     return (
@@ -672,6 +680,7 @@ export function RecurringPlanList({
           plan={plan}
           tier={tiers?.[plan.id]}
           tierPending={tiersPending}
+          archived={archived}
         />
       ))}
     </div>

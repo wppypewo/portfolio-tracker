@@ -89,6 +89,8 @@ function PlanRow({
   // 刪除要按兩次。計畫依 ADR 不能編輯，刪錯了得把金額、日期、級距整份重填，
   // 而且它就排在「暫停」旁邊，一次點錯就沒了。
   const [askingDelete, setAskingDelete] = useState(false);
+  // 按「取消」收起確認後，焦點交回重新出現的「刪除」，鍵盤使用者不會掉回頁首。
+  const [cancelledDelete, setCancelledDelete] = useState(false);
 
   // 這三支成功時都回 ok 字串（已執行本期定期定額／計畫已暫停／計畫已刪除），
   // hook 直接沿用，不另外給成功句。
@@ -211,21 +213,25 @@ function PlanRow({
               </button>
             </form>
           )}
-          <form action={toggleAction}>
-            <input type="hidden" name="planId" value={plan.id} />
-            <input
-              type="hidden"
-              name="newActive"
-              value={plan.active ? "false" : "true"}
-            />
-            <button
-              type="submit"
-              disabled={togglePending}
-              className={`${controlH} btn btn-outline btn-sm btn-fit`}
-            >
-              {plan.active ? "暫停" : "啟用"}
-            </button>
-          </form>
+          {/* 封存帳戶不能執行，所以也不給「啟用」：封存期間啟用的計畫，取消封存後
+              cron 會照排程直接記入，人可能早忘了曾經按過。「暫停」照樣給，停下來不會多記任何一筆。 */}
+          {!(archived && !plan.active) && (
+            <form action={toggleAction}>
+              <input type="hidden" name="planId" value={plan.id} />
+              <input
+                type="hidden"
+                name="newActive"
+                value={plan.active ? "false" : "true"}
+              />
+              <button
+                type="submit"
+                disabled={togglePending}
+                className={`${controlH} btn btn-outline btn-sm btn-fit`}
+              >
+                {plan.active ? "暫停" : "啟用"}
+              </button>
+            </form>
+          )}
           {askingDelete ? (
             <form
               action={deleteAction}
@@ -234,9 +240,15 @@ function PlanRow({
               className="flex items-center gap-1"
             >
               <input type="hidden" name="planId" value={plan.id} />
+              {/* 焦點先落在「取消」：連按兩次 Enter 只會收回，不會刪掉。
+                  要刪得自己移到「確認刪除」。 */}
               <button
                 type="button"
-                onClick={() => setAskingDelete(false)}
+                autoFocus
+                onClick={() => {
+                  setCancelledDelete(true);
+                  setAskingDelete(false);
+                }}
                 disabled={deletePending}
                 className={`${controlH} btn btn-ghost btn-sm btn-fit`}
               >
@@ -244,7 +256,6 @@ function PlanRow({
               </button>
               <button
                 type="submit"
-                autoFocus
                 disabled={deletePending}
                 className={`${controlH} btn btn-danger btn-sm btn-fit whitespace-nowrap`}
               >
@@ -254,6 +265,7 @@ function PlanRow({
           ) : (
             <button
               type="button"
+              autoFocus={cancelledDelete}
               onClick={() => setAskingDelete(true)}
               className={`${controlH} btn btn-ghost btn-ghost-danger btn-sm btn-fit underline`}
             >

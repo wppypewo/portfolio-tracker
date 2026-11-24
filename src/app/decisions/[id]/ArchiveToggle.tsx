@@ -22,7 +22,16 @@ export function ArchiveToggle({ decisionId, archived }: { decisionId: string; ar
       {archived && (
         <span className="text-[length:var(--fs-sm)] text-[var(--c-muted)]">已封存</span>
       )}
-      <button type="submit" disabled={pending} className="btn btn-ghost">
+      {/* 處理中用 aria-disabled 而不是 disabled：disabled 會讓瀏覽器把焦點移走，
+          按完就找不到剛剛那顆鍵 */}
+      <button
+        type="submit"
+        aria-disabled={pending || undefined}
+        onClick={(e) => {
+          if (pending) e.preventDefault();
+        }}
+        className="btn btn-ghost aria-disabled:opacity-50"
+      >
         {pending ? "處理中…" : archived ? "復原" : "封存"}
       </button>
       {state?.error && (

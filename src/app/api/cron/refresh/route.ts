@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { todayTaipei } from "@/lib/dates";
 import { executeRecurringPlan } from "@/lib/contributions";
 import { scanAlerts } from "@/lib/alerts-scan";
+import { runWeeklyBrief } from "@/lib/weekly-brief";
 import { refreshAccountPrices, type MarketStat } from "@/lib/refresh-prices";
 import { PROVIDER_LABEL } from "@/lib/prices/router";
 import { fetchTwTotalReturnSeries } from "@/lib/prices/finmind-total-return";
@@ -178,6 +179,16 @@ export async function GET(request: Request) {
       ` ms=${Date.now() - alertsStart}`,
   );
 
+  // 週報放在警示之後：讀的是剛更新的報價，也要把本週觸發的警示算進去。
+  // 非週一、沒有 GEMINI_API_KEY 時直接略過，不打 API。
+  const briefStart = Date.now();
+  const brief = await runWeeklyBrief(supabase, { today });
+  console.log(
+    `${TAG} 週報 ran=${brief.ran} reason=${brief.reason ?? "-"}` +
+      ` sent=${brief.sent} skipped=${brief.skipped} failed=${brief.failed}` +
+      ` ms=${Date.now() - briefStart}`,
+  );
+
   const finishedAt = Date.now();
   console.log(
     `${TAG} 結束 at=${new Date(finishedAt).toISOString()}` +
@@ -192,5 +203,6 @@ export async function GET(request: Request) {
     refresh,
     plans,
     alerts,
+    brief,
   });
 }

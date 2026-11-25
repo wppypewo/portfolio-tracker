@@ -21,6 +21,7 @@ const TYPE_LABEL: Record<string, string> = {
   price_above: "價格突破",
   price_below: "價格跌破",
   allocation_drift: "配置偏離",
+  weekly_brief: "AI 週報",
   system: "系統",
 };
 
@@ -28,6 +29,7 @@ const TYPE_TONE: Record<string, TagTone> = {
   price_above: "up",
   price_below: "down",
   allocation_drift: "accent",
+  weekly_brief: "quiet",
   system: "quiet",
 };
 

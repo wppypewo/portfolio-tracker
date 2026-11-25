@@ -10,7 +10,7 @@ const INSET = 6;
 // 橫線以 100px 為基準寬，用 scaleX 伸縮到實際寬度
 const BAR_BASE = 100;
 const MOVE =
-  "transition-transform duration-[220ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none";
+  "transition-transform duration-(--dur-base) ease-(--ease-enter) motion-reduce:transition-none";
 
 /* 導覽列的尺寸線指示器。
    動作說明的是狀態：滑鼠指到或鍵盤 tab 到哪一項，線就量到哪一項；

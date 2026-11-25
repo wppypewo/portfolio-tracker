@@ -639,7 +639,7 @@ function CounterfactualTab({ cf }: { cf: CounterfactualData }) {
                   {/* 長度條用 scaleX，不動 width */}
                   <div className="mt-2.5 h-1.5 overflow-hidden bg-[var(--c-surface-soft)]">
                     <span
-                      className="motion-progress block h-full origin-left transition-transform duration-300 ease-out"
+                      className="motion-progress block h-full origin-left transition-transform"
                       style={{
                         transform: `scaleX(${r.finalValue / maxVal})`,
                         background: r.color,

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { usePresence } from "./usePresence";
 
 type NavItem = {
   href: string;
@@ -22,6 +23,7 @@ export function DesktopNavMore({
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = `desktop-more-${useId().replace(/:/g, "")}`;
   const groupActive = items.some((item) => item.key === active);
+  const { mounted, closing } = usePresence(open);
 
   useEffect(() => {
     if (!open) return;
@@ -81,18 +83,24 @@ export function DesktopNavMore({
           strokeWidth={1.6}
           strokeLinecap="round"
           aria-hidden="true"
-          className={open ? "rotate-180" : ""}
+          // 箭頭翻面跟選單展開同一節奏，交代「這顆鈕現在是收起用的」。
+          className={`transition-transform duration-(--dur-base) ease-(--ease-enter) motion-reduce:transition-none ${
+            open ? "rotate-180" : ""
+          }`}
         >
           <path d="m4 6 4 4 4-4" />
         </svg>
       </button>
 
-      {open && (
+      {/* 從觸發鈕下緣、靠右的角落長出來，收起時縮回同一角。 */}
+      {mounted && (
         <nav
           ref={panelRef}
           id={panelId}
           aria-label="更多功能"
-          className="absolute right-0 top-[calc(100%+1px)] z-50 w-44 border border-[var(--c-line-strong)] bg-[var(--c-surface)] shadow-[var(--c-shadow)]"
+          inert={closing}
+          data-closing={closing || undefined}
+          className="pop origin-top-right [--pop-from:translateY(-4px)_scale(0.98)] absolute right-0 top-[calc(100%+1px)] z-50 w-44 border border-[var(--c-line-strong)] bg-[var(--c-surface)] shadow-[var(--c-shadow)]"
         >
           {items.map((item) => (
             <Link

@@ -95,7 +95,8 @@ export default async function Home({
             return { data: res.data as SnapshotRow[] | null, error: res.error };
           })
         : Promise.resolve({ data: null as SnapshotRow[] | null }),
-      // 首頁 AI 區塊要的最新一份週報；非 admin 不查。讀失敗就當沒有，不擋首頁。
+      // 首頁 AI 區塊要的最新一份週報；非 admin 不查。讀失敗不擋首頁，
+      // 但要跟「還沒有週報」分開顯示，否則看起來像排程沒跑。
       admin
         ? supabase
             .from("notifications")
@@ -104,9 +105,10 @@ export default async function Home({
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle()
-        : Promise.resolve({ data: null }),
+        : Promise.resolve({ data: null, error: null }),
     ]);
   const brief = (briefResult.data ?? null) as AiBrief;
+  const briefFailed = briefResult.error != null;
 
   const cashflowRows = cashflowResult.data;
   const incomeRows = incomeResult.data;
@@ -180,7 +182,7 @@ export default async function Home({
       />
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-[1200px] px-4 pb-28 pt-5 sm:px-6 sm:pt-7 lg:px-7 lg:pt-8">
-        <DashboardClient data={dashboard} ai={admin ? { brief } : undefined} />
+        <DashboardClient data={dashboard} ai={admin ? { brief, briefFailed } : undefined} />
       </main>
     </div>
   );

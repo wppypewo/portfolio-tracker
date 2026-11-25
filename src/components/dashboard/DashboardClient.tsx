@@ -27,7 +27,7 @@ export function DashboardClient({
   data: DashboardData;
   demo?: boolean;
   /** 只有 admin 會傳；undefined 時不顯示 AI 區塊。 */
-  ai?: { brief: AiBrief };
+  ai?: { brief: AiBrief; briefFailed?: boolean };
 }) {
   const summary = data.summary;
 
@@ -201,7 +201,7 @@ export function DashboardClient({
                 TWR、回撤與 Sharpe 會在每日淨值快照滿 30 天後顯示。
               </p>
             )}
-            {ai && <AiPanel brief={ai.brief} />}
+            {ai && <AiPanel brief={ai.brief} failed={ai.briefFailed} />}
           </div>
         </section>
   </div>

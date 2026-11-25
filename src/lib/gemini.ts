@@ -1,6 +1,6 @@
 /**
- * Gemini API 的最小包裝。只用內建 fetch，不引 @google/genai：這裡只需要兩種呼叫
- * （結構化 JSON、搜尋 grounding），多一個套件不划算。fetchImpl 可注入，測試不打 Google。
+ * Gemini API 的最小包裝。只用內建 fetch，不引 @google/genai：這裡只需要三種呼叫
+ * （結構化 JSON、搜尋 grounding、多輪對話），多一個套件不划算。fetchImpl 可注入，測試不打 Google。
  *
  * 結構化輸出用 generationConfig.responseFormat.text，這是官方 REST 範例的寫法
  * （aistudio.google.com/docs/structured-output，2026-11-25 讀，同日實測可用）。
@@ -36,7 +36,7 @@ export function geminiConfig(env: Env = process.env) {
   return { apiKey, model };
 }
 
-type Part = { text?: string; thought?: boolean };
+type Part = { text?: string; thought?: boolean; thoughtSignature?: string };
 type Candidate = {
   finishReason?: string;
   content?: { parts?: Part[] };
@@ -52,6 +52,7 @@ async function callGemini(
   body: Record<string, unknown>,
   env: Env,
   fetchImpl: FetchImpl,
+  { allowTruncated = false }: { allowTruncated?: boolean } = {},
 ) {
   const { apiKey, model } = geminiConfig(env);
   let res: Response;
@@ -87,8 +88,12 @@ async function callGemini(
     throw new GeminiError(502, "Gemini 回了不是 JSON 的東西");
   }
   const candidate = data?.candidates?.[0];
-  // MAX_TOKENS 代表輸出被截斷；SAFETY 等理由可能整段是空的。兩種都不能用。
-  if (!candidate || candidate.finishReason !== "STOP") {
+  // MAX_TOKENS 代表輸出被截斷；SAFETY 等理由可能整段是空的。JSON 與新聞整理兩種都不能用；
+  // 對話被截斷還有前半段可讀，由 allowTruncated 放行並在畫面標記。
+  const finished =
+    candidate?.finishReason === "STOP" ||
+    (allowTruncated && candidate?.finishReason === "MAX_TOKENS");
+  if (!candidate || !finished) {
     const reason =
       candidate?.finishReason ?? data?.promptFeedback?.blockReason ?? "無候選";
     throw new GeminiError(502, `Gemini 沒有完整回應（${reason}）`);
@@ -175,4 +180,70 @@ export async function generateGrounded({
     fetchImpl,
   );
   return { text, model, grounding: candidate.groundingMetadata ?? null };
+}
+
+export type ChatContent = { role: "user" | "model"; text: string; signature?: string };
+
+/**
+ * 多輪對話，回純文字。contents 由呼叫端整理好：user／model 交替、第一則與最後一則都是 user。
+ *
+ * REST 是無狀態的，每一輪都要把整段歷史送回去。Gemini 3 系列的回應會帶 thoughtSignature，
+ * 文件要求下一輪把它原樣放回同一個 part；純文字回應漏帶不會被拒，但推理品質可能變差
+ * （ai.google.dev/gemini-api/docs/thought-signatures，2026-11-25 讀）。
+ * 所以把簽章回給前端，前端下一輪連同那則回覆一起送回來。
+ *
+ * grounded=true 時開 Google 搜尋；條款義務（Search Suggestions 原樣顯示、不儲存不快取）
+ * 與 generateGrounded 相同，由呼叫端負責。
+ */
+export async function generateChat({
+  system,
+  contents,
+  grounded = false,
+  thinking = "low",
+  maxOutputTokens = 4096,
+  env = process.env,
+  fetchImpl = fetch,
+}: Omit<Common, "prompt"> & {
+  contents: readonly ChatContent[];
+  grounded?: boolean;
+}): Promise<{
+  text: string;
+  signature: string | null;
+  truncated: boolean;
+  model: string;
+  grounding: GroundingMetadata | null;
+}> {
+  const { text, candidate, model } = await callGemini(
+    {
+      systemInstruction: { parts: [{ text: system }] },
+      contents: contents.map(({ role, text, signature }) => ({
+        role,
+        parts: [signature ? { text, thoughtSignature: signature } : { text }],
+      })),
+      ...(grounded ? { tools: [{ google_search: {} }] } : {}),
+      generationConfig: {
+        thinkingConfig: { thinkingLevel: thinking },
+        maxOutputTokens,
+      },
+    },
+    env,
+    fetchImpl,
+    { allowTruncated: true },
+  );
+  if (!text.trim()) {
+    throw new GeminiError(502, `Gemini 沒有完整回應（${candidate.finishReason ?? "空白"}）`);
+  }
+  // 簽章通常掛在最後一個 part；回覆拆成好幾段時取最後一個有簽章的。
+  const signature =
+    (candidate.content?.parts ?? [])
+      .map((p) => p.thoughtSignature)
+      .filter((sig): sig is string => typeof sig === "string")
+      .pop() ?? null;
+  return {
+    text: text.trim(),
+    signature,
+    truncated: candidate.finishReason === "MAX_TOKENS",
+    model,
+    grounding: candidate.groundingMetadata ?? null,
+  };
 }

@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { AiChat } from "@/components/AiChat";
 import { CardHead } from "./shared";
 
 /** 最新一份 AI 週報。由首頁 server 端從 notifications 取出，沒有就是 null。 */
 export type AiBrief = { title: string; body: string | null } | null;
 
 /**
- * 首頁的 admin 專用 AI 區塊：最新週報全文＋持股新聞入口。
+ * 首頁的 admin 專用 AI 區塊：最新週報全文（可追問）＋持股新聞入口＋自由提問。
  * 只有 ADMIN_EMAILS 的帳號會拿到這個區塊（判斷在 src/app/page.tsx），
  * /admin/news 本身也會再擋一次，這裡只是入口。
  *
@@ -50,6 +51,17 @@ export function AiPanel({
         >
           通知中心
         </Link>
+        {/* 只有讀得到週報本文才給追問；伺服器端會自己重讀最新一份，不用這裡的文字。 */}
+        {brief?.body && (
+          <div>
+            <AiChat
+              mode="brief"
+              openLabel="追問這份週報"
+              title="追問週報"
+              suggestions={["這週市值變化主要來自哪裡？", "哪個資產類別偏離目標最多？"]}
+            />
+          </div>
+        )}
       </div>
 
       <div className="mt-5 border-t border-[var(--c-border)] pt-3.5">
@@ -60,6 +72,19 @@ export function AiPanel({
         <Link href="/admin/news" className="btn btn-outline btn-sm mt-3">
           查持股新聞
         </Link>
+      </div>
+
+      <div className="mt-5 border-t border-[var(--c-border)] pt-3.5">
+        <h3 className="text-[length:var(--fs-sm)] font-semibold">問 AI</h3>
+        <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
+          問自己的持股比重、本週數字，或名詞與觀念。不會上網搜尋。
+        </p>
+        <AiChat
+          mode="free"
+          openLabel="開始提問"
+          title="自由提問"
+          suggestions={["目前最大的三個部位各占多少？", "淨投入和市場變動差在哪？"]}
+        />
       </div>
     </div>
   );

@@ -40,8 +40,8 @@ export type BriefTransaction = {
   cashflow_twd: number | null;
 };
 
-/** 與 alerts-scan.ts／dashboard-data.ts 相同的市值口徑。 */
-function valueOf(a: BriefAccount): number {
+/** 與 alerts-scan.ts／dashboard-data.ts 相同的市值口徑。AI 對話（ai-chat.ts）也用這個。 */
+export function valueOf(a: BriefAccount): number {
   if (a.price_market === "manual") return Number(a.manual_value_base ?? 0);
   const unit = Number(a.last_unit_price ?? 0);
   const fx = Number(a.last_fx_rate ?? 1);
@@ -173,6 +173,69 @@ export function buildWeeklyDigest(input: {
 
 export type WeeklyDigest = ReturnType<typeof buildWeeklyDigest>;
 
+/**
+ * 讀一位使用者算週報要的資料並彙整。cron（service role）與首頁 AI 對話（使用者自己的
+ * client，RLS 生效）共用，兩邊的數字才會是同一個口徑。
+ * 查詢都帶 user_id：service role 不受 RLS 限制，少了這個條件會讀到別人的帳戶。
+ * 沒有 active 帳戶時 digest 是 null。accounts 一併回傳，AI 對話要用來列各帳戶比重。
+ */
+export async function loadWeeklyDigest(
+  supabase: SupabaseClient,
+  userId: string,
+  today: string,
+): Promise<
+  | { ok: true; digest: WeeklyDigest | null; accounts: BriefAccount[] }
+  | { ok: false; code: string }
+> {
+  const sinceIso = `${shiftDate(today, -6)}T00:00:00+08:00`;
+  const [accounts, snapshots, transactions, profile, notes] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select(
+        "id,name,asset_class,price_market,symbol,quantity,last_unit_price,last_fx_rate,manual_value_base",
+      )
+      .eq("user_id", userId)
+      .eq("status", "active"),
+    // 週初前一週的快照就夠找出「最晚一筆 ≤ 週初」，不必整段歷史
+    supabase
+      .from("account_snapshots")
+      .select("account_id,snapshot_date,value_base")
+      .eq("user_id", userId)
+      .gte("snapshot_date", shiftDate(today, -14))
+      .lte("snapshot_date", shiftDate(today, -7)),
+    supabase
+      .from("transactions")
+      .select("account_id,type,cashflow_twd")
+      .eq("user_id", userId)
+      .gte("created_at", sinceIso),
+    // profiles 的主鍵是 id（= auth.users.id），沒有 user_id 欄位
+    supabase.from("profiles").select("allocation_targets").eq("id", userId),
+    supabase
+      .from("notifications")
+      .select("type")
+      .eq("user_id", userId)
+      .gte("created_at", sinceIso),
+  ]);
+  const failedQuery = [accounts, snapshots, transactions, profile, notes].find((r) => r.error);
+  if (failedQuery) return { ok: false, code: failedQuery.error?.code ?? "unknown" };
+  const rows = (accounts.data ?? []) as BriefAccount[];
+  if (rows.length === 0) return { ok: true, digest: null, accounts: [] };
+  return {
+    ok: true,
+    accounts: rows,
+    digest: buildWeeklyDigest({
+      today,
+      accounts: rows,
+      snapshots: snapshots.data as BriefSnapshot[],
+      transactions: transactions.data as BriefTransaction[],
+      targets:
+        ((profile.data ?? [])[0] as { allocation_targets?: Record<string, unknown> })
+          ?.allocation_targets ?? null,
+      notificationTypes: ((notes.data ?? []) as { type: string }[]).map((n) => n.type),
+    }),
+  };
+}
+
 const SYSTEM = `你替一位個人投資者整理他自己的投資組合週報，用繁體中文（台灣用語）。
 
 規則：
@@ -275,57 +338,17 @@ export async function runWeeklyBrief(
         continue;
       }
 
-      const [accounts, snapshots, transactions, profile, notes] = await Promise.all([
-        supabase
-          .from("accounts")
-          .select(
-            "id,name,asset_class,price_market,symbol,quantity,last_unit_price,last_fx_rate,manual_value_base",
-          )
-          .eq("user_id", user.id)
-          .eq("status", "active"),
-        // 週初前一週的快照就夠找出「最晚一筆 ≤ 週初」，不必整段歷史
-        supabase
-          .from("account_snapshots")
-          .select("account_id,snapshot_date,value_base")
-          .eq("user_id", user.id)
-          .gte("snapshot_date", shiftDate(opts.today, -14))
-          .lte("snapshot_date", shiftDate(opts.today, -7)),
-        supabase
-          .from("transactions")
-          .select("account_id,type,cashflow_twd")
-          .eq("user_id", user.id)
-          .gte("created_at", sinceIso),
-        // profiles 的主鍵是 id（= auth.users.id），沒有 user_id 欄位
-        supabase.from("profiles").select("allocation_targets").eq("id", user.id),
-        supabase
-          .from("notifications")
-          .select("type")
-          .eq("user_id", user.id)
-          .gte("created_at", sinceIso),
-      ]);
-      const failedQuery = [accounts, snapshots, transactions, profile, notes].find(
-        (r) => r.error,
-      );
-      if (failedQuery) {
+      const loaded = await loadWeeklyDigest(supabase, user.id, opts.today);
+      if (!loaded.ok) {
         result.failed++;
-        result.errors.push(`讀取週報資料失敗 code=${failedQuery.error?.code ?? "unknown"}`);
+        result.errors.push(`讀取週報資料失敗 code=${loaded.code}`);
         continue;
       }
-      if ((accounts.data ?? []).length === 0) {
+      if (!loaded.digest) {
         result.skipped++;
         continue;
       }
-
-      const digest = buildWeeklyDigest({
-        today: opts.today,
-        accounts: accounts.data as BriefAccount[],
-        snapshots: snapshots.data as BriefSnapshot[],
-        transactions: transactions.data as BriefTransaction[],
-        targets:
-          ((profile.data ?? [])[0] as { allocation_targets?: Record<string, unknown> })
-            ?.allocation_targets ?? null,
-        notificationTypes: ((notes.data ?? []) as { type: string }[]).map((n) => n.type),
-      });
+      const digest = loaded.digest;
 
       const { value } = await generateJson<BriefOutput>({
         system: SYSTEM,

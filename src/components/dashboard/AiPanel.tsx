@@ -14,7 +14,14 @@ export type AiBrief = { title: string; body: string | null } | null;
  * 放在三級（績效指標右側）而不是頂部：週報是文字摘要，不是帳上的數字，
  * 依設計筆記「數字可讀性 > 資訊密度 > 視覺效果」，不該擠進一級摘要。
  */
-export function AiPanel({ brief }: { brief: AiBrief }) {
+export function AiPanel({
+  brief,
+  failed = false,
+}: {
+  brief: AiBrief;
+  /** 週報查詢出錯。跟「沒有週報」分開，否則會被讀成排程沒跑。 */
+  failed?: boolean;
+}) {
   return (
     <div className="min-w-0">
       <CardHead title="AI 摘要（admin）" sub="Gemini 產生，非投資建議" />
@@ -27,6 +34,10 @@ export function AiPanel({ brief }: { brief: AiBrief }) {
           // 週報本文是 formatBriefBody 排好的純文字，用換行分段，不解析成 HTML。
           <p className="mt-2 whitespace-pre-line text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-text)]">
             {brief.body}
+          </p>
+        ) : failed ? (
+          <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
+            週報暫時讀不到，重新整理再試一次；已產生的週報也能在通知中心看到。
           </p>
         ) : (
           <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">

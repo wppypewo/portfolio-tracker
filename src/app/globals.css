@@ -1002,16 +1002,29 @@ textarea:disabled {
 /* 數值更新的提示：總資產這類大數字刷新後，底下閃一層極淡的測量藍再退掉。
    不做跳數、不做位移（大字 1px 位移會在子像素間糊一下），只用底色交代「這個數剛換過」。
    漲跌方向旁邊的變動數字已經講了，這裡用中性色，不重複上紅綠。 */
+/* 底色放在 ::after 上只動 opacity，交給合成器；直接動 background-color 每幀都要重繪大字。 */
 .value-flash {
+  position: relative;
+  isolation: isolate;
+}
+
+.value-flash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--c-accent-soft);
+  pointer-events: none;
+  opacity: 0;
   animation: value-flash 640ms var(--ease-state);
 }
 
 @keyframes value-flash {
   from {
-    background-color: var(--c-accent-soft);
+    opacity: 1;
   }
   to {
-    background-color: transparent;
+    opacity: 0;
   }
 }
 

@@ -117,6 +117,7 @@ export function MobileNavToggle({
             aria-label="關閉導覽"
             onClick={() => setOpen(false)}
             tabIndex={closing ? -1 : undefined}
+            aria-hidden={closing || undefined}
             data-closing={closing || undefined}
             className="pop pop-scrim fixed inset-0 top-[var(--header-h)] z-30 bg-[var(--c-scrim)] md:hidden"
           />

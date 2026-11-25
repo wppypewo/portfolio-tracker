@@ -64,6 +64,11 @@ function applyTheme(pref: ThemePref, resolved: ResolvedTheme) {
   window.dispatchEvent(new Event("theme:change"));
 }
 
+// View Transition 的更新是非同步的：點下去到 data-theme 真的改掉之間還有一小段，
+// 這段期間再點一次，若照舊讀 data-theme 會算出同一個目標、第二下等於沒按。
+// 這裡記住「已經在路上的主題」，下一次切換以它為準。
+let pendingTheme: ResolvedTheme | null = null;
+
 export function setThemePref(pref: ThemePref) {
   const resolved: ResolvedTheme =
     pref === "system"
@@ -76,9 +81,17 @@ export function setThemePref(pref: ThemePref) {
   // 過渡，起訖時間不同步，看起來像一塊塊陸續變色。
   // 實際主題沒變（例如 system → 目前就是的那一色）時直接套用，不播動畫。
   // 不支援的瀏覽器直接切換。減少動態效果時照樣淡化：淡入淡出沒有位移。
-  const changed = document.documentElement.dataset.theme !== resolved;
+  const current = pendingTheme ?? document.documentElement.dataset.theme;
+  const changed = current !== resolved;
   if (changed && typeof document.startViewTransition === "function") {
-    document.startViewTransition(() => applyTheme(pref, resolved));
+    pendingTheme = resolved;
+    // 連點時前一段轉場會被跳過，但它的更新仍會先執行；只有最後一個目標落地時才清掉。
+    const transition = document.startViewTransition(() => {
+      if (pendingTheme === resolved) pendingTheme = null;
+      applyTheme(pref, resolved);
+    });
+    // 被下一次切換跳過時 ready 會 reject（AbortError）；主題照樣套用了，這是預期情況，不要變成未處理的錯誤。
+    transition.ready.catch(() => {});
   } else {
     applyTheme(pref, resolved);
   }
@@ -92,7 +105,9 @@ export function ThemeToggle() {
   const resolved = useResolvedTheme();
 
   function toggle() {
-    const next = (resolved ?? "dark") === "dark" ? "light" : "dark";
+    // 以「已經在路上的主題」為準，轉場還沒落地就再點一次也能切回來。
+    const now = pendingTheme ?? resolved ?? "dark";
+    const next = now === "dark" ? "light" : "dark";
     setThemePref(next);
   }
 

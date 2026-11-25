@@ -10,6 +10,7 @@ import { AllocationCard } from "./AllocationCard";
 import { MetricsCard } from "./MetricsCard";
 import { Holdings } from "./Holdings";
 import { StickySummary } from "./StickySummary";
+import { AiPanel, type AiBrief } from "./AiPanel";
 export type {
   DashSummary,
   AllocTarget,
@@ -21,9 +22,12 @@ import type { DashboardData } from "./types";
 export function DashboardClient({
   data,
   demo = false,
+  ai,
 }: {
   data: DashboardData;
   demo?: boolean;
+  /** 只有 admin 會傳；undefined 時不顯示 AI 區塊。 */
+  ai?: { brief: AiBrief };
 }) {
   const summary = data.summary;
 
@@ -178,15 +182,27 @@ export function DashboardClient({
             內容欄寬收在 640px：四格數字撐滿 1144px 會稀得讀不成一組。
             /demo 例外：被動收入搬到右欄並排（split），兩欄各約 550px，右半不再空著。 */}
         <section className="mt-10 border-t border-[var(--c-border)] pt-7">
-          {metricsHasContent ? (
-            <div className={demo ? "" : "max-w-[640px]"}>
-              <MetricsCard s={summary} split={demo} />
-            </div>
-          ) : (
-            <p className="text-[length:var(--fs-sm)] text-[var(--c-faint)]">
-              TWR、回撤與 Sharpe 會在每日淨值快照滿 30 天後顯示。
-            </p>
-          )}
+          {/* admin 的 AI 區塊放在績效指標右側：640px 欄寬之外原本是空的。
+              併進同一個 section 而不是另開一個，因為 .ledger 的子元素數就是進場節奏的階數。
+              窄於 lg 時改成上下排。 */}
+          <div
+            className={
+              ai
+                ? "grid gap-y-10 lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)] lg:gap-x-12"
+                : ""
+            }
+          >
+            {metricsHasContent ? (
+              <div className={demo ? "" : "max-w-[640px]"}>
+                <MetricsCard s={summary} split={demo} />
+              </div>
+            ) : (
+              <p className="text-[length:var(--fs-sm)] text-[var(--c-faint)]">
+                TWR、回撤與 Sharpe 會在每日淨值快照滿 30 天後顯示。
+              </p>
+            )}
+            {ai && <AiPanel brief={ai.brief} />}
+          </div>
         </section>
   </div>
     </>

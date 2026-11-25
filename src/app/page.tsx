@@ -15,6 +15,9 @@ import { fetchUsdTwdHistory } from "@/lib/prices/fx";
 import { fetchTwDailyClose } from "@/lib/prices/finmind";
 import { fetchBtcDailyCloseTwd } from "@/lib/prices/coingecko";
 import { getUnreadCount } from "@/lib/notifications";
+import { isAdmin } from "@/lib/admin";
+import { WEEKLY_BRIEF_TYPE } from "@/lib/weekly-brief";
+import type { AiBrief } from "@/components/dashboard/AiPanel";
 
 export default async function Home({
   searchParams,
@@ -48,7 +51,8 @@ export default async function Home({
 
   // 總覽金融指標只使用 active portfolio；封存切換只影響持倉帳本。
   const hasActive = activeAccountIds.length > 0;
-  const [cashflowResult, incomeResult, profileResult, snapshotResult] =
+  const admin = isAdmin(user?.email);
+  const [cashflowResult, incomeResult, profileResult, snapshotResult, briefResult] =
     await Promise.all([
       hasActive
         ? fetchAllPages<CashflowRow>(async (from, to) => {
@@ -91,7 +95,18 @@ export default async function Home({
             return { data: res.data as SnapshotRow[] | null, error: res.error };
           })
         : Promise.resolve({ data: null as SnapshotRow[] | null }),
+      // 首頁 AI 區塊要的最新一份週報；非 admin 不查。讀失敗就當沒有，不擋首頁。
+      admin
+        ? supabase
+            .from("notifications")
+            .select("title,body")
+            .eq("type", WEEKLY_BRIEF_TYPE)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
+  const brief = (briefResult.data ?? null) as AiBrief;
 
   const cashflowRows = cashflowResult.data;
   const incomeRows = incomeResult.data;
@@ -165,7 +180,7 @@ export default async function Home({
       />
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-[1200px] px-4 pb-28 pt-5 sm:px-6 sm:pt-7 lg:px-7 lg:pt-8">
-        <DashboardClient data={dashboard} />
+        <DashboardClient data={dashboard} ai={admin ? { brief } : undefined} />
       </main>
     </div>
   );

@@ -613,6 +613,7 @@ function NotifInner({ isAdmin }: { isAdmin: boolean }) {
         {isAdmin && (
           <LinkCard href="/admin/allowlist" label="使用者管理（admin）" />
         )}
+        {isAdmin && <LinkCard href="/admin/news" label="持股新聞（admin）" />}
       </div>
     </>
   );

@@ -37,8 +37,9 @@ type AccountSlim = {
   status: string;
 };
 
+// profiles 的主鍵 id 就是 auth.users.id，這張表沒有 user_id 欄位（見 supabase/schema.sql）。
 type ProfileSlim = {
-  user_id: string;
+  id: string;
   allocation_targets: Record<string, number> | null;
 };
 
@@ -103,12 +104,17 @@ export async function scanAlerts(supabase: SupabaseClient) {
   const profilesMap = new Map<string, ProfileSlim>();
   const userAccountsMap = new Map<string, AccountSlim[]>();
   if (uniqDriftUsers.length > 0) {
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("user_id,allocation_targets")
-      .in("user_id", uniqDriftUsers);
+      .select("id,allocation_targets")
+      .in("id", uniqDriftUsers);
+    // 查不到目標時 profilesMap 是空的，偏離警示全部算成「沒設目標」而靜靜不觸發，
+    // 跟「今天沒有偏離」分不出來，所以要回報。
+    if (profilesError) {
+      errors.push(`查詢配置目標失敗 code=${profilesError.code ?? "unknown"}`);
+    }
     for (const p of (profiles ?? []) as ProfileSlim[]) {
-      profilesMap.set(p.user_id, p);
+      profilesMap.set(p.id, p);
     }
     const { data: userAccounts } = await supabase
       .from("accounts")

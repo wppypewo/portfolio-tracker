@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Panel } from "@/components/survey";
+import { AiChat, GroundingExtras } from "@/components/AiChat";
 import { fetchHoldingsNews, type NewsResult } from "./actions";
 
 const fmtTime = (iso: string) =>
@@ -60,40 +61,21 @@ export function NewsPanel() {
               {result.text}
             </div>
 
-            {result.suggestionsDoc && (
-              // Google 搜尋建議：條款要求原樣顯示。sandbox 不給 allow-scripts，
-              // 只給開新分頁的權限，chip 點下去在新分頁開 Google 搜尋。
-              <iframe
-                title="Google 搜尋建議"
-                srcDoc={result.suggestionsDoc}
-                sandbox="allow-popups allow-popups-to-escape-sandbox"
-                className="block h-16 w-full border-0"
-              />
-            )}
-
-            {result.sources.length > 0 && (
-              <div>
-                <h3 className="text-[length:var(--fs-sm)] font-semibold">來源</h3>
-                <ul className="mt-2 space-y-1 text-[length:var(--fs-sm)]">
-                  {result.sources.map((s) => (
-                    <li key={s.uri}>
-                      <a
-                        href={s.uri}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[var(--c-accent)] underline underline-offset-2"
-                      >
-                        {s.title}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <GroundingExtras suggestionsDoc={result.suggestionsDoc} sources={result.sources} />
 
             <p className="text-[length:var(--fs-micro)] text-[var(--c-faint)]">
               AI 依搜尋結果整理，可能有錯或遺漏，請點來源核對。非投資建議。
             </p>
+
+            {/* 重新查詢就換一段新對話：key 換了，舊的問答跟著舊結果一起丟掉。 */}
+            <AiChat
+              key={result.at}
+              mode="news"
+              openLabel="追問這些消息"
+              title="追問新聞"
+              opener={result.text}
+              suggestions={["把有日期的消息依時間排一次", "哪幾檔近 7 天沒有找到消息？"]}
+            />
           </div>
         )}
       </div>

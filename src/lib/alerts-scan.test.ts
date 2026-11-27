@@ -4,20 +4,52 @@ import { scanAlerts } from "./alerts-scan";
 
 type Row = Record<string, unknown>;
 
+// 已知真實欄位的表：select／in／eq 用到不存在的欄位時，回 PostgREST 的 42703，
+// 跟正式環境一樣 data 為 null。沒列的表不驗欄位。
+// 欄位取自 supabase/schema.sql、batch2-schema.sql 與 migrations；
+// 舊版假 client 不看欄位名，profiles 用了不存在的 user_id 也照樣回資料，才會漏掉那個 bug。
+const KNOWN_COLUMNS: Record<string, readonly string[]> = {
+  profiles: [
+    "id",
+    "display_name",
+    "base_currency",
+    "allocation_targets",
+    "concentration_limit_pct",
+    "created_at",
+  ],
+};
+
 // 只實作 scanAlerts 用到的鏈式呼叫：select / eq / in / insert / update，
-// await 時依表名回傳預先放好的資料。insert / update 記到 calls 供斷言。
+// await 時依表名回傳預先放好的資料，並照 eq / in 的條件篩選。insert / update 記到 calls 供斷言。
 function fakeSupabase(
   tables: Record<string, Row[]>,
-  opts: { insertError?: { code: string }; updateError?: { code: string } } = {},
+  opts: {
+    insertError?: { code: string };
+    updateError?: { code: string };
+    selectError?: Record<string, { code: string }>;
+  } = {},
 ) {
   const calls: { table: string; op: string; payload?: unknown }[] = [];
   const from = (table: string) => {
     let op = "select";
     let payload: unknown;
+    const usedColumns: string[] = [];
+    const filters: ((r: Row) => boolean)[] = [];
     const builder = {
-      select: () => builder,
-      eq: () => builder,
-      in: () => builder,
+      select: (cols: string) => {
+        usedColumns.push(...cols.split(",").map((c) => c.trim()));
+        return builder;
+      },
+      eq: (col: string, val: unknown) => {
+        usedColumns.push(col);
+        filters.push((r) => r[col] === val);
+        return builder;
+      },
+      in: (col: string, vals: unknown[]) => {
+        usedColumns.push(col);
+        filters.push((r) => vals.includes(r[col]));
+        return builder;
+      },
       insert: (p: unknown) => {
         op = "insert";
         payload = p;
@@ -32,7 +64,15 @@ function fakeSupabase(
         calls.push({ table, op, payload });
         if (op === "insert") return resolve({ error: opts.insertError ?? null });
         if (op === "update") return resolve({ error: opts.updateError ?? null });
-        return resolve({ data: tables[table] ?? [], error: null });
+        const known = KNOWN_COLUMNS[table];
+        if (known && usedColumns.some((c) => !known.includes(c))) {
+          return resolve({ data: null, error: { code: "42703" } });
+        }
+        if (opts.selectError?.[table]) {
+          return resolve({ data: null, error: opts.selectError[table] });
+        }
+        const rows = (tables[table] ?? []).filter((r) => filters.every((f) => f(r)));
+        return resolve({ data: rows, error: null });
       },
     };
     return builder;
@@ -62,6 +102,7 @@ const priceAlert = {
   threshold: 100,
   note: null,
   last_triggered_at: null,
+  active: true,
 };
 
 describe("scanAlerts", () => {
@@ -110,7 +151,7 @@ describe("scanAlerts", () => {
         alerts: [
           { ...priceAlert, type: "allocation_drift", account_id: null, threshold: 5 },
         ],
-        profiles: [{ user_id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } }],
+        profiles: [{ id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } }],
         accounts: [account("me")],
       },
       { insertError: { code: "500" } },
@@ -120,6 +161,37 @@ describe("scanAlerts", () => {
 
     expect(result.triggered).toBe(0);
     expect(calls.some((c) => c.table === "alerts" && c.op === "update")).toBe(false);
+  });
+
+  describe("配置偏離讀 profiles", () => {
+    const driftTables = {
+      alerts: [{ ...priceAlert, type: "allocation_drift", account_id: null, threshold: 5 }],
+      // profiles 主鍵是 id（= auth.users.id），沒有 user_id 欄位。
+      profiles: [{ id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } }],
+      accounts: [account("me")],
+    };
+
+    it("用主鍵 id 取得目標配置，偏離超過門檻時觸發", async () => {
+      const { client, calls } = fakeSupabase(driftTables);
+
+      const result = await scanAlerts(client);
+
+      expect(result.errors).toEqual([]);
+      expect(result.triggered).toBe(1);
+      expect(calls.map((c) => `${c.table}:${c.op}`)).toContain("notifications:insert");
+    });
+
+    it("profiles 查詢失敗時回報 code，不寫通知", async () => {
+      const { client, calls } = fakeSupabase(driftTables, {
+        selectError: { profiles: { code: "57014" } },
+      });
+
+      const result = await scanAlerts(client);
+
+      expect(result.triggered).toBe(0);
+      expect(result.errors).toContain("查詢配置目標失敗 code=57014");
+      expect(calls.some((c) => c.op === "insert")).toBe(false);
+    });
   });
 
   describe("配置偏離每天提醒一次", () => {
@@ -139,7 +211,7 @@ describe("scanAlerts", () => {
       // 目標 us_stock 50 / tw_stock 50，實際全在 us_stock：偏離 +50 / −50，一定超過門檻。
       // 只填 us_stock 50 的話正規化後目標是 100%，偏離為 0，測不到觸發。
       profiles: [
-        { user_id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } },
+        { id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } },
       ],
       accounts: [account("me")],
     });
@@ -183,7 +255,7 @@ describe("scanAlerts", () => {
       // 目標 us_stock 30 / fund 20（加總 50）→ 正規化為 60 / 40。
       const mixed = (fundValue: number) => ({
         alerts: [driftAlert("2026-11-01T06:00:00Z")],
-        profiles: [{ user_id: "me", allocation_targets: { us_stock: 30, fund: 20 } }],
+        profiles: [{ id: "me", allocation_targets: { us_stock: 30, fund: 20 } }],
         accounts: [
           { ...account("me"), quantity: 1.5 }, // 1.5 × 500 × 32 = 24000
           {
@@ -242,7 +314,7 @@ describe("scanAlerts", () => {
         alerts: [
           { ...priceAlert, type: "allocation_drift", account_id: null, threshold: 5 },
         ],
-        profiles: [{ user_id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } }],
+        profiles: [{ id: "me", allocation_targets: { us_stock: 50, tw_stock: 50 } }],
         accounts: [account("me")],
       },
       { updateError: { code: "40001" } },

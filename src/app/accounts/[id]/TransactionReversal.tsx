@@ -66,7 +66,7 @@ export function TransactionReversal({
       <input type="hidden" name="accountId" value={accountId} />
       <input type="hidden" name="transactionId" value={target.id} />
       <input type="hidden" name="mode" value={mode} />
-      <p className="text-left text-[length:var(--fs-micro)] font-semibold text-[var(--c-text)]">
+      <p className="text-left text-[length:var(--fs-micro)] font-medium text-[var(--c-text)]">
         {copy.title}
       </p>
       <p className="w-[248px] text-left text-[length:var(--fs-micro)] leading-relaxed text-[var(--c-muted)]">

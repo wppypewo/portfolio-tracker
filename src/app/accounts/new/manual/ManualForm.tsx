@@ -18,17 +18,17 @@ export function ManualForm() {
       className="mt-6 border border-[var(--c-border)] bg-[var(--c-surface)] p-5 sm:p-6"
     >
       <div className="flex flex-col gap-5">
-        <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+        <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
           帳戶名稱
           <input
             name="name"
             required
             placeholder="例：玉山銀行活存"
-            className="field h-[42px]"
+            className="field h-11 sm:h-10"
           />
         </label>
 
-        <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+        <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
           餘額（TWD）
           <input
             name="balance"
@@ -37,12 +37,12 @@ export function ManualForm() {
             min="0"
             required
             placeholder="例：100000"
-            className="field h-[42px]"
+            className="field h-11 sm:h-10"
           />
         </label>
 
         {state?.error && (
-          <p className="border border-[var(--c-down)] px-3.5 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
+          <p className="border border-[var(--c-down)] px-4 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
             {state.error}
           </p>
         )}

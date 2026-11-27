@@ -258,7 +258,7 @@ body {
   color: var(--c-btn-strong-text);
   padding: 0.5rem 1rem;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   box-shadow: var(--c-shadow);
   transition: transform var(--dur-base) var(--ease-enter);
 }
@@ -701,10 +701,10 @@ textarea:disabled {
   border-radius: var(--r-control);
   /* 高度用 min-height 不用 height：中文字比拉丁字高，使用者把瀏覽器
      字級調大時，固定高度會把字裁掉。 */
-  min-height: 38px;
+  min-height: 40px;
   padding-inline: 1rem;
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
   cursor: pointer;
 }
@@ -713,7 +713,7 @@ textarea:disabled {
    sm 給表格列與卡片內的密集控制項；lg 給整頁只有一個的主動作
    （登入、驗證碼），44px 是 Apple HIG 的觸控目標下限。 */
 .btn-sm {
-  min-height: 30px;
+  min-height: 32px;
   padding-inline: 0.625rem;
   font-size: var(--fs-micro);
 }
@@ -726,12 +726,12 @@ textarea:disabled {
 
 /* 只有圖示、沒有文字：寬度等於高度，內距歸零。 */
 .btn-icon {
-  width: 38px;
+  width: 40px;
   padding-inline: 0;
 }
 
 .btn-icon.btn-sm {
-  width: 30px;
+  width: 32px;
 }
 
 .btn-icon.btn-lg {

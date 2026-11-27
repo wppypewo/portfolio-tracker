@@ -28,7 +28,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-[1200px] px-4 pb-24 pt-8 sm:px-6 sm:pb-10 lg:px-7">
         <div className="grid grid-cols-2 border border-[var(--c-line-strong)] bg-[var(--c-page)] text-[length:var(--fs-micro)] md:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))_auto]">
           <div className="col-span-2 flex flex-col justify-between gap-2 border-b border-[var(--c-border)] p-3 md:col-span-1 md:border-b-0 md:border-r">
-            <p className="flex items-center gap-2 font-semibold text-[var(--c-text)]">
+            <p className="flex items-center gap-2 font-medium text-[var(--c-text)]">
               <CompassMark />
               StackWorth
             </p>
@@ -41,7 +41,7 @@ export function SiteFooter() {
                 index === 2 ? "col-span-2 border-t md:col-span-1 md:border-t-0 md:border-r" : "border-r"
               } ${index === 1 ? "max-md:border-r-0" : ""}`}
             >
-              <span className="font-mono text-[length:var(--fs-axis)] uppercase tracking-[0.12em] text-[var(--c-faint)]">
+              <span className="font-mono text-[length:var(--fs-axis)] tracking-[0.12em] text-[var(--c-faint)]">
                 {cell.label}
               </span>
               <span className="text-[var(--c-muted)]">{cell.value}</span>

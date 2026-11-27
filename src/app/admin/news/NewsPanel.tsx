@@ -48,7 +48,7 @@ export function NewsPanel() {
           <p className="text-[length:var(--fs-sm)] text-[var(--c-muted)]">正在搜尋與整理…</p>
         )}
         {!pending && result && !result.ok && (
-          <p className="border border-[var(--c-down)] px-3.5 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
+          <p className="border border-[var(--c-down)] px-4 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
             {result.error}
           </p>
         )}

@@ -120,14 +120,14 @@ export default async function NotificationsPage() {
                         {TYPE_LABEL[r.type] ?? r.type}
                       </Tag>
                       <span
-                        className={`text-[length:var(--fs-sm)] font-semibold ${
+                        className={`text-[length:var(--fs-sm)] font-medium ${
                           r.read_at ? "text-[var(--c-muted)]" : ""
                         }`}
                       >
                         {r.title}
                       </span>
                       {!r.read_at && (
-                        <span className="text-[length:var(--fs-micro)] font-semibold text-[var(--c-accent)]">
+                        <span className="text-[length:var(--fs-micro)] font-medium text-[var(--c-accent)]">
                           未讀
                         </span>
                       )}

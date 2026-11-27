@@ -218,7 +218,7 @@ function FirstRun({ archivedCount }: { archivedCount: number }) {
   if (archivedCount > 0) {
     return (
       <section className="mx-auto mt-14 max-w-[520px] rounded-[var(--r-card)] border border-[var(--c-border)] bg-[var(--c-surface)] px-6 py-11 text-center sm:px-8">
-        <h2 className="text-[length:var(--fs-xl)] font-semibold tracking-[-0.02em]">
+        <h2 className="text-[length:var(--fs-xl)] font-medium tracking-[-0.02em]">
           <span className="tnum">{archivedCount}</span> 個帳戶都已封存
         </h2>
         <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
@@ -247,7 +247,7 @@ function FirstRun({ archivedCount }: { archivedCount: number }) {
       >
         <path d="M8 1 L15 8 L8 15 L1 8 Z" />
       </svg>
-      <h2 className="mt-4 text-[length:var(--fs-xl)] font-semibold tracking-[-0.02em]">
+      <h2 className="mt-4 text-[length:var(--fs-xl)] font-medium tracking-[-0.02em]">
         從第一個資產開始
       </h2>
       <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">

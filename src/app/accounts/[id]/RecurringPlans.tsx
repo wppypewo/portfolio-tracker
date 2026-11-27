@@ -47,11 +47,11 @@ const fmtSignedPct = (value: number) => {
 // 定期定額區塊的控制項高度。小螢幕 44px（WCAG 2.5.5 舒適觸控值），
 // sm 以上是滑鼠操作，收到 34px 以免這排在桌機變得笨重。
 // 這排按鈕原本只有 28-30px，手指點「暫停」很容易誤中旁邊的「刪除」。
-const controlH = "h-11 sm:h-[34px]";
+const controlH = "h-11 sm:h-9";
 
 // 新增計劃表單是堆疊的完整欄位，桌機給到 38px 與 app 其他表單接近，
 // 不套用上面那排行內控制項的 34px。
-const controlFieldH = "h-11 sm:h-[38px]";
+const controlFieldH = "h-11 sm:h-10";
 
 function PlanRow({
   plan,
@@ -133,7 +133,7 @@ function PlanRow({
               </>
             )}
             {!plan.active && (
-              <span className="ml-2 inline-block border border-[var(--c-line-strong)] px-1.5 py-px text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <span className="ml-2 inline-block border border-[var(--c-line-strong)] px-1.5 py-px text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 已暫停
               </span>
             )}
@@ -178,7 +178,7 @@ function PlanRow({
                   min="0.01"
                   disabled={!plan.active || awaitingTier}
                   defaultValue={amountDefault}
-                  className={`${controlH} field w-full py-0 pl-9 pr-2 text-right tnum disabled:opacity-40 sm:w-[118px]`}
+                  className={`${controlH} field w-full py-0 pl-9 pr-2 text-right tnum disabled:opacity-40 sm:w-[120px]`}
                 />
               </div>
               <label htmlFor={feeFieldId} className="sr-only">
@@ -201,7 +201,7 @@ function PlanRow({
                   min="0"
                   disabled={!plan.active || awaitingTier}
                   defaultValue={planFee}
-                  className={`${controlH} field w-full py-0 pl-7 pr-2 text-right tnum disabled:opacity-40 sm:w-[86px]`}
+                  className={`${controlH} field w-full py-0 pl-7 pr-2 text-right tnum disabled:opacity-40 sm:w-[88px]`}
                 />
               </div>
               <button
@@ -300,7 +300,7 @@ function PlanRow({
 function TierNote({ children }: { children: React.ReactNode }) {
   return (
     <p className="mt-2 border-l border-dashed border-[var(--c-annot)] pl-2 text-[length:var(--fs-micro)] leading-5 text-[var(--c-muted)]">
-      <span className="font-semibold text-[var(--c-annot-text)]">注意</span>{" "}
+      <span className="font-medium text-[var(--c-annot-text)]">注意</span>{" "}
       {children}
     </p>
   );
@@ -445,7 +445,7 @@ function TierRows({
 }) {
   return (
     <fieldset className="border border-[var(--c-border)] px-3 pb-3 pt-2">
-      <legend className="px-1 text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+      <legend className="px-1 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
         {legend}
       </legend>
       <div className="grid grid-cols-[auto_1fr_1fr] items-center gap-x-2 gap-y-2 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
@@ -489,7 +489,7 @@ function TierRows({
 function TierConfigFields() {
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)] sm:max-w-[calc(50%-0.375rem)]">
+      <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)] sm:max-w-[calc(50%-0.375rem)]">
         均線天數（20-500）
         <input
           name="tierMaLength"
@@ -556,7 +556,7 @@ export function AddRecurringPlanForm({
       >
         <input type="hidden" name="accountId" value={accountId} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+          <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
             每次金額（TWD）
             <input
               name="amount"
@@ -568,7 +568,7 @@ export function AddRecurringPlanForm({
               className={`field ${controlFieldH} py-0`}
             />
           </label>
-          <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+          <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
             每期手續費（TWD，留空 = 0）
             <input
               name="fee"
@@ -582,7 +582,7 @@ export function AddRecurringPlanForm({
               內含於每次金額，扣掉後才換算股數。
             </span>
           </label>
-          <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+          <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
             每月幾日扣款（1-28）
             <input
               name="dayOfMonth"
@@ -595,7 +595,7 @@ export function AddRecurringPlanForm({
             />
           </label>
         </div>
-        <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+        <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
           起始日期（留空 = 今天）
           <input
             name="startDate"
@@ -603,7 +603,7 @@ export function AddRecurringPlanForm({
             className={`field ${controlFieldH} py-0`}
           />
         </label>
-        <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+        <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
           備註（選填）
           <input
             name="note"
@@ -614,8 +614,8 @@ export function AddRecurringPlanForm({
         </label>
         {tierAvailable && (
           <>
-            <fieldset className="text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
-              <legend className="mb-[7px]">金額模式</legend>
+            <fieldset className="text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
+              <legend className="mb-2">金額模式</legend>
               <div className="flex gap-2">
                 <label className={tierModeLabelClass}>
                   <input

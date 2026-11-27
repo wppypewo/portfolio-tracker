@@ -250,7 +250,7 @@ export function QuickAddFab({ accounts }: { accounts: Account[] }) {
             <div className="flex items-center justify-between border-b border-[var(--c-line-strong)] pb-3">
               <div>
                 <SurveyLabel>快速建立</SurveyLabel>
-                <h2 className="mt-1 text-[length:var(--fs-lg)] font-semibold">
+                <h2 className="mt-1 text-[length:var(--fs-lg)] font-medium">
                   快速加碼
                 </h2>
               </div>
@@ -275,10 +275,10 @@ export function QuickAddFab({ accounts }: { accounts: Account[] }) {
               </button>
             </div>
 
-            <form action={action} className="mt-5 flex flex-col gap-3.5">
+            <form action={action} className="mt-5 flex flex-col gap-4">
               <input type="hidden" name="accountId" value={accountId} />
 
-              <label className="flex flex-col gap-1 text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-1 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 帳戶
                 <select
                   value={accountId}
@@ -295,7 +295,7 @@ export function QuickAddFab({ accounts }: { accounts: Account[] }) {
                 </select>
               </label>
 
-              <label className="flex flex-col gap-1 text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-1 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 投入金額（TWD）
                 <input
                   name="twd"
@@ -313,7 +313,7 @@ export function QuickAddFab({ accounts }: { accounts: Account[] }) {
               </label>
 
               {account && (
-                <div className="border border-[var(--c-border)] bg-[var(--c-surface-soft)] px-3.5 py-3 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
+                <div className="border border-[var(--c-border)] bg-[var(--c-surface-soft)] px-4 py-3 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
                   <div className="flex justify-between gap-4">
                     <span>現價</span>
                     <span className="text-[var(--c-text)] tnum">
@@ -350,7 +350,7 @@ export function QuickAddFab({ accounts }: { accounts: Account[] }) {
               {/* 缺市價是「請注意」而不是錯誤：朱砂虛線框＋文字，字色用 --c-annot-text
                   （淺色主題下朱砂本身對底不到 4.5:1，只當框色）。 */}
               {accountMissingPrice && (
-                <p className="border border-dashed border-[var(--c-annot)] px-3 py-2 text-[length:var(--fs-micro)] font-semibold text-[var(--c-annot-text)]">
+                <p className="border border-dashed border-[var(--c-annot)] px-3 py-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-annot-text)]">
                   此帳戶目前沒有市價，請先到帳戶詳情頁更新價格。
                 </p>
               )}

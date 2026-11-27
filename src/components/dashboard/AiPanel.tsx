@@ -27,8 +27,8 @@ export function AiPanel({
     <div className="min-w-0">
       <CardHead title="AI 摘要（admin）" sub="Gemini 產生，非投資建議" />
 
-      <div className="border-t border-[var(--c-border)] pt-3.5">
-        <h3 className="text-[length:var(--fs-sm)] font-semibold">
+      <div className="border-t border-[var(--c-border)] pt-3">
+        <h3 className="text-[length:var(--fs-sm)] font-medium">
           {brief ? brief.title : "AI 週報"}
         </h3>
         {brief?.body ? (
@@ -64,8 +64,8 @@ export function AiPanel({
         )}
       </div>
 
-      <div className="mt-5 border-t border-[var(--c-border)] pt-3.5">
-        <h3 className="text-[length:var(--fs-sm)] font-semibold">持股新聞</h3>
+      <div className="mt-5 border-t border-[var(--c-border)] pt-3">
+        <h3 className="text-[length:var(--fs-sm)] font-medium">持股新聞</h3>
         <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
           用 Google 搜尋整理持股近 7 天的消息。按下才查詢，結果不保存。
         </p>
@@ -74,8 +74,8 @@ export function AiPanel({
         </Link>
       </div>
 
-      <div className="mt-5 border-t border-[var(--c-border)] pt-3.5">
-        <h3 className="text-[length:var(--fs-sm)] font-semibold">問 AI</h3>
+      <div className="mt-5 border-t border-[var(--c-border)] pt-3">
+        <h3 className="text-[length:var(--fs-sm)] font-medium">問 AI</h3>
         <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
           問自己的持股比重、本週數字，或名詞與觀念。不會上網搜尋。
         </p>

@@ -43,7 +43,7 @@ export default function WhatIfLoading() {
             <div className="sk mt-5 h-[280px]" />
             <div className="mt-5 grid grid-cols-2 gap-px border border-[var(--c-border)] bg-[var(--c-border)] sm:grid-cols-4">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="bg-[var(--c-surface)] px-4 py-3.5">
+                <div key={i} className="bg-[var(--c-surface)] px-4 py-3">
                   <div className="sk h-3 w-16" />
                   <div className="sk mt-2 h-5 w-20" />
                 </div>

@@ -51,8 +51,8 @@ export function GroundingExtras({
           <Heading
             className={
               compact
-                ? "text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]"
-                : "text-[length:var(--fs-sm)] font-semibold"
+                ? "text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]"
+                : "text-[length:var(--fs-sm)] font-medium"
             }
           >
             來源
@@ -198,7 +198,7 @@ export function AiChat({
   return (
     <div className="mt-4 border-t border-[var(--c-border-soft)] pt-3">
       <div className="flex items-center justify-between gap-3">
-        <h4 className="text-[length:var(--fs-sm)] font-semibold">{title}</h4>
+        <h4 className="text-[length:var(--fs-sm)] font-medium">{title}</h4>
         {entries.length > 0 && (
           <button type="button" className="btn btn-ghost btn-sm" onClick={reset} disabled={pending}>
             清空對話
@@ -210,7 +210,7 @@ export function AiChat({
         <ol className="mt-3 space-y-4" aria-live="polite" aria-busy={pending}>
           {entries.map((e, i) => (
             <li key={i} ref={i === entries.length - 1 ? lastRef : undefined}>
-              <p className="text-[length:var(--fs-micro)] font-semibold text-[var(--c-faint)]">
+              <p className="text-[length:var(--fs-micro)] font-medium text-[var(--c-faint)]">
                 {e.role === "user" ? "你" : "AI"}
               </p>
               {e.role === "user" ? (

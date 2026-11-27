@@ -242,7 +242,7 @@ export default async function AccountDetail({
               {MARKET_LABEL[account.price_market] ?? account.price_market}
               {account.symbol ? ` · ${account.symbol}` : ""}
             </SurveyLabel>
-            <h1 className="mt-2 font-display text-[length:var(--fs-2xl)] font-semibold leading-tight tracking-[-0.01em]">
+            <h1 className="mt-2 font-display text-[length:var(--fs-2xl)] font-medium leading-tight tracking-[-0.01em]">
               {account.name}
             </h1>
           </div>
@@ -392,7 +392,7 @@ export default async function AccountDetail({
                 {plansError ? (
                   // 查詢失敗時 plans 是空的，不能讓畫面說成「尚無計劃」。
                   <p className="border border-dashed border-[var(--c-annot)] px-4 py-3 text-[length:var(--fs-sm)] leading-6 text-[var(--c-muted)]">
-                    <span className="font-semibold text-[var(--c-annot-text)]">
+                    <span className="font-medium text-[var(--c-annot-text)]">
                       注意
                     </span>{" "}
                     讀不到定期定額計劃，資料沒有變動。重新整理再試一次。
@@ -435,7 +435,7 @@ export default async function AccountDetail({
           >
             <table className="w-full min-w-[760px] border-collapse text-[length:var(--fs-sm)]">
               <thead>
-                <tr className="border-b border-[var(--c-line-strong)] text-[length:var(--fs-micro)] font-semibold tracking-[0.06em] text-[var(--c-muted)]">
+                <tr className="border-b border-[var(--c-line-strong)] text-[length:var(--fs-micro)] font-medium tracking-[0.06em] text-[var(--c-muted)]">
                   <th scope="col" className="whitespace-nowrap px-5 py-2.5 text-left">類型</th>
                   <th scope="col" className="px-3 py-2.5 text-right">持有後</th>
                   <th scope="col" className="px-3 py-2.5 text-right">單價</th>
@@ -529,7 +529,7 @@ export default async function AccountDetail({
 // 裡面的 details 自己有框，外面再包一層 Panel 會變成框中框。
 function SectionHead({ title }: { title: string }) {
   return (
-    <h2 className="border-b border-[var(--c-line-strong)] pb-2 text-[length:var(--fs-lg)] font-semibold">
+    <h2 className="border-b border-[var(--c-line-strong)] pb-2 text-[length:var(--fs-lg)] font-medium">
       {title}
     </h2>
   );

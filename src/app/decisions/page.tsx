@@ -111,7 +111,7 @@ export default async function DecisionsPage() {
                     <Tag tone="accent">
                       {typeLabels[decision.decision_type] ?? decision.decision_type}
                     </Tag>
-                    <span className="text-[length:var(--fs-md)] font-semibold">{decision.asset_name}</span>
+                    <span className="text-[length:var(--fs-md)] font-medium">{decision.asset_name}</span>
                     {decision.symbol && (
                       <span className="font-mono text-[length:var(--fs-micro)] text-[var(--c-muted)]">
                         {decision.symbol}

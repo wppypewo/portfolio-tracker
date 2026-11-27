@@ -65,7 +65,7 @@ export function TrendSection({
     <section className="survey-frame mt-4 border border-[var(--c-border)] bg-[var(--c-surface)]">
       <div className="flex flex-col gap-4 px-4 pb-2 pt-5 sm:flex-row sm:items-start sm:justify-between sm:px-6 sm:pt-6">
         <div>
-          <h2 className="text-[length:var(--fs-lg)] font-semibold tracking-[-0.015em]">
+          <h2 className="text-[length:var(--fs-lg)] font-medium tracking-[-0.015em]">
             {mode === "value" ? "淨資產趨勢" : "績效對照"}
           </h2>
           <p className="mt-1 text-[length:var(--fs-sm)] text-[var(--c-muted)]">

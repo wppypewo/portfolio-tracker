@@ -18,7 +18,7 @@ export default function AccountDetailLoading() {
         <div className="sk mt-3 h-3 w-72" />
         <div className="mt-5 grid grid-cols-2 gap-px border border-[var(--c-border)] bg-[var(--c-border)] sm:grid-cols-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className={`bg-[var(--c-surface)] px-4 py-3.5 ${i === 2 ? "col-span-2 sm:col-span-1" : ""}`}>
+            <div key={i} className={`bg-[var(--c-surface)] px-4 py-3 ${i === 2 ? "col-span-2 sm:col-span-1" : ""}`}>
               <div className="sk h-3 w-16" />
               <div className="sk mt-2.5 h-5 w-28" />
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkline, type SeriesPoint } from "./DashboardCharts";
+import type { SeriesPoint } from "./DashboardCharts";
 import { fmtUpdatedAt } from "@/lib/format";
 import { RefreshPricesButton } from "@/components/RefreshPricesButton";
 import type { DashSummary } from "./types";
@@ -35,7 +35,7 @@ export function Hero({
   }
 
   return (
-    <section className="grid grid-cols-1 gap-6 border-b border-[var(--c-border)] pb-7 pt-4 sm:grid-cols-[minmax(0,1fr)_190px] sm:items-end sm:gap-8 sm:pb-8 sm:pt-7">
+    <section className="border-b border-[var(--c-border)] pb-7 pt-4 sm:pb-8 sm:pt-7">
       <div className="min-w-0">
         {/* 原本的 h1 內容就是金額本身，讀屏使用者按標題鍵跳到頁首會聽到一串數字，
             而且金額每次刷新報價都變，頁面等於沒有穩定的名字。
@@ -86,6 +86,15 @@ export function Hero({
               <span className="ml-2 font-normal text-[var(--c-faint)]">今日</span>
             </span>
           )}
+          {/* 原本右側是 30 日 sparkline；2026-11-27 拿掉迷你圖（主圖表已在下方），只留數字 */}
+          {recent.length >= 2 && (
+            <span className={`font-semibold tnum ${TONE_TEXT[up30 ? "up" : "down"]}`}>
+              <span className="amt">
+                {sign(change30)}NT$ {Math.abs(Math.round(change30)).toLocaleString("en-US")}
+              </span>
+              <span className="ml-2 font-normal text-[var(--c-faint)]">近 30 日</span>
+            </span>
+          )}
           <span className="flex flex-wrap items-center gap-1 text-[var(--c-muted)]">
             報價 {s.lastUpdate ? fmtUpdatedAt(s.lastUpdate) : "—"}
             <span className="text-[var(--c-faint)]">·</span>
@@ -95,20 +104,6 @@ export function Hero({
         </div>
       </div>
 
-      {recent.length >= 2 && (
-        <div className="border-t border-[var(--c-border)] pt-4 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <SurveyLabel>近 30 日</SurveyLabel>
-            <span
-              className={`amt text-[length:var(--fs-micro)] font-semibold tnum ${up30 ? "text-[var(--c-up)]" : "text-[var(--c-down)]"}`}
-            >
-              {sign(change30)}NT${" "}
-              {Math.abs(Math.round(change30)).toLocaleString("en-US")}
-            </span>
-          </div>
-          <Sparkline data={recent} w={164} h={42} up={up30} />
-        </div>
-      )}
     </section>
   );
 }
@@ -131,7 +126,7 @@ export function HeroStat({
   return (
     /* 底色跟著頁面而不是卡片：這四格屬於一級摘要區，不再是卡片內容。
        仍需要明確的底色，因為父層用自身底色透出當分隔線。 */
-    <div className="min-w-0 bg-[var(--c-page)] px-4 py-4 sm:px-5 sm:py-[18px]">
+    <div className="min-w-0 bg-[var(--c-page)] px-4 py-4 sm:px-5 sm:py-5">
       <SurveyLabel>{label}</SurveyLabel>
       {/* 手機降一級。實測 390 寬時半格可用 163px，而「NT$ 1,075,921」在
           22px 等寬下要 164px——差 1px 就被 truncate 切成「NT$ 1,075...」。

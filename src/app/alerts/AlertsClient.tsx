@@ -229,11 +229,11 @@ function ConditionText({
   if (type === "allocation_drift")
     return (
       <>
-        當任一類別偏離目標 <b className="font-semibold text-[var(--c-text)]">≥ {t}%</b> 時提醒我
+        當任一類別偏離目標 <b className="font-medium text-[var(--c-text)]">≥ {t}%</b> 時提醒我
       </>
     );
   const name = (
-    <b className="font-semibold text-[var(--c-text)]">
+    <b className="font-medium text-[var(--c-text)]">
       {acc ? acc.symbol || acc.name : "—"}
     </b>
   );
@@ -241,7 +241,7 @@ function ConditionText({
   return type === "price_above" ? (
     <>
       當 {name} 價格{" "}
-      <b className="font-semibold text-[var(--c-up)]">
+      <b className="font-medium text-[var(--c-up)]">
         ≥ {unit}
         {t}
       </b>{" "}
@@ -250,7 +250,7 @@ function ConditionText({
   ) : (
     <>
       當 {name} 價格{" "}
-      <b className="font-semibold text-[var(--c-down)]">
+      <b className="font-medium text-[var(--c-down)]">
         ≤ {unit}
         {t}
       </b>{" "}
@@ -303,7 +303,7 @@ function CreatePanel({ accounts }: { accounts: AlertAccount[] }) {
               style={{ "--tc": t.color } as React.CSSProperties}
               // 選中：框線換成類型色並加粗成 2px（inset 陰影補 1px，不推擠版面），
               // 所以不只靠顏色分辨；底色維持 surface，不做色塊
-              className={`flex flex-col items-start gap-[3px] border p-3.5 text-left transition-[border-color,box-shadow] duration-(--dur-state) ease-(--ease-state) ${
+              className={`flex flex-col items-start gap-1 border p-4 text-left transition-[border-color,box-shadow] duration-(--dur-state) ease-(--ease-state) ${
                 on
                   ? "border-[var(--tc)] bg-[var(--c-surface)] shadow-[inset_0_0_0_1px_var(--tc)]"
                   : "border-[var(--c-border)] bg-[var(--c-surface-soft)] hover:border-[var(--c-line-strong)]"
@@ -311,12 +311,12 @@ function CreatePanel({ accounts }: { accounts: AlertAccount[] }) {
             >
               <span
                 aria-hidden="true"
-                className="mb-[5px] grid h-8 w-8 place-items-center border border-current text-[length:var(--fs-lg)]"
+                className="mb-1 grid h-8 w-8 place-items-center border border-current text-[length:var(--fs-lg)]"
                 style={{ color: "var(--tc)" }}
               >
                 {t.glyph}
               </span>
-              <span className="text-[length:var(--fs-sm)] font-semibold">{t.label}</span>
+              <span className="text-[length:var(--fs-sm)] font-medium">{t.label}</span>
               <span className="text-[length:var(--fs-micro)] leading-[1.35] text-[var(--c-muted)]">
                 {t.desc}
               </span>
@@ -326,9 +326,9 @@ function CreatePanel({ accounts }: { accounts: AlertAccount[] }) {
       </div>
 
       {/* 表單 */}
-      <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {needAccount && (
-          <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+          <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
             <span>帳戶</span>
             <select
               name="accountId"
@@ -345,7 +345,7 @@ function CreatePanel({ accounts }: { accounts: AlertAccount[] }) {
             </select>
           </label>
         )}
-        <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+        <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
           <span className="flex items-baseline gap-2">
             {needAccount ? "目標價格" : "偏離門檻（%）"}
             {needAccount && acc?.price != null && (
@@ -367,7 +367,7 @@ function CreatePanel({ accounts }: { accounts: AlertAccount[] }) {
           />
         </label>
         <label
-          className={`flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)] ${needAccount ? "sm:col-span-2" : ""}`}
+          className={`flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)] ${needAccount ? "sm:col-span-2" : ""}`}
         >
           <span>備註（選填）</span>
           <input
@@ -389,7 +389,7 @@ function CreatePanel({ accounts }: { accounts: AlertAccount[] }) {
         <ConditionText type={type} acc={acc} threshold={threshold} />
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3.5">
+      <div className="mt-5 flex flex-wrap items-center gap-4">
         <button
           type="submit"
           disabled={pending || !threshold}
@@ -398,7 +398,7 @@ function CreatePanel({ accounts }: { accounts: AlertAccount[] }) {
           {pending ? "建立中…" : "＋ 建立提醒"}
         </button>
         {state?.ok && (
-          <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--c-up)]">
+          <span className="text-[length:var(--fs-sm)] font-medium text-[var(--c-up)]">
             ✓ 已新增
           </span>
         )}
@@ -447,17 +447,17 @@ function AlertCard({
       </span>
 
       <div className="min-w-0">
-        <div className="flex flex-col items-start justify-between gap-[3px] sm:flex-row sm:items-baseline sm:gap-3">
+        <div className="flex flex-col items-start justify-between gap-1 sm:flex-row sm:items-baseline sm:gap-3">
           <span className="text-[length:var(--fs-md)] font-medium tnum">
             {a.type === "allocation_drift" ? (
               <>
                 任一類別偏離目標{" "}
-                <b className="font-bold">≥ {a.threshold}%</b>
+                <b className="font-semibold">≥ {a.threshold}%</b>
               </>
             ) : (
               <>
                 {accLabel} {a.type === "price_above" ? "≥" : "≤"}{" "}
-                <b className="font-bold">
+                <b className="font-semibold">
                   {unit}
                   {Number(a.threshold).toLocaleString("en-US")}
                 </b>
@@ -465,7 +465,7 @@ function AlertCard({
             )}
           </span>
           <span
-            className="whitespace-nowrap text-[length:var(--fs-micro)] font-semibold"
+            className="whitespace-nowrap text-[length:var(--fs-micro)] font-medium"
             style={{ color: a.active ? t.color : "var(--c-muted)" }}
           >
             {t.long}
@@ -473,7 +473,7 @@ function AlertCard({
         </div>
 
         {/* 距觸發進度條 */}
-        <div className="mt-2.5 flex items-center gap-[11px]">
+        <div className="mt-2.5 flex items-center gap-3">
           {/* 刻度尺：底軌是髮絲框，填充用 scaleX 而不是 width，只動 transform */}
           <div className="h-1.5 flex-1 overflow-hidden border border-[var(--c-border)] bg-[var(--c-surface-soft)]">
             <span
@@ -553,7 +553,7 @@ function ListHead({
   count: number;
 }) {
   return (
-    <div className="flex items-center gap-2 border-b border-[var(--c-line-strong)] pb-2 text-[length:var(--fs-sm)] font-semibold">
+    <div className="flex items-center gap-2 border-b border-[var(--c-line-strong)] pb-2 text-[length:var(--fs-sm)] font-medium">
       <span
         aria-hidden="true"
         className={`h-2 w-2 ${on ? "bg-[var(--c-up)]" : "border border-[var(--c-faint)]"}`}

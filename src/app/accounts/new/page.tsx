@@ -62,12 +62,12 @@ export default async function NewAccountIndex() {
             >
               <span
                 aria-hidden="true"
-                className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--c-accent)] bg-[var(--c-accent-soft)] text-base font-semibold text-[var(--c-accent)]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center border border-[var(--c-accent)] bg-[var(--c-accent-soft)] text-base font-medium text-[var(--c-accent)]"
               >
                 {it.icon}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="text-[length:var(--fs-md)] font-semibold">{it.title}</div>
+                <div className="text-[length:var(--fs-md)] font-medium">{it.title}</div>
                 <div className="mt-1 text-[length:var(--fs-micro)] leading-5 text-[var(--c-muted)]">
                   {it.desc}
                 </div>

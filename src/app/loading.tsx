@@ -34,7 +34,7 @@ function HomeLoading() {
               {[0, 1, 2, 3].map((index) => (
                 <div
                   key={index}
-                  className="bg-[var(--c-surface)] px-4 py-4 sm:px-5 sm:py-[18px]"
+                  className="bg-[var(--c-surface)] px-4 py-4 sm:px-5 sm:py-5"
                 >
                   <div className={`h-3 w-16 ${skeleton}`} />
                   <div className={`mt-2 h-6 w-24 ${skeleton}`} />

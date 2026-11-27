@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { project, crossMonth, type ProjPoint } from "@/lib/whatif-project";
-import { fmtFull as fmtTwd, fmtCompact } from "@/lib/format";
+import { fmtFull as fmtTwd } from "@/lib/format";
 import { Stat, StatStrip, SurveyLabel, Tag, EmptyPlot } from "@/components/survey";
 import { ScenarioTab, type ScenarioData } from "./ScenarioTab";
 import { RebalanceTab } from "./RebalanceTab";
@@ -315,14 +315,14 @@ function ProjectionChart({
             <span className="h-2 w-2 bg-[var(--c-accent)]" />
             <span className="text-[var(--c-muted)]">淨值</span>
             <span className="amt ml-auto font-semibold tnum">
-              NT$ {fmtCompact(hp.value)}
+              NT$ {fmtTwd(hp.value)}
             </span>
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-[length:var(--fs-micro)]">
             <span className="h-2 w-2 bg-[var(--c-muted)]" />
             <span className="text-[var(--c-muted)]">累積投入</span>
             <span className="amt ml-auto font-semibold text-[var(--c-muted)] tnum">
-              NT$ {fmtCompact(hp.contributed)}
+              NT$ {fmtTwd(hp.contributed)}
             </span>
           </div>
         </div>
@@ -382,9 +382,9 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
     <div className="grid grid-cols-1 items-start min-[880px]:grid-cols-[340px_1fr]">
       {/* 控制欄：桌機用右側髮絲線跟結果分開，手機疊在上面 */}
       <section className="p-5 sm:p-6 min-[880px]:sticky min-[880px]:top-[var(--header-h)] min-[880px]:border-r min-[880px]:border-[var(--c-border)]">
-        <h2 className="text-[length:var(--fs-lg)] font-semibold">情境設定</h2>
+        <h2 className="text-[length:var(--fs-lg)] font-medium">情境設定</h2>
         <p className="mt-1 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
-          從目前淨值 <span className="amt tnum">NT$ {fmtCompact(netWorth)}</span> 開始推算
+          從目前淨值 <span className="amt tnum">NT$ {fmtTwd(netWorth)}</span> 開始推算
         </p>
 
         <div className="mt-5">
@@ -397,7 +397,7 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
                 type="button"
                 onClick={() => setRet(p.r)}
                 aria-pressed={ret === p.r}
-                className={`tap-row min-h-[40px] flex-1 whitespace-nowrap border-r border-[var(--c-border)] px-2.5 text-[length:var(--fs-sm)] font-semibold transition-colors ${
+                className={`tap-row min-h-[40px] flex-1 whitespace-nowrap border-r border-[var(--c-border)] px-2.5 text-[length:var(--fs-sm)] font-medium transition-colors ${
                   ret === p.r ? SEG_ON : SEG_OFF
                 }`}
               >
@@ -405,7 +405,7 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
               </button>
             ))}
             <label
-              className={`tap-row inline-flex min-h-[40px] flex-1 cursor-text items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[length:var(--fs-sm)] font-semibold transition-colors ${
+              className={`tap-row inline-flex min-h-[40px] flex-1 cursor-text items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[length:var(--fs-sm)] font-medium transition-colors ${
                 !isPreset ? SEG_ON : SEG_OFF
               }`}
             >
@@ -420,7 +420,7 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
                   const v = e.target.value === "" ? 0 : Number(e.target.value);
                   setRet(Math.max(-5, Math.min(20, v)));
                 }}
-                className="w-[42px] border-none bg-transparent text-right font-semibold text-inherit tnum"
+                className="w-11 border-none bg-transparent text-right font-semibold text-inherit tnum"
               />
               <span aria-hidden="true">%</span>
             </label>
@@ -462,8 +462,8 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
           max={3000000}
           step={100000}
           onChange={setExpense}
-          fmt={(v) => `NT$ ${fmtCompact(v)}`}
-          hint={`FIRE 目標 NT$ ${fmtCompact(fireTarget)}`}
+          fmt={(v) => `NT$ ${fmtTwd(v)}`}
+          hint={`FIRE 目標 NT$ ${fmtTwd(fireTarget)}`}
         />
       </section>
 
@@ -479,9 +479,9 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
             <b
               className={`amt font-semibold tnum ${gain >= 0 ? "text-[var(--c-up)]" : "text-[var(--c-down)]"}`}
             >
-              {sign(gain)}NT$ {fmtCompact(Math.abs(gain))}
+              {sign(gain)}NT$ {fmtTwd(Math.abs(gain))}
             </b>{" "}
-            · 累積投入 <span className="amt tnum">NT$ {fmtCompact(contributed)}</span>
+            · 累積投入 <span className="amt tnum">NT$ {fmtTwd(contributed)}</span>
           </span>
         </div>
 
@@ -498,7 +498,7 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
         </div>
 
         <StatStrip cols={4} className="mt-5">
-          <Stat label="4% 法則年提領" mask value={`NT$ ${fmtCompact(annualWithdraw)}`} />
+          <Stat label="4% 法則年提領" mask value={`NT$ ${fmtTwd(annualWithdraw)}`} />
           <Stat
             label="換算月被動收入"
             mask
@@ -506,7 +506,7 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
               <span className="text-[var(--c-up)]">NT$ {fmtTwd(annualWithdraw / 12)}</span>
             }
           />
-          <Stat label="總投入本金" mask value={`NT$ ${fmtCompact(contributed)}`} />
+          <Stat label="總投入本金" mask value={`NT$ ${fmtTwd(contributed)}`} />
           <Stat
             label="獲利倍數"
             value={`${contributed > 0 ? (final / contributed).toFixed(2) : "—"}×`}
@@ -514,7 +514,7 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
         </StatStrip>
 
         <div className="mt-6">
-          <h3 className="border-b border-[var(--c-line-strong)] pb-2 text-[length:var(--fs-md)] font-semibold">
+          <h3 className="border-b border-[var(--c-line-strong)] pb-2 text-[length:var(--fs-md)] font-medium">
             里程碑
           </h3>
           {/* 未達成的列不降透明度，改用淡字與空心方塊；「未達成」三個字本身就是訊號 */}
@@ -531,11 +531,11 @@ function ProjectionTab({ netWorth }: { netWorth: number }) {
                   background: m.reached ? m.color : "transparent",
                 }}
               />
-              <span className="whitespace-nowrap text-[length:var(--fs-sm)] font-semibold">
+              <span className="whitespace-nowrap text-[length:var(--fs-sm)] font-medium">
                 {m.label}
               </span>
               <span className="amt text-[length:var(--fs-micro)] text-[var(--c-muted)] tnum">
-                NT$ {fmtCompact(m.target)}
+                NT$ {fmtTwd(m.target)}
               </span>
               <span
                 className={`whitespace-nowrap text-right text-[length:var(--fs-micro)] tnum ${
@@ -596,7 +596,7 @@ function CounterfactualTab({ cf }: { cf: CounterfactualData }) {
 
       <section>
         <div className="border-b border-[var(--c-line-strong)] pb-2">
-          <h2 className="text-[length:var(--fs-lg)] font-semibold">
+          <h2 className="text-[length:var(--fs-lg)] font-medium">
             如果當初全買 ETF 並 Buy &amp; Hold
           </h2>
           <p className="mt-1 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
@@ -623,7 +623,7 @@ function CounterfactualTab({ cf }: { cf: CounterfactualData }) {
                       className="h-2.5 w-2.5 shrink-0"
                       style={{ background: r.color }}
                     />
-                    <span className="whitespace-nowrap text-[length:var(--fs-md)] font-semibold">
+                    <span className="whitespace-nowrap text-[length:var(--fs-md)] font-medium">
                       {r.label}
                       {r.sym && (
                         <span className="ml-1.5 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)] tnum">
@@ -663,7 +663,7 @@ function CounterfactualTab({ cf }: { cf: CounterfactualData }) {
                           diff > 0 ? "text-[var(--c-up)]" : "text-[var(--c-down)]"
                         }
                       >
-                        vs 實際 <span className="amt">{sign(diff)}NT$ {fmtCompact(Math.abs(diff))}</span>
+                        vs 實際 <span className="amt">{sign(diff)}NT$ {fmtTwd(Math.abs(diff))}</span>
                       </span>
                     )}
                     {/* 資料缺口不是虧損，用朱砂註記而不是跌色 */}
@@ -737,7 +737,7 @@ export function WhatIfClient({
             aria-selected={tab === t}
             aria-controls={tab === t ? `${tabBase}-panel-${t}` : undefined}
             tabIndex={tab === t ? 0 : -1}
-            className={`tap-row min-h-[44px] flex-1 whitespace-nowrap border-r border-[var(--c-border)] px-4 text-[length:var(--fs-sm)] font-semibold transition-colors last:border-r-0 sm:flex-none ${
+            className={`tap-row min-h-[44px] flex-1 whitespace-nowrap border-r border-[var(--c-border)] px-4 text-[length:var(--fs-sm)] font-medium transition-colors last:border-r-0 sm:flex-none ${
               tab === t ? SEG_ON : SEG_OFF
             }`}
           >

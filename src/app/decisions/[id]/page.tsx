@@ -263,7 +263,7 @@ function Metric({
   className?: string;
 }) {
   return (
-    <div className={`bg-[var(--c-surface)] px-5 py-3.5 ${className}`}>
+    <div className={`bg-[var(--c-surface)] px-5 py-3 ${className}`}>
       <dt>
         <SurveyLabel>{label}</SurveyLabel>
       </dt>
@@ -315,7 +315,7 @@ function SnapshotCard({ snapshot, transactionId }: { snapshot: DecisionSnapshot;
       {snapshot.data_gaps && snapshot.data_gaps.length > 0 && (
         /* 資料缺口會讓檢討指標失準，是「請注意」，所以走朱砂虛線框加文字 */
         <div className="m-5 border border-dashed border-[var(--c-annot)] px-4 py-3 text-[length:var(--fs-sm)] text-[var(--c-muted)]">
-          <div className="font-semibold text-[var(--c-annot-text)]">注意 · 資料缺口</div>
+          <div className="font-medium text-[var(--c-annot-text)]">注意 · 資料缺口</div>
           <ul className="mt-1 list-disc space-y-1 pl-5">
             {snapshot.data_gaps.map((gap) => (
               <li key={gap}>{gap}</li>

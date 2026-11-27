@@ -64,29 +64,29 @@ export function ImportCsv() {
           encType="multipart/form-data"
           className="flex flex-col gap-3 border-t border-[var(--c-border)] p-4"
         >
-          <div className="border-l-2 border-[var(--c-line-strong)] bg-[var(--c-surface-soft)] px-3.5 py-2.5 text-[length:var(--fs-micro)] leading-relaxed text-[var(--c-muted)]">
-            <p className="mb-1.5 font-semibold text-[var(--c-text)]">
+          <div className="border-l-2 border-[var(--c-line-strong)] bg-[var(--c-surface-soft)] px-4 py-2.5 text-[length:var(--fs-micro)] leading-relaxed text-[var(--c-muted)]">
+            <p className="mb-1.5 font-medium text-[var(--c-text)]">
               支援的欄位（任一即可）
             </p>
-            <ul className="flex flex-col gap-[3px]">
+            <ul className="flex flex-col gap-1">
               <li>
-                <b className="font-semibold text-[var(--c-text)]">日期</b> date /
+                <b className="font-medium text-[var(--c-text)]">日期</b> date /
                 日期 / 成交日（2026-05-01 / 2026/5/1 / 5/1/2026）
               </li>
               <li>
-                <b className="font-semibold text-[var(--c-text)]">帳戶</b> account
+                <b className="font-medium text-[var(--c-text)]">帳戶</b> account
                 / 帳戶 / 標的（須與帳戶名稱一致）
               </li>
               <li>
-                <b className="font-semibold text-[var(--c-text)]">類型</b> type /
+                <b className="font-medium text-[var(--c-text)]">類型</b> type /
                 類型（配息 / 利息 / 買進 / 賣出 / buy / sell）
               </li>
               <li>
-                <b className="font-semibold text-[var(--c-text)]">金額</b> amount /
+                <b className="font-medium text-[var(--c-text)]">金額</b> amount /
                 金額，或匯出檔的 Cashflow（自動去除逗號與 NT$）
               </li>
               <li>
-                <b className="font-semibold text-[var(--c-text)]">備註</b> note /
+                <b className="font-medium text-[var(--c-text)]">備註</b> note /
                 備註（選填）
               </li>
               <li className="mt-1.5 border-t border-[var(--c-border-soft)] pt-1.5">
@@ -119,13 +119,13 @@ export function ImportCsv() {
 
           {state &&
             (state.ok === false ? (
-              <p className="border border-[var(--c-down)] px-3.5 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
+              <p className="border border-[var(--c-down)] px-4 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
                 {state.error}
               </p>
             ) : state.ok === true ? (
               // 一筆都沒進去時不能用成功的綠色：檔案讀到了，但資料沒有變動
               <div
-                className={`border px-3.5 py-2.5 text-[length:var(--fs-sm)] ${
+                className={`border px-4 py-2.5 text-[length:var(--fs-sm)] ${
                   state.imported === 0
                     ? "border-[var(--c-warn)] text-[var(--c-warn)]"
                     : "border-[var(--c-up)] text-[var(--c-up)]"

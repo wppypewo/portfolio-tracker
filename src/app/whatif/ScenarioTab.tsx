@@ -311,7 +311,7 @@ export function ScenarioTab({
         <div className="scroll-region overflow-x-auto" tabIndex={0} aria-label="持倉前後權重表，可水平捲動">
           <table className="w-full min-w-[660px] text-left text-[length:var(--fs-sm)]">
             <thead className="border-b border-[var(--c-line-strong)] text-[length:var(--fs-micro)] tracking-[0.06em] text-[var(--c-muted)]">
-              <tr><th className="px-5 py-2.5 font-semibold">持倉</th><th className="px-3 py-2.5 text-right font-semibold">目前估值</th><th className="px-3 py-2.5 text-right font-semibold">壓力後</th><th className="px-3 py-2.5 text-right font-semibold">目前權重</th><th className="px-5 py-2.5 text-right font-semibold">買後權重</th></tr>
+              <tr><th className="px-5 py-2.5 font-medium">持倉</th><th className="px-3 py-2.5 text-right font-medium">目前估值</th><th className="px-3 py-2.5 text-right font-medium">壓力後</th><th className="px-3 py-2.5 text-right font-medium">目前權重</th><th className="px-5 py-2.5 text-right font-medium">買後權重</th></tr>
             </thead>
             <tbody>
               {result.holdings.map((holding) => (
@@ -356,7 +356,7 @@ function GuardFact({ label, value, warning, className = "" }: { label: string; v
         {warning && (
           <span className="flex min-w-16 flex-1 items-center gap-2">
             <span aria-hidden="true" className="h-0 min-w-3 flex-1 border-t border-dashed border-[var(--c-annot)]" />
-            <span className="shrink-0 text-[length:var(--fs-micro)] font-semibold text-[var(--c-annot-text)]">注意</span>
+            <span className="shrink-0 text-[length:var(--fs-micro)] font-medium text-[var(--c-annot-text)]">注意</span>
           </span>
         )}
       </div>

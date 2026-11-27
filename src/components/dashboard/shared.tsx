@@ -26,7 +26,7 @@ export const TONE_TEXT: Record<Tone, string> = {
    填色選 surface-soft 而不是原本區間鈕的 accent-soft，是因為 accent 字疊在
    accent-soft 上實測深色 4.42:1、淺色（在 page 上）4.37:1，兩個主題各有一種
    底色低於 AA 的 4.5:1；疊在 surface-soft 上是 4.87 / 5.11，兩邊都過。 */
-export const PICK_ON = "bg-[var(--c-surface-soft)] font-semibold text-[var(--c-accent)]";
+export const PICK_ON = "bg-[var(--c-surface-soft)] font-medium text-[var(--c-accent)]";
 export const PICK_OFF =
   "font-medium text-[var(--c-muted)] hover:bg-[var(--c-surface-soft)] hover:text-[var(--c-text)]";
 
@@ -45,7 +45,7 @@ export function CardHead({
        字級差距本身就是層級訊號，不必再靠容器。 */
     <div className="mb-5 flex items-start justify-between gap-4">
       <div>
-        <h2 className="text-[length:var(--fs-sm)] font-semibold tracking-[0.01em] text-[var(--c-muted)]">
+        <h2 className="text-[length:var(--fs-sm)] font-medium tracking-[0.01em] text-[var(--c-muted)]">
           {title}
         </h2>
         {sub && (

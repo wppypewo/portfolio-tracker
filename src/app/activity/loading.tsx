@@ -40,7 +40,7 @@ export default function ActivityLoading() {
                 </div>
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="grid grid-cols-[40px_1fr] sm:grid-cols-[56px_1fr]">
-                    <div className="flex justify-center pt-3.5">
+                    <div className="flex justify-center pt-3">
                       <div className="sk h-6 w-6 sm:h-7 sm:w-7" />
                     </div>
                     <div className="ml-1 border-b border-[var(--c-border-soft)] py-3">

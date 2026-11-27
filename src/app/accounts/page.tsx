@@ -136,7 +136,7 @@ function AccountList({
           <Link
             key={a.id}
             href={`/accounts/${a.id}`}
-            className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0.5 px-5 py-3.5 transition-colors hover:bg-[var(--c-row-hover)] ${cols} ${
+            className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0.5 px-5 py-3 transition-colors hover:bg-[var(--c-row-hover)] ${cols} ${
               i > 0 ? "border-t border-[var(--c-border-soft)]" : ""
             } ${muted ? "text-[var(--c-muted)]" : ""}`}
           >

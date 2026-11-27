@@ -24,7 +24,7 @@ export default function MethodologyPage() {
             aria-label="StackWorth 首頁"
           >
             <RegistrationMark className="text-[var(--c-accent)]" />
-            <span className="text-[17px] font-semibold tracking-[-0.025em] sm:text-[18px]">
+            <span className="text-[length:var(--fs-lg)] font-medium tracking-[-0.025em]">
               StackWorth
             </span>
           </Link>
@@ -47,7 +47,7 @@ export default function MethodologyPage() {
           sub={
             <>
               這頁說明 StackWorth 每個報酬與風險數字的來源與口徑。原則只有一條：
-              <strong className="font-semibold text-[var(--c-text)]">
+              <strong className="font-medium text-[var(--c-text)]">
               當一個數字無法可靠計算時，畫面顯示「—」，而不是猜一個看起來正常的值。
               </strong>
             </>
@@ -114,7 +114,7 @@ export default function MethodologyPage() {
             <P>
               在「現金流調整後的 TWR 指數」上，逐日更新歷史高點，記錄每一點相對其之前高點的跌幅，
               取最深的一次。因為建立在剔除現金流的指數上，
-              <strong className="font-semibold text-[var(--c-text)]">提領不會被誤判成市場虧損</strong>。
+              <strong className="font-medium text-[var(--c-text)]">提領不會被誤判成市場虧損</strong>。
             </P>
             <Note>期間內沒有出現任何回撤（一路創新高）時顯示「—」。</Note>
           </Section>
@@ -161,10 +161,10 @@ function Section({
     // 每節是一格帳本列：左欄術語、右欄內文，窄螢幕疊成一欄。節與節之間一條髮絲線。
     <section className="grid gap-x-8 gap-y-3 border-b border-[var(--c-border-soft)] py-8 sm:grid-cols-[168px_1fr]">
       <div>
-        <h2 className="font-display text-[length:var(--fs-xl)] font-semibold leading-tight">
+        <h2 className="font-display text-[length:var(--fs-xl)] font-medium leading-tight">
           {term}
         </h2>
-        <p className="mt-1.5 text-[length:var(--fs-micro)] font-semibold leading-relaxed text-[var(--c-muted)]">
+        <p className="mt-1.5 text-[length:var(--fs-micro)] font-medium leading-relaxed text-[var(--c-muted)]">
           {subtitle}
         </p>
       </div>
@@ -184,7 +184,7 @@ function P({ children }: { children: React.ReactNode }) {
 function Note({ children }: { children: React.ReactNode }) {
   return (
     // 門檻說明：左側一條測量藍實線，像圖面邊上的附註欄。不用朱砂——這是規則，不是警示。
-    <p className="border-l-2 border-[var(--c-accent)] bg-[var(--c-surface-soft)] px-3.5 py-2.5 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
+    <p className="border-l-2 border-[var(--c-accent)] bg-[var(--c-surface-soft)] px-4 py-2.5 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">
       {children}
     </p>
   );

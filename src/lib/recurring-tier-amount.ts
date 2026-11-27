@@ -18,7 +18,7 @@ import { parseStoredDcaTierConfig } from "./schemas/domain/dca-tier-config";
 import type { DailyClose } from "./total-return-series";
 
 /**
- * 序列最後一筆收盤離今天超過這個天數就不採用。
+ * 判定用的最後一筆收盤離決定日（今天較早時用今天）超過這個天數就不採用。
  * 與台股報價（finmind.ts 的 getQuote）取「最近 14 天的最後一筆」同一個窗：
  * 超過這個窗報價自己也會失敗，級距不該比成交價用更舊的資料。
  * 春節連假最長約 10 天，在窗內。
@@ -50,8 +50,42 @@ function daysBetween(fromIso: string, toIso: string): number {
   );
 }
 
+/** 本期的「決定日」：扣款日往前推 leadDays 個日曆天（YYYY-MM-DD）。 */
+export function tierDecisionDate(runDate: string, leadDays: number): string {
+  return new Date(Date.parse(`${runDate}T00:00:00Z`) - leadDays * DAY_MS)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/**
+ * 只留決定日當天或之前的收盤，級距判定才會和券商實際扣的金額一致。
+ *
+ * 券商的定期定額金額要在扣款日之前改好，使用者是在決定日收盤後看指標面板決定金額。
+ * cron 在扣款日台北 14:00 跑，那時 FinMind 已經有決定日之後、甚至扣款日當天的收盤，
+ * 不切掉的話會用到使用者當時看不到的資料；這幾天的漲跌剛好跨過門檻時
+ * （例如乖離從 20% 以上掉到 20% 以下），流水記的倍數就和券商實扣對不上。
+ *
+ * 用排程日而不是 today 推決定日：級距算不出來隔天重試時，仍然用同一根收盤。
+ * 決定日是假日時，取的是它之前最後一個交易日，和使用者那天看到的一樣。
+ * 序列在切之前已經整條還原過，決定日以後的除息與分割只會把前面每一列乘上同一個因子，
+ * 回撤與乖離都是比例，不受影響。
+ */
+export function seriesUpToDecisionDate<T extends { date: string }>(
+  series: T[],
+  runDate: string,
+  leadDays: number,
+): T[] {
+  const decisionDate = tierDecisionDate(runDate, leadDays);
+  return series.filter((row) => row.date <= decisionDate);
+}
+
 export async function resolveCronTierAmount(args: {
-  plan: { amount_twd: number | string; tier_config: unknown };
+  plan: {
+    amount_twd: number | string;
+    tier_config: unknown;
+    /** 這一期的排程扣款日（YYYY-MM-DD）。級距看這天往前推提前天數的收盤。 */
+    next_run_date: string;
+  };
   account: { price_market: string; symbol: string | null };
   /** 台北時區的今天（YYYY-MM-DD）。 */
   today: string;
@@ -83,10 +117,28 @@ export async function resolveCronTierAmount(args: {
     return { kind: "error", error: dcaTierFetchErrorMessage(cause), cause };
   }
 
-  const status = buildDcaTierStatus(totalReturn, stored.config, baseAmount);
+  const status = buildDcaTierStatus(
+    {
+      ...totalReturn,
+      series: seriesUpToDecisionDate(
+        totalReturn.series,
+        plan.next_run_date,
+        stored.config.decisionLeadDays,
+      ),
+    },
+    stored.config,
+    baseAmount,
+  );
   if (!status.ok) return { kind: "error", error: status.error };
 
-  const age = daysBetween(status.asOf, today);
+  // 新舊以決定日衡量，不是 today：決定日本來就在幾天前，隔天重試時也一樣。
+  // 決定日若晚於 today（例如手動提前執行），以 today 為準。
+  const decisionDate = tierDecisionDate(
+    plan.next_run_date,
+    stored.config.decisionLeadDays,
+  );
+  const reference = decisionDate < today ? decisionDate : today;
+  const age = daysBetween(status.asOf, reference);
   if (!Number.isFinite(age) || age > TIER_SERIES_MAX_AGE_DAYS) {
     return {
       kind: "error",

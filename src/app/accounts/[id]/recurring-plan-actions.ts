@@ -9,8 +9,8 @@ import {
   DcaTierConfigSchema,
   dcaTierConfigErrorMessage,
   readDcaTierConfigForm,
+  type StoredTierPlanConfig,
 } from "@/lib/schemas/domain/dca-tier-config";
-import type { DcaTierConfig } from "@/lib/dca-tiers";
 import type { FormState } from "./action-shared";
 
 export async function createRecurringPlan(
@@ -50,7 +50,7 @@ export async function createRecurringPlan(
 
   // 級距加減碼：表單選了才讀那組欄位。固定金額的計畫完全不帶 tier_config 這個 key，
   // 所以資料庫還沒跑 20260930180000_recurring_tier_config.sql 時，固定金額照樣建得起來。
-  let tierConfig: DcaTierConfig | null = null;
+  let tierConfig: StoredTierPlanConfig | null = null;
   if (String(formData.get("tierMode") ?? "") === "tier") {
     // 含息序列只接了 FinMind，美股與加密沒有資料來源。
     if (account.price_market !== "tw") {

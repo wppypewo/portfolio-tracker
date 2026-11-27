@@ -1,6 +1,6 @@
 "use client";
 
-import { fmtTwd, fmtCompact } from "./DashboardCharts";
+import { fmtTwd } from "./DashboardCharts";
 import type { DashSummary } from "./types";
 import { CardHead, sign, toneCls, TONE_TEXT, type Tone } from "./shared";
 
@@ -107,7 +107,7 @@ export function MetricsCard({ s, split = false }: { s: DashSummary; split?: bool
             /* 沒有外框之後，內距只留在分隔線那一側，格子內容才會與區段左右緣切齊。 */
             <div
               key={metric.label}
-              className={`bg-[var(--c-page)] py-3.5 ${index % 2 === 0 ? "pr-4" : "pl-4"}`}
+              className={`bg-[var(--c-page)] py-3 ${index % 2 === 0 ? "pr-4" : "pl-4"}`}
             >
               <div className="text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 {metric.label}
@@ -129,15 +129,15 @@ export function MetricsCard({ s, split = false }: { s: DashSummary; split?: bool
       {s.hasIncome && !split && (
         <div className="mt-5 border-t border-[var(--c-border)] pt-4">
           <div className="mb-3 flex items-baseline justify-between gap-3">
-            <span className="text-[length:var(--fs-sm)] font-semibold">被動收入</span>
+            <span className="text-[length:var(--fs-sm)] font-medium">被動收入</span>
             <span className="text-[length:var(--fs-micro)] font-semibold text-[var(--c-accent)] tnum">
               配息率 {s.yieldOnCost.toFixed(2)}%
             </span>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3.5">
-            <IncomeStat label="今年累積" value={`NT$ ${fmtCompact(s.incomeYtd)}`} up />
-            <IncomeStat label="近 12 月" value={`NT$ ${fmtCompact(s.income12m)}`} up />
-            <IncomeStat label="月均" value={`NT$ ${fmtCompact(s.monthlyAvg)}`} />
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
+            <IncomeStat label="今年累積" value={`NT$ ${fmtTwd(s.incomeYtd)}`} up />
+            <IncomeStat label="近 12 月" value={`NT$ ${fmtTwd(s.income12m)}`} up />
+            <IncomeStat label="月均" value={`NT$ ${fmtTwd(s.monthlyAvg)}`} />
           </div>
           <p className="mt-3 text-[length:var(--fs-micro)] text-[var(--c-faint)]">
             累計配息 <span className="amt">NT$ {fmtTwd(s.dividendAll)}</span> · 利息{" "}

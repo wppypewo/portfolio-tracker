@@ -274,10 +274,10 @@ export default async function MonthlyReportPage({
             <table className="w-full text-[length:var(--fs-sm)]">
               <thead className="border-b border-[var(--c-line-strong)] text-left text-[length:var(--fs-micro)] tracking-[0.06em] text-[var(--c-muted)]">
                 <tr>
-                  <th scope="col" className="px-5 py-2.5 font-semibold">類別</th>
-                  <th scope="col" className="px-3 py-2.5 text-right font-semibold">期初</th>
-                  <th scope="col" className="px-3 py-2.5 text-right font-semibold">期末</th>
-                  <th scope="col" className="px-5 py-2.5 text-right font-semibold">變動</th>
+                  <th scope="col" className="px-5 py-2.5 font-medium">類別</th>
+                  <th scope="col" className="px-3 py-2.5 text-right font-medium">期初</th>
+                  <th scope="col" className="px-3 py-2.5 text-right font-medium">期末</th>
+                  <th scope="col" className="px-5 py-2.5 text-right font-medium">變動</th>
                 </tr>
               </thead>
               <tbody>

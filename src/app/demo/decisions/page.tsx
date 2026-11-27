@@ -48,14 +48,14 @@ export default function DemoDecisionsPage() {
               >
                 <div className="flex flex-wrap items-center gap-2.5 lg:gap-y-1.5">
                   <Tag tone="accent">{typeLabel[decision.decisionType] ?? decision.decisionType}</Tag>
-                  <h2 className="text-[length:var(--fs-md)] font-semibold">{decision.assetName}</h2>
+                  <h2 className="text-[length:var(--fs-md)] font-medium">{decision.assetName}</h2>
                   <span className="ml-auto text-[length:var(--fs-micro)] text-[var(--c-faint)] tnum lg:ml-0 lg:basis-full">{decision.decisionDate}</span>
                 </div>
                 <div className="pb-2 lg:pb-0">
                   <p className="max-w-[68ch] text-[length:var(--fs-sm)] leading-6 text-[var(--c-muted)]">{decision.thesis}</p>
                   {decision.reflection && (
                     <p className="mt-3 max-w-[68ch] border-l-2 border-[var(--c-line-strong)] pl-3 text-[length:var(--fs-sm)] leading-6 text-[var(--c-muted)]">
-                      <span className="font-semibold text-[var(--c-text)]">檢討</span>　{decision.reflection}
+                      <span className="font-medium text-[var(--c-text)]">檢討</span>　{decision.reflection}
                     </p>
                   )}
                 </div>
@@ -192,7 +192,7 @@ function ReviewTimeline({ decisions, today }: { decisions: DemoDecision[]; today
                     style={flipNote ? { left: 0, right: `calc(${100 - reviewX}% + 8px)` } : { left: `calc(${reviewX}% + 8px)`, right: 0 }}
                   >
                     <span className="w-4 shrink-0 border-t border-dashed border-[var(--c-annot)]" />
-                    <span className={`min-w-0 text-[length:var(--fs-micro)] font-semibold leading-tight text-[var(--c-annot-text)] ${flipNote ? "text-right" : ""}`}>
+                    <span className={`min-w-0 text-[length:var(--fs-micro)] font-medium leading-tight text-[var(--c-annot-text)] ${flipNote ? "text-right" : ""}`}>
                       <span className="whitespace-nowrap">注意 ·</span> <span className="whitespace-nowrap">檢討到期</span>
                     </span>
                   </span>

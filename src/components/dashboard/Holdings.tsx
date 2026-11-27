@@ -131,7 +131,7 @@ export function Holdings({
     <section className={`flex flex-1 flex-col pb-2 pt-5 sm:pb-4 sm:pt-6 ${fitTable ? "@container" : ""}`}>
       <div className="flex items-start justify-between gap-4 px-4 sm:px-6">
         <div>
-          <h2 className="text-[length:var(--fs-lg)] font-semibold tracking-[-0.015em]">
+          <h2 className="text-[length:var(--fs-lg)] font-medium tracking-[-0.015em]">
             持倉帳本
           </h2>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--fs-sm)] text-[var(--c-muted)]">
@@ -215,7 +215,7 @@ export function Holdings({
                 <col className="w-[17%]" />
               </colgroup>
               <thead>
-                <tr className="border-b border-t border-b-[var(--c-border)] border-t-[var(--c-line-strong)] text-[length:var(--fs-micro)] font-semibold tracking-[0.06em] text-[var(--c-muted)]">
+                <tr className="border-b border-t border-b-[var(--c-border)] border-t-[var(--c-line-strong)] text-[length:var(--fs-micro)] font-medium tracking-[0.06em] text-[var(--c-muted)]">
                   <TableHead
                     onClick={() => setSort("name")}
                     align="left"
@@ -363,21 +363,21 @@ export function Holdings({
               {/* 合計列：上方一條 line-strong 髮絲線收帳，像帳冊最後一行。 */}
               <tfoot>
                 <tr className="border-t border-[var(--c-line-strong)] text-[length:var(--fs-sm)]">
-                  <th scope="row" colSpan={2} className="px-6 py-3.5 text-left font-semibold">
+                  <th scope="row" colSpan={2} className="px-6 py-3 text-left font-medium">
                     合計
                     <span className="ml-2 text-[length:var(--fs-micro)] font-normal text-[var(--c-muted)]">
                       {activeCount} 個有效帳戶{showArchived && archivedCount > 0 ? "，不含封存" : ""}
                     </span>
                   </th>
-                  <td className="px-5 py-3.5 text-right text-[length:var(--fs-micro)] text-[var(--c-muted)] tnum">
+                  <td className="px-5 py-3 text-right text-[length:var(--fs-micro)] text-[var(--c-muted)] tnum">
                     {total > 0 ? "100%" : "—"}
                   </td>
-                  <td className="amt px-5 py-3.5 text-right font-semibold tnum">
+                  <td className="amt px-5 py-3 text-right font-semibold tnum">
                     {fmtTwd(totals.value)}
                   </td>
-                  <td className="px-5 py-3.5 text-right text-[var(--c-faint)]">—</td>
+                  <td className="px-5 py-3 text-right text-[var(--c-faint)]">—</td>
                   <td
-                    className={`px-6 py-3.5 text-right tnum ${
+                    className={`px-6 py-3 text-right tnum ${
                       totals.pnlPct == null ? "text-[var(--c-muted)]" : TONE_TEXT[toneCls(totals.pnl)]
                     }`}
                   >
@@ -410,10 +410,10 @@ export function Holdings({
                   ? null
                   : (holding.value / total) * 100;
               /* 密度：改版前每張卡 133px，桌機同一筆資料只用 71px。
-                 拿掉的是間距不是內容——py-4→py-3.5、內部分隔的 mt/pt 3→2、
+                 拿掉的是間距不是內容——py-4→py-3.5（2026-11-27 對齊 4px 格線再收到 py-3）、內部分隔的 mt/pt 3→2、
                  配置條從「再空 12px 再畫」改成貼在卡片下緣（絕對定位，不佔高度）。
                  欄位一個沒少。 */
-              const rowClass = `relative block border-b border-[var(--c-border)] px-4 py-3.5 ${markCls(
+              const rowClass = `relative block border-b border-[var(--c-border)] px-4 py-3 ${markCls(
                 holding.cls,
               )} ${holding.status === "archived" ? "opacity-60" : ""}`;
               const content = (
@@ -561,7 +561,7 @@ function TableHead({
       <button
         type="button"
         onClick={onClick}
-        className={`w-full px-5 py-3 font-semibold tracking-[0.06em] ${alignClass} ${
+        className={`w-full px-5 py-3 font-medium tracking-[0.06em] ${alignClass} ${
           sorted ? "text-[var(--c-accent)]" : "hover:text-[var(--c-text)]"
         }`}
       >

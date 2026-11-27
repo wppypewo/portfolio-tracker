@@ -84,7 +84,7 @@ function TypeBadge({ type }: { type: string }) {
   const t = typeMeta(type);
   return (
     <span
-      className="inline-flex items-center gap-[5px] whitespace-nowrap border px-1.5 py-px text-[length:var(--fs-micro)] font-semibold leading-5"
+      className="inline-flex items-center gap-1.5 whitespace-nowrap border px-1.5 py-px text-[length:var(--fs-micro)] font-medium leading-5"
       style={{ color: t.color, borderColor: t.color }}
     >
       <span aria-hidden="true">{t.glyph}</span>
@@ -114,7 +114,7 @@ function LedgerRow({
         <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-[var(--c-border)]" />
         <span
           aria-hidden="true"
-          className="relative z-[1] mt-3.5 grid h-6 w-6 place-items-center border bg-[var(--c-page)] text-[length:var(--fs-micro)] font-bold sm:h-7 sm:w-7"
+          className="relative z-[1] mt-3 grid h-6 w-6 place-items-center border bg-[var(--c-page)] text-[length:var(--fs-micro)] font-medium sm:h-7 sm:w-7"
           style={{ color: t.color, borderColor: t.color }}
         >
           {t.glyph}
@@ -124,27 +124,27 @@ function LedgerRow({
         className={`ml-1 py-3 ${isLast ? "" : "border-b border-[var(--c-border-soft)]"}`}
       >
         <div className="flex flex-col items-start justify-between gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-x-[11px] gap-y-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
             <TypeBadge type={r.type} />
             {r.accountId ? (
               <Link
                 href={`/accounts/${r.accountId}`}
-                className="text-[length:var(--fs-md)] font-semibold hover:text-[var(--c-accent)]"
+                className="text-[length:var(--fs-md)] font-medium hover:text-[var(--c-accent)]"
               >
                 {r.accountName}
                 {r.symbol && (
-                  <span className="ml-[7px] font-mono text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
+                  <span className="ml-2 font-mono text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                     {r.symbol}
                   </span>
                 )}
               </Link>
             ) : (
-              <span className="text-[length:var(--fs-md)] font-semibold text-[var(--c-faint)]">
+              <span className="text-[length:var(--fs-md)] font-medium text-[var(--c-faint)]">
                 已刪除帳戶
               </span>
             )}
           </div>
-          <div className="flex w-full items-baseline justify-between gap-3.5 sm:w-auto sm:justify-end">
+          <div className="flex w-full items-baseline justify-between gap-4 sm:w-auto sm:justify-end">
             {showAmt && (
               <span
                 className={`amt text-[length:var(--fs-md)] font-semibold tnum ${
@@ -217,7 +217,7 @@ function Kv({
 
 // 篩選鈕：方角外框，按下時換成測量藍淡底 + 藍框。數字用 Mono。
 const chipBase =
-  "tap-row inline-flex min-h-9 items-center gap-[7px] whitespace-nowrap border px-3 py-1.5 text-[length:var(--fs-sm)] font-medium transition-colors";
+  "tap-row inline-flex min-h-9 items-center gap-2 whitespace-nowrap border px-3 py-1.5 text-[length:var(--fs-sm)] font-medium transition-colors";
 const chipOn = "border-[var(--c-accent)] bg-[var(--c-accent-soft)] text-[var(--c-text)]";
 const chipOff =
   "border-[var(--c-border)] bg-[var(--c-surface)] text-[var(--c-muted)] hover:border-[var(--c-line-strong)] hover:text-[var(--c-text)]";
@@ -400,7 +400,7 @@ export function ActivityClient({
                 {/* 日期列：一條 line-strong 髮絲線收邊，當作這一天的基準線 */}
                 <div className="flex items-baseline justify-between gap-3 border-b border-[var(--c-line-strong)] pb-2 pt-3 sm:ml-14">
                   <div className="flex items-baseline gap-2.5 whitespace-nowrap">
-                    <h2 className="font-display text-[length:var(--fs-md)] font-semibold">
+                    <h2 className="font-display text-[length:var(--fs-md)] font-medium">
                       {lab.big}
                     </h2>
                     {lab.sub && (
@@ -409,7 +409,7 @@ export function ActivityClient({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-baseline gap-3.5 whitespace-nowrap">
+                  <div className="flex items-baseline gap-4 whitespace-nowrap">
                     <span className="text-[length:var(--fs-micro)] text-[var(--c-muted)] tnum">
                       {g.items.length} 筆
                     </span>

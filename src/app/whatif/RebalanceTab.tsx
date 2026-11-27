@@ -67,7 +67,7 @@ export function RebalanceTab({ data }: { data: RebalanceData }) {
                 type="button"
                 onClick={() => setContribution(v)}
                 aria-pressed={contribution === v}
-                className={`tap-row min-h-[44px] border-r border-[var(--c-border)] px-3 text-[length:var(--fs-sm)] font-semibold transition-colors last:border-r-0 ${
+                className={`tap-row min-h-[44px] border-r border-[var(--c-border)] px-3 text-[length:var(--fs-sm)] font-medium transition-colors last:border-r-0 ${
                   contribution === v
                     ? "bg-[var(--c-accent-soft)] text-[var(--c-accent)] shadow-[inset_0_-2px_0_var(--c-accent)]"
                     : "text-[var(--c-muted)] hover:bg-[var(--c-surface)] hover:text-[var(--c-text)]"
@@ -100,13 +100,13 @@ export function RebalanceTab({ data }: { data: RebalanceData }) {
           <table className="w-full min-w-[640px] text-[length:var(--fs-sm)]">
             <thead className="border-b border-[var(--c-line-strong)] text-left text-[length:var(--fs-micro)] tracking-[0.06em] text-[var(--c-muted)]">
               <tr>
-                <th scope="col" className="px-5 py-2.5 font-semibold">類別</th>
-                <th scope="col" className="px-3 py-2.5 text-right font-semibold">目標</th>
-                <th scope="col" className="px-3 py-2.5 text-right font-semibold">實際</th>
-                <th scope="col" className="px-3 py-2.5 text-right font-semibold">偏離</th>
-                <th scope="col" className="px-3 py-2.5 text-right font-semibold">差額</th>
-                <th scope="col" className="px-3 py-2.5 text-right font-semibold">本次配置</th>
-                <th scope="col" className="px-5 py-2.5 text-right font-semibold">投入後</th>
+                <th scope="col" className="px-5 py-2.5 font-medium">類別</th>
+                <th scope="col" className="px-3 py-2.5 text-right font-medium">目標</th>
+                <th scope="col" className="px-3 py-2.5 text-right font-medium">實際</th>
+                <th scope="col" className="px-3 py-2.5 text-right font-medium">偏離</th>
+                <th scope="col" className="px-3 py-2.5 text-right font-medium">差額</th>
+                <th scope="col" className="px-3 py-2.5 text-right font-medium">本次配置</th>
+                <th scope="col" className="px-5 py-2.5 text-right font-medium">投入後</th>
               </tr>
             </thead>
             <tbody>
@@ -160,7 +160,7 @@ export function RebalanceTab({ data }: { data: RebalanceData }) {
       </Panel>
 
       <aside className="border-t border-[var(--c-border)] pt-3">
-        <h3 className="text-[length:var(--fs-micro)] font-semibold tracking-[0.06em] text-[var(--c-muted)]">
+        <h3 className="text-[length:var(--fs-micro)] font-medium tracking-[0.06em] text-[var(--c-muted)]">
           前提與限制
         </h3>
         <ul className="mt-2 list-[square] space-y-1 pl-5 text-[length:var(--fs-micro)] leading-relaxed text-[var(--c-faint)]">
@@ -193,7 +193,7 @@ function Stat({
   hint?: string;
 }) {
   return (
-    <div className="bg-[var(--c-surface)] px-4 py-3.5">
+    <div className="bg-[var(--c-surface)] px-4 py-3">
       <dt className="flex items-center gap-2">
         <SurveyLabel className="shrink-0">{label}</SurveyLabel>
         {hint && (

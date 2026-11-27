@@ -47,7 +47,7 @@ export function HistoryBridge({
       sub={<Tag tone={a.reconciled ? "up" : "annot"}>{a.reconciled ? "對帳在容差內" : "有待解釋差額"}</Tag>}
       flush
     >
-      <div aria-hidden="true" className="hidden grid-cols-[minmax(0,11rem)_minmax(0,1fr)_9.5rem] gap-x-5 border-b border-[var(--c-line-strong)] px-5 py-2 text-[length:var(--fs-micro)] font-semibold tracking-[0.06em] text-[var(--c-muted)] sm:grid">
+      <div aria-hidden="true" className="hidden grid-cols-[minmax(0,11rem)_minmax(0,1fr)_9.5rem] gap-x-5 border-b border-[var(--c-line-strong)] px-5 py-2 text-[length:var(--fs-micro)] font-medium tracking-[0.06em] text-[var(--c-muted)] sm:grid">
         <span>項目</span>
         <span className="flex justify-between">
           <span>減</span>

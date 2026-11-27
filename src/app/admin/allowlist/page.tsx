@@ -56,7 +56,7 @@ export default async function AdminUsers() {
         />
 
         {error && (
-          <p className="mt-6 border border-[var(--c-down)] px-3.5 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
+          <p className="mt-6 border border-[var(--c-down)] px-4 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
             讀取使用者列表失敗，請稍後重新整理。問題持續的話到伺服器 log 查 [admin/allowlist]。
           </p>
         )}

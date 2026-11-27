@@ -257,12 +257,12 @@ export default async function HistoryPage({
                 <table className="w-full min-w-[720px] text-left text-[length:var(--fs-sm)]">
                   <thead className="border-b border-[var(--c-line-strong)] text-[length:var(--fs-micro)] tracking-[0.06em] text-[var(--c-muted)]">
                     <tr>
-                      <th className="px-5 py-2.5 font-semibold">帳戶</th>
-                      <th className="px-3 py-2.5 font-semibold">類別</th>
-                      <th className="px-3 py-2.5 text-right font-semibold">數量</th>
-                      <th className="px-3 py-2.5 text-right font-semibold">單價</th>
-                      <th className="px-3 py-2.5 text-right font-semibold">匯率</th>
-                      <th className="px-5 py-2.5 text-right font-semibold">TWD 估值</th>
+                      <th className="px-5 py-2.5 font-medium">帳戶</th>
+                      <th className="px-3 py-2.5 font-medium">類別</th>
+                      <th className="px-3 py-2.5 text-right font-medium">數量</th>
+                      <th className="px-3 py-2.5 text-right font-medium">單價</th>
+                      <th className="px-3 py-2.5 text-right font-medium">匯率</th>
+                      <th className="px-5 py-2.5 text-right font-medium">TWD 估值</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -298,7 +298,7 @@ export default async function HistoryPage({
         {attribution.gaps.length > 0 && (
           // 資料缺口是「請注意」的註記，不是虧損：朱砂虛線框＋「注意」字樣，不用跌色
           <section className="mt-6 border border-dashed border-[var(--c-annot)] bg-[var(--c-surface)] px-5 py-4">
-            <h2 className="flex items-center gap-2 text-[length:var(--fs-sm)] font-semibold">
+            <h2 className="flex items-center gap-2 text-[length:var(--fs-sm)] font-medium">
               <span className="text-[var(--c-annot-text)]">注意</span>
               資料缺口與限制
             </h2>
@@ -318,7 +318,7 @@ export default async function HistoryPage({
 
 function DateInput({ name, label, value, max }: { name: string; label: string; value: string; max: string }) {
   return (
-    <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+    <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
       {label}
       <input type="date" name={name} defaultValue={value} max={max} className="field h-11 w-auto py-0 tnum sm:h-10" />
     </label>

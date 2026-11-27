@@ -155,7 +155,7 @@ export function MfaSetupCard() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-4 py-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-4 py-3">
         <div className="min-w-0">
           <span className="text-[length:var(--fs-md)] font-medium text-[var(--c-text)]">
             雙因素驗證 (MFA)
@@ -250,7 +250,7 @@ export function MfaSetupCard() {
 
       {/* 已啟用：顯示 done card */}
       {verified && (
-        <div className="flex flex-wrap items-center justify-between gap-3.5 border border-[var(--c-up)] bg-[var(--c-surface-soft)] px-4 py-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-4 border border-[var(--c-up)] bg-[var(--c-surface-soft)] px-4 py-3">
           <span className="text-[length:var(--fs-sm)] text-[var(--c-text)]">
             MFA 已啟用，下次登入會要求驗證碼。
           </span>
@@ -333,7 +333,7 @@ export function MfaSetupCard() {
       )}
 
       {error && (
-        <p role="alert" className="border border-[var(--c-down)] px-3.5 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
+        <p role="alert" className="border border-[var(--c-down)] px-4 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
           {error}
         </p>
       )}

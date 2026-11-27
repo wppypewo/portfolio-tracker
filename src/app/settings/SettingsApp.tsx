@@ -200,14 +200,14 @@ function PriceHealthInner({ health }: { health: PriceHealth }) {
   const none = health.tracked === 0;
   return (
     <div
-      className={`mb-5 border px-4 py-3.5 text-[length:var(--fs-sm)] ${
+      className={`mb-5 border px-4 py-3 text-[length:var(--fs-sm)] ${
         none || ok
           ? "border-[var(--c-border)] bg-[var(--c-surface-soft)]"
           : "border-[var(--c-down)] bg-[var(--c-surface)]"
       }`}
     >
       {/* 狀態用字標出來，不只靠顏色 */}
-      <div className="flex flex-wrap items-center gap-2 font-semibold">
+      <div className="flex flex-wrap items-center gap-2 font-medium">
         報價更新狀態
         {none ? (
           <Tag>無追蹤帳戶</Tag>
@@ -260,7 +260,7 @@ function Section({
       className="mt-10 border-t border-[var(--c-line-strong)] pt-6 first:mt-0 first:border-t-0 first:pt-0"
     >
       <div className="mb-4">
-        <h2 className="flex items-baseline gap-2.5 text-[length:var(--fs-lg)] font-semibold text-[var(--c-text)]">
+        <h2 className="flex items-baseline gap-2.5 text-[length:var(--fs-lg)] font-medium text-[var(--c-text)]">
           <span aria-hidden="true" className="font-mono text-[length:var(--fs-micro)] font-medium text-[var(--c-accent)]">
             {String(NAV.findIndex((n) => n.id === id) + 1).padStart(2, "0")}
           </span>
@@ -285,7 +285,7 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--c-border-soft)] py-3.5 first-of-type:border-t-0">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--c-border-soft)] py-3 first-of-type:border-t-0">
       <div className="min-w-0">
         <span className="text-[length:var(--fs-md)] font-medium text-[var(--c-text)]">
           {label}
@@ -319,7 +319,7 @@ function Segmented<T extends string>({
           type="button"
           onClick={() => onChange(o.v)}
           aria-pressed={value === o.v}
-          className={`tap-row min-h-[38px] whitespace-nowrap border-l border-[var(--c-border)] px-3.5 text-[length:var(--fs-sm)] font-semibold transition-colors first:border-l-0 ${
+          className={`tap-row min-h-10 whitespace-nowrap border-l border-[var(--c-border)] px-4 text-[length:var(--fs-sm)] font-medium transition-colors first:border-l-0 ${
             value === o.v
               ? "bg-[var(--c-accent-soft)] text-[var(--c-accent)] shadow-[inset_0_-2px_0_var(--c-accent)]"
               : "text-[var(--c-muted)] hover:bg-[var(--c-surface)] hover:text-[var(--c-text)]"
@@ -345,7 +345,7 @@ function AccountInner({ user }: { user: SettingsAppProps["user"] }) {
           {initials}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[length:var(--fs-md)] font-semibold">
+          <div className="truncate text-[length:var(--fs-md)] font-medium">
             {user.email?.split("@")[0] ?? "—"}
           </div>
           <div className="mt-0.5 truncate text-[length:var(--fs-sm)] text-[var(--c-muted)]">
@@ -501,13 +501,13 @@ function AllocInner({
         </div>
       ))}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3.5 border-t border-[var(--c-border-soft)] pt-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--c-border-soft)] pt-4">
         <span
           className={`text-[length:var(--fs-sm)] ${
             ok ? "text-[var(--c-up)]" : "text-[var(--c-down)]"
           }`}
         >
-          合計 <b className="tnum font-bold">{Math.round(sum)}%</b>
+          合計 <b className="tnum font-semibold">{Math.round(sum)}%</b>
           {ok
             ? " ✓"
             : `（需為 100%，差 ${
@@ -530,7 +530,7 @@ function AllocInner({
             {pending ? "儲存中…" : "儲存目標"}
           </button>
           {savedTick && !pending && !state?.error && (
-            <span className="text-[length:var(--fs-sm)] font-semibold text-[var(--c-up)]">
+            <span className="text-[length:var(--fs-sm)] font-medium text-[var(--c-up)]">
               ✓ 已儲存
             </span>
           )}
@@ -582,7 +582,7 @@ function ConcentrationLimitForm({ initialValue }: { initialValue: number }) {
       </label>
       <div className="flex items-center gap-2">
         {state?.error && <span className="text-[length:var(--fs-micro)] text-[var(--c-down)]">{state.error}</span>}
-        {saved && !pending && !state?.error && <span className="text-[length:var(--fs-micro)] font-semibold text-[var(--c-up)]">✓ 已儲存</span>}
+        {saved && !pending && !state?.error && <span className="text-[length:var(--fs-micro)] font-medium text-[var(--c-up)]">✓ 已儲存</span>}
         <button type="submit" disabled={pending} className="btn btn-outline">
           {pending ? "儲存中…" : "儲存上限"}
         </button>

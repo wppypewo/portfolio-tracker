@@ -1,6 +1,6 @@
 "use client";
 
-import { allocColor, fmtCompact, type AllocDatum } from "./DashboardCharts";
+import { allocColor, fmtTwd, type AllocDatum } from "./DashboardCharts";
 import type { AllocTarget } from "./types";
 import { CardHead, sign } from "./shared";
 import { squarify, targetBoundary } from "./treemap";
@@ -84,7 +84,7 @@ export function AllocationCard({
             <span className="font-semibold tnum">
               {selected && <span className="mr-2">{selected.pct.toFixed(1)}%</span>}
               <span className="amt">
-                NT$ {fmtCompact(selected ? selected.value : total)}
+                NT$ {fmtTwd(selected ? selected.value : total)}
               </span>
             </span>
           </div>
@@ -139,7 +139,7 @@ export function AllocationCard({
                         <span
                           className={`bg-[var(--c-surface)] px-1 py-0.5 text-[length:var(--fs-micro)] ${
                             pinnedCls === d.cls
-                              ? "font-semibold text-[var(--c-accent)]"
+                              ? "font-medium text-[var(--c-accent)]"
                               : "font-medium text-[var(--c-text)]"
                           }`}
                         >
@@ -162,7 +162,7 @@ export function AllocationCard({
         <div className="flex w-full flex-col">
           <div
             aria-hidden="true"
-            className="grid grid-cols-[10px_minmax(0,1fr)_auto_58px] gap-2.5 border-b border-[var(--c-line-strong)] px-1.5 pb-1.5 text-[length:var(--fs-micro)] font-semibold tracking-[0.06em] text-[var(--c-muted)]"
+            className="grid grid-cols-[10px_minmax(0,1fr)_auto_58px] gap-2.5 border-b border-[var(--c-line-strong)] px-1.5 pb-1.5 text-[length:var(--fs-micro)] font-medium tracking-[0.06em] text-[var(--c-muted)]"
           >
             <span />
             <span>類別</span>
@@ -201,7 +201,7 @@ export function AllocationCard({
                 <span className="flex min-w-0 items-center gap-2">
                   <span
                     className={`min-w-0 break-words text-[length:var(--fs-sm)] ${
-                      pinnedCls === item.cls ? "font-semibold text-[var(--c-accent)]" : ""
+                      pinnedCls === item.cls ? "font-medium text-[var(--c-accent)]" : ""
                     }`}
                   >
                     {item.label}
@@ -224,7 +224,7 @@ export function AllocationCard({
                     !drift
                       ? "text-[var(--c-faint)]"
                       : attention
-                        ? "font-semibold text-[var(--c-annot-text)]"
+                        ? "font-medium text-[var(--c-annot-text)]"
                         : drift.level === "normal"
                           ? "font-medium text-[var(--c-muted)]"
                           : "text-[var(--c-faint)]"

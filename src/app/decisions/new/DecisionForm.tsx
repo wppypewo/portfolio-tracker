@@ -79,7 +79,7 @@ export function DecisionForm({
       {decisionId && <input type="hidden" name="decisionId" value={decisionId} />}
       {linkedTransaction && (
         <aside className="border-l-2 border-[var(--c-accent)] bg-[var(--c-accent-soft)] px-4 py-3 text-[length:var(--fs-sm)]">
-          <div className="font-semibold">已連結交易 · {linkedName}</div>
+          <div className="font-medium">已連結交易 · {linkedName}</div>
           <div className="mt-1 text-[var(--c-muted)]">
             類型 {linkedTransaction.type} · 交易識別碼{" "}
             <span className="font-mono">{linkedTransaction.id.slice(0, 8)}…</span>

@@ -43,7 +43,7 @@ export default async function DemoReportPage({ searchParams }: { searchParams: P
             <div className="flex items-end gap-2">
               {/* 欄位與按鈕的高度、樣式同歷史頁的日期欄：手機 44px 觸控高度，.field 在粗指標裝置把字級拉到 16px */}
               <form method="GET" className="no-print flex items-end gap-2">
-                <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+                <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                   示範月份
                   <input type="month" name="month" defaultValue={bounds.month} min={DEMO_EPOCH.slice(0, 7)} max={today.slice(0, 7)} className="field h-11 w-auto py-0 tnum sm:h-10" />
                 </label>
@@ -87,7 +87,7 @@ export default async function DemoReportPage({ searchParams }: { searchParams: P
             </div>
             {/* 朱砂註記：超過情境頁同一個集中度上限才出現。顏色之外有虛線引線與整句文字。 */}
             {overConcentration && (
-              <p className="mt-4 flex items-center gap-2 text-[length:var(--fs-micro)] font-semibold text-[var(--c-annot-text)]">
+              <p className="mt-4 flex items-center gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-annot-text)]">
                 <span aria-hidden="true" className="h-0 w-5 shrink-0 border-t border-dashed border-[var(--c-annot)]" />
                 最高單一持倉高於 {DEMO_CONCENTRATION_LIMIT_PCT}% 集中度上限
               </p>
@@ -106,7 +106,7 @@ function Block({ title, sub, className = "", children }: { title: string; sub?: 
   return (
     <section className={`report-block mt-6 border border-[var(--c-border)] bg-[var(--c-surface)] ${className}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--c-border-soft)] px-5 py-3">
-        <h2 className="text-[length:var(--fs-lg)] font-semibold">{title}</h2>
+        <h2 className="text-[length:var(--fs-lg)] font-medium">{title}</h2>
         {sub && <p className="text-[length:var(--fs-micro)] text-[var(--c-faint)]">{sub}</p>}
       </div>
       <div className="p-5">{children}</div>

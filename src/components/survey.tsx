@@ -2,11 +2,9 @@
    這支檔刻意不加 "use client"——全部是無狀態的純標記，server 頁面直接用，
    client 元件 import 也照常。dashboard/shared.tsx 的 SurveyLabel 從這裡轉出。 */
 
-/* 測量註記的標籤：前面一個 7px 的 L 形角標，後面是字。
-   原本是十字，小字下讀起來像「+」，緊接在帶號金額上方時跟正負號混在一起；
-   改成跟 .survey-frame 四角同一個 L 形，不會被讀成任何運算符號。
-   記號不帶意義，所以對輔助技術隱藏。
-   字仍用 Plex Sans：中文會落到 Noto Sans TC，Mono 只在數字上用。 */
+/* 測量註記的標籤：muted 小字。
+   原本字前有 7px 的 L 形角標；2026-11-27 拿掉，讓 L 形只出現在 .survey-frame 四角，
+   不再每個標籤都重複（33 處）。字仍用 Plex Sans：中文會落到 Noto Sans TC，Mono 只在數字上用。 */
 export function SurveyLabel({
   children,
   className = "",
@@ -16,11 +14,8 @@ export function SurveyLabel({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[length:var(--fs-micro)] font-semibold tracking-[0.06em] text-[var(--c-muted)] ${className}`}
+      className={`inline-flex items-center gap-1.5 text-[length:var(--fs-micro)] font-medium tracking-[0.06em] text-[var(--c-muted)] ${className}`}
     >
-      <svg width="7" height="7" viewBox="0 0 7 7" aria-hidden="true" className="shrink-0">
-        <path d="M0.5 7V0.5H7" fill="none" stroke="var(--c-accent)" strokeWidth="1" />
-      </svg>
       {children}
     </span>
   );
@@ -48,7 +43,7 @@ export function PageHead({
       <div className="min-w-0">
         {label && <SurveyLabel>{label}</SurveyLabel>}
         <h1
-          className={`font-display text-[length:var(--fs-2xl)] font-semibold leading-tight tracking-[-0.01em] ${
+          className={`font-display text-[length:var(--fs-2xl)] font-medium leading-tight tracking-[-0.01em] ${
             label ? "mt-2" : ""
           }`}
         >
@@ -91,7 +86,7 @@ export function Tag({
 }) {
   return (
     <span
-      className={`inline-flex items-center border px-1.5 py-px text-[length:var(--fs-micro)] font-semibold leading-5 ${TAG_TONE[tone]}`}
+      className={`inline-flex items-center border px-1.5 py-px text-[length:var(--fs-micro)] font-medium leading-5 ${TAG_TONE[tone]}`}
     >
       {children}
     </span>
@@ -144,7 +139,7 @@ export function Stat({
   className?: string;
 }) {
   return (
-    <div className={`bg-[var(--c-surface)] px-4 py-3.5 ${className}`}>
+    <div className={`bg-[var(--c-surface)] px-4 py-3 ${className}`}>
       <SurveyLabel>{label}</SurveyLabel>
       <div
         className={`mt-1.5 text-[length:var(--fs-md)] font-semibold tnum ${mask ? "amt" : ""}`}
@@ -179,7 +174,7 @@ export function Panel({
   return (
     <section className={`border border-[var(--c-border)] bg-[var(--c-surface)] ${className}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--c-border-soft)] px-5 py-3">
-        <h2 className="text-[length:var(--fs-lg)] font-semibold">{title}</h2>
+        <h2 className="text-[length:var(--fs-lg)] font-medium">{title}</h2>
         {sub && <div className="text-[length:var(--fs-micro)] text-[var(--c-faint)]">{sub}</div>}
         {action}
       </div>

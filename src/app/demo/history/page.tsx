@@ -63,7 +63,7 @@ export default async function DemoHistoryPage({ searchParams }: { searchParams: 
                   aria-current={on ? "true" : undefined}
                   className={`inline-flex min-h-11 shrink-0 items-center px-3 text-[length:var(--fs-micro)] ${
                     on
-                      ? "bg-[var(--c-surface-soft)] font-semibold text-[var(--c-accent)]"
+                      ? "bg-[var(--c-surface-soft)] font-medium text-[var(--c-accent)]"
                       : "font-medium text-[var(--c-muted)] hover:bg-[var(--c-surface-soft)] hover:text-[var(--c-text)]"
                   }`}
                 >
@@ -83,7 +83,7 @@ export default async function DemoHistoryPage({ searchParams }: { searchParams: 
         <Panel className="survey-frame mt-6" title="回放日持倉" sub="條長＝回放日佔比，刻度＝期初佔比" flush>
           {/* 寬螢幕攤成帳本：期初與回放兩欄並排，才能直接橫向比對每個帳戶這段期間的變化。
               窄螢幕收回兩行，期初降成小字附註。欄寬與上方拆解帳的「金額」欄同為 9.5rem。 */}
-          <div aria-hidden="true" className="hidden grid-cols-[minmax(0,1fr)_7rem_9.5rem_9.5rem_minmax(0,13rem)] gap-x-5 border-b border-[var(--c-line-strong)] px-5 py-2 text-[length:var(--fs-micro)] font-semibold tracking-[0.06em] text-[var(--c-muted)] lg:grid">
+          <div aria-hidden="true" className="hidden grid-cols-[minmax(0,1fr)_7rem_9.5rem_9.5rem_minmax(0,13rem)] gap-x-5 border-b border-[var(--c-line-strong)] px-5 py-2 text-[length:var(--fs-micro)] font-medium tracking-[0.06em] text-[var(--c-muted)] lg:grid">
             <span>帳戶</span>
             <span>快照日</span>
             <span className="text-right">期初</span>
@@ -95,7 +95,7 @@ export default async function DemoHistoryPage({ searchParams }: { searchParams: 
             const openingValue = openingValueOf.get(holding.accountId);
             const openingPct = openingValue != null && opening.totalValueTwd > 0 ? (openingValue / opening.totalValueTwd) * 100 : null;
             return (
-              <div key={holding.accountId} className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3.5 sm:grid-cols-[minmax(0,1fr)_auto_7.5rem] lg:grid-cols-[minmax(0,1fr)_7rem_9.5rem_9.5rem_minmax(0,13rem)] lg:gap-x-5 ${index > 0 ? "border-t border-[var(--c-border-soft)]" : ""}`}>
+              <div key={holding.accountId} className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-3 sm:grid-cols-[minmax(0,1fr)_auto_7.5rem] lg:grid-cols-[minmax(0,1fr)_7rem_9.5rem_9.5rem_minmax(0,13rem)] lg:gap-x-5 ${index > 0 ? "border-t border-[var(--c-border-soft)]" : ""}`}>
                 <div className="min-w-0">
                   <div className="truncate text-[length:var(--fs-sm)] font-medium">
                     {holding.name}
@@ -139,7 +139,7 @@ export default async function DemoHistoryPage({ searchParams }: { searchParams: 
 
 function DateInput({ name, label, value, min, max }: { name: string; label: string; value: string; min: string; max: string }) {
   return (
-    <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+    <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
       {label}
       <input type="date" name={name} defaultValue={value} min={min} max={max} className="field h-11 w-auto py-0 tnum sm:h-10" />
     </label>

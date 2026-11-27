@@ -259,7 +259,7 @@ export function AccountActions({
           <form action={addAction} className="flex flex-col gap-3 border-t border-[var(--c-border)] p-4">
             <input type="hidden" name="accountId" value={accountId} />
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               投入金額（TWD）
               <input
                 name="twd"
@@ -277,7 +277,7 @@ export function AccountActions({
               </span>
             </label>
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               手續費（TWD，選填）
               <input
                 name="feeTwd"
@@ -295,7 +295,7 @@ export function AccountActions({
             </label>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 成交價（{nativeCurrency}，留空 = 市價 {currentPrice || "—"}）
                 <input
                   name="priceOverride"
@@ -314,7 +314,7 @@ export function AccountActions({
                 )}
               </label>
 
-              <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 匯率 ({nativeCurrency}/TWD，留空 = 目前 {currentFx})
                 <input
                   name="fxOverride"
@@ -330,7 +330,7 @@ export function AccountActions({
               </label>
             </div>
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               加入時間（留空 = 現在）
               <input
                 name="occurredAt"
@@ -347,7 +347,7 @@ export function AccountActions({
               )}
             </label>
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               備註（選填）
               <input
                 name="note"
@@ -359,7 +359,7 @@ export function AccountActions({
               />
             </label>
 
-            <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface-soft)] px-3.5 py-2.5 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
+            <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface-soft)] px-4 py-2.5 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
               預估加入股數：
               <span className="ml-1 font-semibold tnum text-[var(--c-text)]">
                 {fmtShares(previewShares)}
@@ -407,7 +407,7 @@ export function AccountActions({
           <form action={sellAction} className="flex flex-col gap-3 border-t border-[var(--c-border)] p-4">
             <input type="hidden" name="accountId" value={accountId} />
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               賣出股數（目前持有 {fmtShares(currentQty)}）
               <input
                 name="sellQty"
@@ -423,7 +423,7 @@ export function AccountActions({
               />
             </label>
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               實收金額（TWD，留空 = 股數 × 市價 × FX − 手續費）
               <input
                 name="proceedsTwd"
@@ -440,7 +440,7 @@ export function AccountActions({
               </span>
             </label>
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               手續費（TWD，選填）
               <input
                 name="feeTwd"
@@ -458,7 +458,7 @@ export function AccountActions({
             </label>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 成交價 ({nativeCurrency}, 留空 = 市價)
                 <input
                   name="priceOverride"
@@ -471,7 +471,7 @@ export function AccountActions({
                   className="field"
                 />
               </label>
-              <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 匯率 (留空 = 目前 {currentFx})
                 <input
                   name="fxOverride"
@@ -487,7 +487,7 @@ export function AccountActions({
               </label>
             </div>
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               成交時間（留空 = 現在）
               <input
                 name="occurredAt"
@@ -496,7 +496,7 @@ export function AccountActions({
               />
             </label>
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               備註（選填）
               <input
                 name="note"
@@ -506,7 +506,7 @@ export function AccountActions({
               />
             </label>
 
-            <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface-soft)] px-3.5 py-2.5 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
+            <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface-soft)] px-4 py-2.5 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
               <div>
                 預估實收：
                 <span className="amt ml-1 font-semibold tnum text-[var(--c-text)]">
@@ -559,7 +559,7 @@ export function AccountActions({
           <form action={divAction} className="flex flex-col gap-3 border-t border-[var(--c-border)] p-4">
             <input type="hidden" name="accountId" value={accountId} />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 金額（TWD）
                 <input
                   name="amount"
@@ -571,7 +571,7 @@ export function AccountActions({
                   className="field"
                 />
               </label>
-              <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 配發日（留空 = 現在）
                 <input
                   name="occurredAt"
@@ -580,7 +580,7 @@ export function AccountActions({
                 />
               </label>
             </div>
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               備註（選填）
               <input
                 name="note"
@@ -618,7 +618,7 @@ export function AccountActions({
         <form action={intAction} className="flex flex-col gap-3 border-t border-[var(--c-border)] p-4">
           <input type="hidden" name="accountId" value={accountId} />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               金額（TWD）
               <input
                 name="amount"
@@ -630,7 +630,7 @@ export function AccountActions({
                 className="field"
               />
             </label>
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               入帳日（留空 = 現在）
               <input
                 name="occurredAt"
@@ -639,7 +639,7 @@ export function AccountActions({
               />
             </label>
           </div>
-          <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+          <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
             備註（選填）
             <input
               name="note"
@@ -676,7 +676,7 @@ export function AccountActions({
           </summary>
           <form action={qtyAction} className="flex flex-col gap-3 border-t border-[var(--c-border)] p-4">
             <input type="hidden" name="accountId" value={accountId} />
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               新的持有數量（會同時重新抓價並寫入快照）
               <input
                 name="quantity"
@@ -721,7 +721,7 @@ export function AccountActions({
           <form action={costAction} className="flex flex-col gap-3 border-t border-[var(--c-border)] p-4">
             <input type="hidden" name="accountId" value={accountId} />
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               總成本（{nativeCurrency}，目前 {fmtNative(currentCostNative, isTwdNative ? 0 : 2)}）
               <input
                 name="costNative"
@@ -740,7 +740,7 @@ export function AccountActions({
             </label>
 
             {!isTwdNative && (
-              <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+              <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
                 TWD 總成本（選填，目前 {fmtTwd(currentCost)}）
                 <input
                   name="costTwd"
@@ -759,7 +759,7 @@ export function AccountActions({
               </label>
             )}
 
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               備註（選填）
               <input
                 name="note"
@@ -770,7 +770,7 @@ export function AccountActions({
               />
             </label>
 
-            <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface-soft)] px-3.5 py-2.5 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
+            <div className="border border-dashed border-[var(--c-line-strong)] bg-[var(--c-surface-soft)] px-4 py-2.5 text-[length:var(--fs-micro)] text-[var(--c-muted)]">
               {costPreview?.ok === true ? (
                 <>
                   校正後均價：
@@ -828,7 +828,7 @@ export function AccountActions({
           </summary>
           <form action={balAction} className="flex flex-col gap-3 border-t border-[var(--c-border)] p-4">
             <input type="hidden" name="accountId" value={accountId} />
-            <label className="flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]">
+            <label className="flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]">
               新餘額（TWD）
               <input
                 name="balance"

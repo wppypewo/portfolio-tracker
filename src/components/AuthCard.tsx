@@ -26,7 +26,7 @@ export function AuthCard({
         </span>
       </div>
       <div className="px-6 pb-6 pt-5 sm:px-8 sm:pb-8">
-        <h1 className="font-display text-[length:var(--fs-2xl)] font-semibold leading-tight tracking-[-0.01em]">
+        <h1 className="font-display text-[length:var(--fs-2xl)] font-medium leading-tight tracking-[-0.01em]">
           {title}
         </h1>
         {sub && (
@@ -48,10 +48,10 @@ export const AUTH_MAIN =
   "flex min-h-dvh flex-col items-center justify-center px-4 py-10 sm:p-6";
 
 export const AUTH_LABEL =
-  "flex flex-col gap-[7px] text-[length:var(--fs-micro)] font-semibold text-[var(--c-muted)]";
+  "flex flex-col gap-2 text-[length:var(--fs-micro)] font-medium text-[var(--c-muted)]";
 
 export const AUTH_ERROR =
-  "border border-[var(--c-down)] px-3.5 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]";
+  "border border-[var(--c-down)] px-4 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]";
 
 export const AUTH_OK =
-  "border border-[var(--c-up)] px-3.5 py-3 text-[length:var(--fs-sm)] text-[var(--c-up)]";
+  "border border-[var(--c-up)] px-4 py-3 text-[length:var(--fs-sm)] text-[var(--c-up)]";

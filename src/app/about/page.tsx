@@ -6,6 +6,7 @@ import { SurveyLabel } from "@/components/survey";
 import { buildDashboardData } from "@/lib/dashboard-data";
 import { buildDemoInputs } from "@/lib/demo-data";
 import { todayTaipei } from "@/lib/dates";
+import { fmtFull } from "@/lib/format";
 import { CadastralMap } from "./CadastralMap";
 import { RevealRoot } from "./RevealRoot";
 import { SurveyPlate } from "./SurveyPlate";
@@ -109,7 +110,7 @@ export default function AboutPage() {
       <header className="mx-auto flex h-[var(--header-h)] max-w-[1200px] items-center gap-4 px-4 sm:px-6 lg:px-7">
         <Link href="/about" className="flex items-center gap-2 text-[var(--c-text)]" aria-label="StackWorth 介紹">
           <RegistrationMark className="text-[var(--c-accent)]" />
-          <span className="text-[17px] font-semibold tracking-[-0.025em] sm:text-[18px]">StackWorth</span>
+          <span className="text-[length:var(--fs-lg)] font-medium tracking-[-0.025em]">StackWorth</span>
         </Link>
         <nav aria-label="介紹頁" className="ml-auto flex items-center gap-1 sm:gap-2">
           <Link
@@ -136,10 +137,11 @@ export default function AboutPage() {
         <section className="grid gap-10 border-t border-[var(--c-line-strong)] pt-10 sm:pt-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-center lg:gap-14 lg:pt-20">
           <div className="about-intro">
             <SurveyLabel>圖號 SW-00 · 個人投資組合測繪</SurveyLabel>
-            {/* 斷行寫死在詞組上：交給瀏覽器斷，1440 寬會斷成「…量清／楚。」，
-                最後一行只剩一個字。每行最多 5 個字，欄寬最窄（1024）時也放得下。 */}
-            <h1 className="about-display mt-5 font-display font-semibold">
-              {["把資產攤在", "製圖桌上，", "一條一條", "量清楚。"].map((line) => (
+            {/* 斷行寫死在詞組上：交給瀏覽器斷，1440 寬會斷成「…量清／楚」，
+                最後一行只剩一個字。每行最多 5 個字，欄寬最窄（1024）時也放得下。
+                標題不加句號（2026-11-27 unslop）。 */}
+            <h1 className="about-display mt-5 font-display font-medium">
+              {["把資產攤在", "製圖桌上，", "一條一條", "量清楚"].map((line) => (
                 <span key={line} className="block whitespace-nowrap">
                   {line}
                 </span>
@@ -157,20 +159,24 @@ export default function AboutPage() {
                 登入
               </Link>
             </div>
-            <dl className="mt-10 grid max-w-md grid-cols-3 border-t border-[var(--c-border)] pt-4 text-[length:var(--fs-micro)]">
+          </div>
+          {/* 示範組合的三個數字原本疊在 CTA 下方，跟按鈕搶視線；
+              改成主圖的圖例，說明這張圖畫的是哪一組資料。 */}
+          <div className="min-w-0">
+            <SurveyPlate series={data.series} maxDrawdown={s.maxDrawdown} ddPeak={s.ddPeak} ddTrough={s.ddTrough} />
+            <dl className="mt-4 grid grid-cols-3 border-t border-[var(--c-border)] pt-3 text-[length:var(--fs-micro)]">
               {[
-                ["示範淨值", `${(s.total / 10_000).toFixed(1)}萬`],
+                ["示範淨值", `NT$ ${fmtFull(s.total)}`],
                 ["帳戶", `${s.accounts} 個`],
                 ["快照", `${data.series.length} 天`],
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt className="text-[var(--c-faint)]">{k}</dt>
-                  <dd className="mt-1 font-mono text-[length:var(--fs-md)] text-[var(--c-text)]">{v}</dd>
+                  <dd className="mt-1 font-mono text-[length:var(--fs-sm)] tnum text-[var(--c-text)]">{v}</dd>
                 </div>
               ))}
             </dl>
           </div>
-          <SurveyPlate series={data.series} maxDrawdown={s.maxDrawdown} ddPeak={s.ddPeak} ddTrough={s.ddTrough} />
         </section>
 
         {/* ── 圖幅 01：量什麼 ─────────────────────────────── */}
@@ -179,19 +185,27 @@ export default function AboutPage() {
           title="四個數字，各回答一個問題"
           lead="報酬不只一種算法。StackWorth 同時列出資金加權與時間加權，並用回撤與 Sharpe 交代風險；每個數字都可以在「指標怎麼算」查到公式與門檻。"
         >
-          <ol className="grid border-l border-t border-[var(--c-border)] sm:grid-cols-2 lg:grid-cols-4">
+          {/* 四張等寬卡讀起來像模板。XIRR 回答「我實際賺多少」，是使用者最先問的，
+              給它較寬的欄與較大的數字；其餘三張退成同一級的小卡。 */}
+          <ol className="grid border-l border-t border-[var(--c-border)] sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
             {readouts.map((r, i) => (
               <li
                 key={r.key}
                 data-reveal
                 style={{ "--rd": `${i * 70}ms` } as React.CSSProperties}
-                className="flex flex-col border-b border-r border-[var(--c-border)] bg-[var(--c-surface)] p-5 sm:p-6"
+                className={`flex flex-col border-b border-r border-[var(--c-border)] bg-[var(--c-surface)] p-5 sm:p-6 ${
+                  i === 0 ? "sm:col-span-2 lg:col-span-1" : ""
+                }`}
               >
                 <span className="font-mono text-[length:var(--fs-axis)] tracking-[0.12em] text-[var(--c-faint)]">
-                  {String(i + 1).padStart(2, "0")} · {r.key}
+                  {r.key}
                 </span>
-                <span className="mt-3 text-[length:var(--fs-sm)] font-semibold">{r.name}</span>
-                <span className={`tnum mt-1 text-[clamp(30px,3.4vw,40px)] font-semibold leading-none tracking-[-0.02em] ${toneCls[r.tone]}`}>
+                <span className="mt-3 text-[length:var(--fs-sm)] font-medium">{r.name}</span>
+                <span
+                  className={`tnum mt-1 font-semibold leading-none tracking-[-0.02em] ${
+                    i === 0 ? "text-[clamp(40px,4.4vw,56px)]" : "text-[clamp(28px,2.6vw,32px)]"
+                  } ${toneCls[r.tone]}`}
+                >
                   {r.value}
                 </span>
                 <p className="mt-4 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">{r.body}</p>
@@ -230,7 +244,7 @@ export default function AboutPage() {
                   key={src.name}
                   className="flex items-baseline justify-between gap-4 border-b border-[var(--c-border)] px-5 py-4 last:border-b-0"
                 >
-                  <span className="font-semibold">{src.name}</span>
+                  <span className="font-medium">{src.name}</span>
                   <span className="text-right text-[length:var(--fs-sm)] text-[var(--c-muted)]">{src.scope}</span>
                   <span className="sr-only">（來源 {i + 1}）</span>
                 </li>
@@ -239,10 +253,10 @@ export default function AboutPage() {
             <ol className="grid bg-[var(--c-surface)] sm:grid-cols-3">
               {PIPELINE.map((step, i) => (
                 <li key={step.k} className="relative border-b border-[var(--c-border)] p-5 sm:border-b-0 sm:border-l first:sm:border-l-0">
-                  <span className="font-mono text-[length:var(--fs-axis)] tracking-[0.12em] text-[var(--c-faint)]">
-                    STEP {i + 1}
+                  <span className="font-mono text-[length:var(--fs-axis)] text-[var(--c-faint)]">
+                    步驟 {i + 1}
                   </span>
-                  <p className="mt-2 font-semibold">{step.k}</p>
+                  <p className="mt-2 font-medium">{step.k}</p>
                   <p className="mt-1.5 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">{step.v}</p>
                   {/* 流向線：從上一步畫過來。只在並排時出現，手機上下堆疊時順序本身就是流向。 */}
                   <span
@@ -313,7 +327,7 @@ export default function AboutPage() {
                 className="grid gap-x-8 gap-y-2 border-b border-[var(--c-border)] py-5 md:grid-cols-[minmax(0,17rem)_minmax(0,10rem)_minmax(0,1fr)] md:items-baseline"
               >
                 {/* 序號放在 dt 裡：dl 底下的 div 只能直接包 dt／dd。 */}
-                <dt className="flex items-baseline font-semibold">
+                <dt className="flex items-baseline font-medium">
                   <span className="w-12 shrink-0 font-mono text-[length:var(--fs-micro)] font-normal text-[var(--c-faint)]">
                     {String(i + 1).padStart(2, "0")}
                   </span>
@@ -337,7 +351,7 @@ export default function AboutPage() {
               ["金鑰", "報價 API 與資料庫管理金鑰只放在伺服器端，不進瀏覽器。"],
             ].map(([k, v]) => (
               <li key={k} className="bg-[var(--c-surface)] p-5 sm:p-6">
-                <p className="font-semibold">{k}</p>
+                <p className="font-medium">{k}</p>
                 <p className="mt-2 text-[length:var(--fs-sm)] leading-relaxed text-[var(--c-muted)]">{v}</p>
               </li>
             ))}
@@ -346,7 +360,7 @@ export default function AboutPage() {
 
         {/* ── 收尾 ──────────────────────────────────────── */}
         <section data-reveal className="mt-20 border-t border-[var(--c-line-strong)] pt-12 sm:mt-28">
-          <h2 className="about-display-sm font-display font-semibold">先看示範，再決定。</h2>
+          <h2 className="about-display-sm font-display font-medium">先看示範，再決定</h2>
           <p className="mt-4 max-w-[46ch] text-[length:var(--fs-md)] leading-relaxed text-[var(--c-muted)]">
             示範是五個用固定種子生成的帳戶，總覽、決策日誌、歷史重播、情境與月報都能操作，不需要註冊。
           </p>
@@ -384,7 +398,7 @@ function Sheet({
           <span className="font-mono text-[length:var(--fs-micro)] tracking-[0.12em] text-[var(--c-faint)]">
             圖幅 {no}
           </span>
-          <h2 id={`sheet-${no}`} className="about-display-sm mt-2 font-display font-semibold">
+          <h2 id={`sheet-${no}`} className="about-display-sm mt-2 font-display font-medium">
             {title}
           </h2>
         </div>

@@ -67,7 +67,7 @@ export function CadastralMap({
             >
               {r.w > 22 && r.h > 14 && (
                 <span className="inline-flex flex-col bg-[var(--c-surface)] px-1 py-0.5 leading-tight">
-                  <span className="whitespace-nowrap text-[length:var(--fs-micro)] font-semibold">{d.label}</span>
+                  <span className="whitespace-nowrap text-[length:var(--fs-micro)] font-medium">{d.label}</span>
                   <span className="font-mono text-[length:var(--fs-axis)] text-[var(--c-muted)]">
                     {d.pct.toFixed(1)}%
                   </span>

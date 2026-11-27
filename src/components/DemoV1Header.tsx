@@ -16,12 +16,12 @@ export function DemoV1Header({ active }: { active: DemoActive }) {
   return (
     <header data-demo-header className="sticky top-0 z-40 border-b border-[var(--c-line-strong)] bg-[var(--c-page)]">
       <div className="mx-auto flex min-h-[var(--header-h)] max-w-[1200px] flex-wrap items-center gap-x-2 px-4 sm:flex-nowrap sm:px-6 lg:px-7">
-        <Link href="/demo" className="flex min-h-11 items-center gap-2 font-semibold tracking-[-0.02em]">
+        <Link href="/demo" className="flex min-h-11 items-center gap-2 font-medium tracking-[-0.02em]">
           StackWorth
           {/* 朱砂框的「樣張」戳記：提醒這一頁的數字是示範資料。框是朱砂、字用內文色，
               淺色主題下朱砂對底只有 3.75:1，不能拿來當字色。 */}
-          <span className="border border-dashed border-[var(--c-annot)] px-1.5 py-px font-mono text-[length:var(--fs-micro)] font-medium tracking-[0.14em] text-[var(--c-text)]">
-            DEMO
+          <span className="border border-dashed border-[var(--c-annot)] px-1.5 py-px font-mono text-[length:var(--fs-micro)] font-medium text-[var(--c-text)]">
+            Demo
           </span>
         </Link>
         <SurveyNav

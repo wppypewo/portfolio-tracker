@@ -62,7 +62,7 @@ export function AppHeader({
           aria-label="StackWorth 首頁"
         >
           <RegistrationMark className="text-[var(--c-accent)]" />
-          <span className="text-[17px] font-semibold tracking-[-0.025em] sm:text-[18px]">
+          <span className="text-[length:var(--fs-lg)] font-medium tracking-[-0.025em]">
             StackWorth
           </span>
         </Link>

@@ -20,7 +20,6 @@ import {
 
 // 金額格式統一走 lib/format；fmtTwd 別名保留給既有匯入端。
 export const fmtTwd = fmtFull;
-export { fmtCompact };
 
 // 資產類別配色（9 類 + fallback）。
 // 色值定義在 globals.css，深淺兩個主題各一組：同一組 hex 在淺色底下對比不足，
@@ -56,61 +55,6 @@ export type AllocDatum = {
   value: number;
   pct: number;
 };
-
-/* ---------- Sparkline ---------- */
-/* 測繪桌版本：不填漸層，改畫兩件量測用的東西——
-   起點高度的虛線基準（一眼看出現在比 30 天前高或低），
-   以及起點、終點各一根短刻度。終點再加一個實心方點標出「現在」。
-   上下各留 3px，讓方點與刻度不被 viewBox 切掉。 */
-export function Sparkline({
-  data,
-  w = 132,
-  h = 40,
-  up = true,
-}: {
-  data: SeriesPoint[];
-  w?: number;
-  h?: number;
-  up?: boolean;
-}) {
-  if (data.length < 2) return null;
-  const pad = 3;
-  const vals = data.map((d) => d.value);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const nx = (i: number) => (i / (data.length - 1)) * (w - pad * 2) + pad;
-  const ny = (v: number) =>
-    h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
-  const d = vals
-    .map((v, i) => `${i ? "L" : "M"}${nx(i).toFixed(1)},${ny(v).toFixed(1)}`)
-    .join(" ");
-  const stroke = up ? "var(--c-up)" : "var(--c-down)";
-  const y0 = ny(vals[0]);
-  const xEnd = nx(vals.length - 1);
-  const yEnd = ny(vals[vals.length - 1]);
-  return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true" className="overflow-visible">
-      <line
-        x1={pad}
-        x2={w - pad}
-        y1={y0}
-        y2={y0}
-        stroke="var(--c-line-strong)"
-        strokeWidth="1"
-        strokeDasharray="2 3"
-      />
-      <line x1={pad} x2={pad} y1={y0 - 4} y2={y0 + 4} stroke="var(--c-muted)" strokeWidth="1" />
-      <path
-        d={d}
-        fill="none"
-        stroke={stroke}
-        strokeWidth="1.5"
-        strokeLinejoin="miter"
-      />
-      <rect x={xEnd - 2.5} y={yEnd - 2.5} width="5" height="5" fill={stroke} />
-    </svg>
-  );
-}
 
 /* 圖表寬度：掛載當下先同步量一次，之後交給 ResizeObserver。
    只靠 observer 時，寬度要等它第一次非同步回呼才更新；在某些環境（背景分頁、
@@ -705,7 +649,7 @@ export function BenchChart({
             return (
               <div
                 key={k}
-                className="flex items-center gap-[7px] text-[length:var(--fs-micro)] leading-5"
+                className="flex items-center gap-2 text-[length:var(--fs-micro)] leading-5"
               >
                 <span
                   className="h-[7px] w-[7px] shrink-0"

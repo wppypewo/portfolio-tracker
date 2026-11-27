@@ -140,9 +140,9 @@ export function MobileNavToggle({
                       href={item.href}
                       aria-current={isActive ? "page" : undefined}
                       onClick={() => setOpen(false)}
-                      className={`flex min-h-12 items-center gap-4 border-l-2 pl-3 pr-2 text-[15px] ${
+                      className={`flex min-h-12 items-center gap-4 border-l-2 pl-3 pr-2 text-[length:var(--fs-md)] ${
                         isActive
-                          ? "border-l-[var(--c-accent)] bg-[var(--c-accent-soft)] font-semibold text-[var(--c-text)]"
+                          ? "border-l-[var(--c-accent)] bg-[var(--c-accent-soft)] font-medium text-[var(--c-text)]"
                           : "border-l-transparent font-medium text-[var(--c-muted)] hover:bg-[var(--c-row-hover)] hover:text-[var(--c-text)]"
                       }`}
                     >
@@ -162,7 +162,7 @@ export function MobileNavToggle({
             </ol>
 
             <div className="mt-3 flex items-center justify-between">
-              <span className="text-[12px] text-[var(--c-muted)]">顯示模式</span>
+              <span className="text-[length:var(--fs-micro)] text-[var(--c-muted)]">顯示模式</span>
               <ThemeToggle />
             </div>
 

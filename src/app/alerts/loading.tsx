@@ -28,7 +28,7 @@ export default function AlertsLoading() {
                 <div key={i} className="sk h-24" />
               ))}
             </div>
-            <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sk h-11" />
               <div className="sk h-11" />
             </div>

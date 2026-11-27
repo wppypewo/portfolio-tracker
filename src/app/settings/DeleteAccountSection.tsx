@@ -29,7 +29,7 @@ export function DeleteAccountSection({ email }: { email: string | null }) {
     <div className="mt-4 border border-[var(--c-down)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0">
-          <span className="text-[length:var(--fs-md)] font-semibold text-[var(--c-down)]">
+          <span className="text-[length:var(--fs-md)] font-medium text-[var(--c-down)]">
             刪除我的 StackWorth 帳號
           </span>
           <span className="mt-0.5 block text-[length:var(--fs-micro)] text-[var(--c-muted)]">
@@ -85,7 +85,7 @@ export function DeleteAccountSection({ email }: { email: string | null }) {
           </label>
 
           {state?.error && (
-            <p className="mt-3 border border-[var(--c-down)] px-3.5 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
+            <p className="mt-3 border border-[var(--c-down)] px-4 py-2.5 text-[length:var(--fs-sm)] text-[var(--c-down)]">
               {state.error}
             </p>
           )}

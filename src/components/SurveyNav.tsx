@@ -110,9 +110,9 @@ export function SurveyNav({
             aria-current={isActive ? "page" : undefined}
             onPointerEnter={() => setPointed(item.key)}
             onFocus={() => setPointed(item.key)}
-            className={`relative flex items-center whitespace-nowrap px-2.5 text-[13px] ${
+            className={`relative flex items-center whitespace-nowrap px-2.5 text-[length:var(--fs-sm)] ${
               isActive
-                ? "font-semibold text-[var(--c-text)]"
+                ? "font-medium text-[var(--c-text)]"
                 : "font-medium text-[var(--c-muted)] hover:text-[var(--c-text)]"
             } ${itemClassName}`}
           >

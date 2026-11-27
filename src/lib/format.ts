@@ -3,7 +3,7 @@
 //
 // 規則：
 // - fmtFull：全位數千分位 → hero 主數字、副指標、表格明細
-// - fmtCompact：萬/億緊湊（萬帶 1 位小數避免相鄰刻度塌成同字）→ 圖表軸、donut 中心、緊湊情境
+// - fmtCompact：萬/億緊湊（萬帶 1 位小數避免相鄰刻度塌成同字）→ 只用在圖表上的標籤（軸、高點標記）；畫面上的主要數字一律用 fmtFull
 // - fmtUpdatedAt：報價時間，台北時區、人類可讀
 
 export const fmtFull = (n: number) => Math.round(n).toLocaleString("en-US");
